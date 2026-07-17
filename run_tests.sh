@@ -32,7 +32,9 @@ exec bb -cp "$ACTOR_DIR" -e '
   (quote fuchi.methods.test-consistency)
   (quote fuchi.methods.test-vote)
   (quote fuchi.methods.test-live-gate)
-  (quote fuchi.methods.test-public-person))
+  (quote fuchi.methods.test-public-person)
+  (quote fuchi.methods.test-l0-enroll)
+  (quote fuchi.methods.test-disclosure-hold))
 (let [r (clojure.test/run-tests
           (quote fuchi.cells.test-state-machine)
           (quote fuchi.methods.test-provision)
@@ -46,6 +48,8 @@ exec bb -cp "$ACTOR_DIR" -e '
           (quote fuchi.methods.test-consistency)
           (quote fuchi.methods.test-vote)
           (quote fuchi.methods.test-live-gate)
-          (quote fuchi.methods.test-public-person))]
+          (quote fuchi.methods.test-public-person)
+          (quote fuchi.methods.test-l0-enroll)
+          (quote fuchi.methods.test-disclosure-hold))]
   (System/exit (if (zero? (+ (:fail r) (:error r))) 0 1)))
 '
