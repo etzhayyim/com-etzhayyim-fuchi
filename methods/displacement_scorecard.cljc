@@ -101,6 +101,12 @@
                :all-r2-not-executed (boolean (:all-r2-not-executed s true))
                :mitsuho-gated-admissible (boolean (:mitsuho-gated-admissible s))
                :hikari-gated-admissible (boolean (:hikari-gated-admissible s))
+               :mitsuho-gated-receive-admissible
+               (boolean (:mitsuho-gated-receive-admissible s))
+               :hikari-gated-receive-admissible
+               (boolean (:hikari-gated-receive-admissible s))
+               :mitsuho-hikari-receive-both-refused
+               (boolean (:mitsuho-hikari-receive-both-refused s))
                :care-gated-admissible (boolean (:care-gated-admissible s))
                :housing-land-grant-executed (boolean (:housing-land-grant-executed s))
                :liquidity-loan-executed (boolean (:liquidity-loan-executed s))
@@ -557,6 +563,10 @@
                          (boolean (:mitsuho-gated-admissible sp)) "/"
                          (boolean (:hikari-gated-admissible sp)) "/"
                          (boolean (:care-gated-admissible sp)) "\n"))
+        (conj! lines (str "- mitsuho/hikari gated-receive admissible/both-refused: "
+                         (boolean (:mitsuho-gated-receive-admissible sp)) "/"
+                         (boolean (:hikari-gated-receive-admissible sp)) "/"
+                         (boolean (:mitsuho-hikari-receive-both-refused sp)) "\n"))
         (conj! lines (str "- housing land-grant / liquidity loan / cash: "
                          (boolean (:housing-land-grant-executed sp)) "/"
                          (boolean (:liquidity-loan-executed sp)) "/"

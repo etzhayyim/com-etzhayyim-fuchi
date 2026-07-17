@@ -46,3 +46,29 @@
 
 (deftest test-default-refuse
   (is (false? (get (mr/default-refuse-status) "admissible"))))
+
+(deftest test-gated-receive-status-default-refuse
+  (let [pkg (m/r1-dry-package {:alloc-id "a" :imputed-usd-micros-yr 1000 :person (person)})
+        st (mr/gated-receive-status pkg)]
+    (is (= :refused (:phase st)))
+    (is (false? (:admissible st)))
+    (is (false? (:produce-invoked st)))
+    (is (false? (:live st)))
+    (is (= 0 (:cash-usd-micros st)))
+    (is (= [] (:score-surface st)))
+    (pp/assert-no-public-scores! st)))
+
+(deftest test-gated-receive-status-with-capability
+  (let [pkg (m/r1-dry-package {:alloc-id "a" :imputed-usd-micros-yr 1000 :person (person)})
+        gate (live-gate/make-live-gate
+              {:leg "provision" :operator-did "did:op:x" :council-level 6
+               :member-signature "member-cap-ok"})
+        st (mr/gated-receive-status pkg :gate gate
+                                    :env {"FUCHI_ALLOW_LIVE_PROVISION" "1"})]
+    (is (= :gated-ack-plan (:phase st)))
+    (is (true? (:admissible st)))
+    (is (true? (:authorized-to-publish st)))
+    (is (false? (:produce-invoked st)))
+    (is (false? (:live st)))
+    (is (false? (:published st)))
+    (pp/assert-no-public-scores! st)))

@@ -216,6 +216,11 @@
                       (hprod/plan-from-r1 energy-pkg))
         food-ack (when (and food-pkg (not= :refused (:phase food-pkg)))
                    (frecv/receive-from-r1-package food-pkg))
+        ;; priority (3): mitsuho/hikari gated-receive DESIGN (default refuse; produce/generate false)
+        food-recv-gated (when (and food-pkg (not= :refused (:phase food-pkg)))
+                          (frecv/gated-receive-status food-pkg))
+        energy-recv-gated (when (and energy-pkg (not= :refused (:phase energy-pkg)))
+                            (hrecv/gated-receive-status energy-pkg))
         care-plan (when (and care-pkg (not= :refused (:phase care-pkg)))
                     (cprod/plan-from-r1 care-pkg))
         care-ack (when (and care-pkg (not= :refused (:phase care-pkg)))
@@ -354,9 +359,24 @@
                  :mitsuho-r1-phase (when food-pkg (name (:phase food-pkg)))
                  :mitsuho-gated-admissible (boolean (:admissible food-gated))
                  :mitsuho-produce-executed false
+                 :mitsuho-gated-receive-admissible
+                 (boolean (:admissible food-recv-gated))
+                 :mitsuho-gated-receive-phase
+                 (when food-recv-gated (name (:phase food-recv-gated)))
+                 :mitsuho-produce-invoked-on-receive false
                  :hikari-r1-phase (when energy-pkg (name (:phase energy-pkg)))
                  :hikari-gated-admissible (boolean (:admissible energy-gated))
                  :hikari-generate-executed false
+                 :hikari-gated-receive-admissible
+                 (boolean (:admissible energy-recv-gated))
+                 :hikari-gated-receive-phase
+                 (when energy-recv-gated (name (:phase energy-recv-gated)))
+                 :hikari-generate-invoked-on-receive false
+                 :mitsuho-hikari-receive-both-refused
+                 (and (some? food-recv-gated)
+                      (some? energy-recv-gated)
+                      (not (true? (:admissible food-recv-gated)))
+                      (not (true? (:admissible energy-recv-gated))))
                  :care-r1-phase (when care-pkg (name (:phase care-pkg)))
                  :care-gated-admissible (boolean (:admissible care-gated))
                  :care-delivery-executed false
@@ -409,11 +429,13 @@
                                                :stage (or (:stage person-ladder) "L0"))
              :food-package food-pkg
              :food-gated-live-status food-gated
+             :food-gated-receive-status food-recv-gated
              :food-produce-plan food-plan
              :food-receive food-ack
              :food-r2-execute-status food-r2
              :energy-package energy-pkg
              :energy-gated-live-status energy-gated
+             :energy-gated-receive-status energy-recv-gated
              :energy-produce-plan energy-plan
              :energy-receive (when (and energy-pkg (not= :refused (:phase energy-pkg)))
                                (hrecv/receive-from-r1-package energy-pkg))
@@ -448,6 +470,8 @@
                                          :stage-rails :ladder-rails-hint))
     (pp/assert-no-public-scores! stage-row)
     (doseq [g (remove nil? gated-statuses)] (pp/assert-no-public-scores! g))
+    (when food-recv-gated (pp/assert-no-public-scores! food-recv-gated))
+    (when energy-recv-gated (pp/assert-no-public-scores! energy-recv-gated))
     out))
 
 #?(:clj

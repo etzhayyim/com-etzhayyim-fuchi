@@ -77,3 +77,69 @@
 
 (defn default-refuse-status []
   (live-gate/gate-status (live-gate/make-live-gate {:leg "provision"}) {}))
+
+(defn gated-receive-status
+  "Non-raising R1→gated-receive DESIGN status for mitsuho (priority rail #3).
+   Default gate/env refuses. Never invokes produce; cash≡0; live=false."
+  [r1-pkg & {:keys [gate env]}]
+  (cond
+    (nil? r1-pkg)
+    nil
+
+    (= :refused (:phase r1-pkg))
+    (let [out {:rail-kind "food-mitsuho"
+               :provider-did PROVIDER-DID
+               :phase :refused
+               :r1-phase :refused
+               :admissible false
+               :authorized-to-publish false
+               :produce-invoked false
+               :refusal-reason (or (:refusal-reason r1-pkg) "r1 refused")
+               :live false
+               :cash-usd-micros 0
+               :score-surface []
+               :priority-stack PRIORITY-STACK
+               :note "R1 refused — gated-receive not attempted"}]
+      (pp/assert-no-public-scores! out)
+      out)
+
+    :else
+    (let [g (or gate (live-gate/make-live-gate {:leg "provision"}))
+          e (or env {})]
+      (try
+        (let [ack (gated-receive-plan r1-pkg g :env e)
+              out {:rail-kind "food-mitsuho"
+                   :provider-did PROVIDER-DID
+                   :phase :gated-ack-plan
+                   :r1-phase (:phase r1-pkg)
+                   :admissible true
+                   :authorized-to-publish (boolean (:authorized-to-publish ack))
+                   :produce-invoked false
+                   :published false
+                   :live false
+                   :cash-usd-micros 0
+                   :score-surface []
+                   :priority-stack PRIORITY-STACK
+                   :note "gated-receive plan authorized — mitsuho produce not invoked"}]
+          (pp/assert-no-public-scores! out)
+          out)
+        (catch #?(:clj Exception :cljs :default) ex
+          (let [st (live-gate/gate-status g e)
+                out {:rail-kind "food-mitsuho"
+                     :provider-did PROVIDER-DID
+                     :phase :refused
+                     :r1-phase (:phase r1-pkg)
+                     :admissible false
+                     :authorized-to-publish false
+                     :produce-invoked false
+                     :refusal-reason (or (ex-message ex)
+                                         (get st "reason")
+                                         "live gate default refuse")
+                     :gate-admissible (boolean (get st "admissible"))
+                     :live false
+                     :cash-usd-micros 0
+                     :score-surface []
+                     :priority-stack PRIORITY-STACK
+                     :note "R1 dry ok; gated-receive refused by default membrane"}]
+            (pp/assert-no-public-scores! out)
+            out))))))

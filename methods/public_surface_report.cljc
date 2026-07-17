@@ -295,9 +295,17 @@
               :mitsuho-r1-phase (:mitsuho-r1-phase s)
               :mitsuho-gated-admissible (boolean (:mitsuho-gated-admissible s))
               :mitsuho-produce-executed false
+              :mitsuho-gated-receive-admissible
+              (boolean (:mitsuho-gated-receive-admissible s))
+              :mitsuho-gated-receive-phase (:mitsuho-gated-receive-phase s)
               :hikari-r1-phase (:hikari-r1-phase s)
               :hikari-gated-admissible (boolean (:hikari-gated-admissible s))
               :hikari-generate-executed false
+              :hikari-gated-receive-admissible
+              (boolean (:hikari-gated-receive-admissible s))
+              :hikari-gated-receive-phase (:hikari-gated-receive-phase s)
+              :mitsuho-hikari-receive-both-refused
+              (boolean (:mitsuho-hikari-receive-both-refused s))
               :care-r1-phase (:care-r1-phase s)
               :care-gated-admissible (boolean (:care-gated-admissible s))
               :housing-r1-phase (:housing-r1-phase s)
@@ -887,6 +895,13 @@
                          (or (:hikari-r1-phase sp) "—") "/"
                          (boolean (:hikari-gated-admissible sp)) "/"
                          (boolean (:hikari-generate-executed sp)) "\n"))
+        (conj! lines (str "- (3) mitsuho/hikari gated-receive admissible/phase: "
+                         (boolean (:mitsuho-gated-receive-admissible sp)) "/"
+                         (or (:mitsuho-gated-receive-phase sp) "—") " · "
+                         (boolean (:hikari-gated-receive-admissible sp)) "/"
+                         (or (:hikari-gated-receive-phase sp) "—")
+                         " both-refused="
+                         (boolean (:mitsuho-hikari-receive-both-refused sp)) "\n"))
         (conj! lines (str "- (3) care/housing/tooling/compute/liquidity gated-admissible: "
                          (boolean (:care-gated-admissible sp)) "/"
                          (boolean (:housing-gated-admissible sp)) "/"
@@ -1185,6 +1200,11 @@
           ". (3) mitsuho/hikari gated="
           (boolean (:mitsuho-gated-admissible sp)) "/"
           (boolean (:hikari-gated-admissible sp))
+          " gated-receive="
+          (boolean (:mitsuho-gated-receive-admissible sp)) "/"
+          (boolean (:hikari-gated-receive-admissible sp))
+          " both-recv-refused="
+          (boolean (:mitsuho-hikari-receive-both-refused sp))
           " care/housing/tooling/compute/liquidity gated="
           (boolean (:care-gated-admissible sp)) "/"
           (boolean (:housing-gated-admissible sp)) "/"
