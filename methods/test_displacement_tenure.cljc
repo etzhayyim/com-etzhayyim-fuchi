@@ -2,6 +2,7 @@
   (:require [clojure.test :refer [deftest is]]
             [fuchi.methods.displacement-tenure :as ten]
             [fuchi.methods.displacement-l0-path :as d]
+            [fuchi.methods.displacement-gov :as g]
             [fuchi.methods.couple :as couple]
             [fuchi.methods.itonami-bridge :as ib]
             [fuchi.methods.public-person :as pp]
@@ -25,9 +26,40 @@
     (is (= "care" (first (get-in t [:stage-sustenance :rails]))))
     (is (= "housing" (second (get-in t [:stage-sustenance :rails]))))
     (is (= :booked-offline (get-in t [:booking :phase])))
+    (is (= :open (:disclosure-state t)))
+    (is (false? (:disclosure-held? t)))
+    (is (true? (:entitlements-may-flow? t)))
+    (is (map? (:disclosure-hold t)))
+    (is (map? (:disclosure-continuity t)))
     (is (false? (:live t)))
     (is (= 0 (:cash-usd-micros t)))
     (pp/assert-no-public-scores! (:public-person t))))
+
+(deftest test-tenure-stale-disclosure-holds-flow
+  "Stale disclosure: continuity holds flow; ladder refuses L4→L6 advance (correct)."
+  (let [ev (couple/make-displacement-event
+            {:displacing-actor "itonami-robotics"
+             :cohort-id "c-stale"
+             :displaced-count 5
+             :surplus-usd-micros-yr 120000000000
+             :funded true})
+        pkg (d/run-for-event ev :max-slots 1 :climb-steps 4)
+        s (first (:subjects pkg))
+        stale {:wage-labor-band :stale :state-benefits? false
+               :wellbecoming-attest-fact :stale :related-party-edges []
+               :rider-s2-self-report :none}
+        t (ten/tenure-climb-subject s :target-stage "L6" :disclosure stale)
+        g (g/package-subject t)]
+    ;; held disclosure blocks ladder advance — stage remains L4
+    (is (= "L4" (:stage t)))
+    (is (= :held (:disclosure-state t)))
+    (is (true? (:disclosure-held? t)))
+    (is (false? (:entitlements-may-flow? t)))
+    (is (true? (:disclosure-held? g)))
+    (is (false? (:may-flow? g)))
+    (is (zero? (get-in g [:flowable-booking :in-kind-total-usd-micros])))
+    (is (false? (:live t)))
+    (is (= 0 (:cash-usd-micros t)))))
 
 (deftest test-tenure-l5
   (let [ev (couple/make-displacement-event

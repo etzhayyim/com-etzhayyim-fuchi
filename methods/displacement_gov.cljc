@@ -12,6 +12,7 @@
             [fuchi.methods.vote :as vote]
             [fuchi.methods.live-gate :as live-gate]
             [fuchi.methods.public-person :as pp]
+            [fuchi.methods.disclosure-continuity :as disc]
             [fuchi.methods.displacement-book :as dbook]
             [fuchi.methods.displacement-couple :as dcouple]
             [fuchi.methods.couple :as couple]
@@ -196,11 +197,22 @@
                             :score-surface []})]))
                pkgs))))
 
+(defn- disclosure-held-subject?
+  "True when disclosure continuity freezes entitlement flow (public-person may stay)."
+  [subject]
+  (or (true? (:disclosure-held? subject))
+      (false? (:entitlements-may-flow? subject))
+      (when-let [m (:disclosure-hold subject)]
+        (not (disc/entitlements-may-flow? m)))
+      (true? (get-in subject [:disclosure-hold :entitlements-held?]))))
+
 (defn package-subject
-  "Route subject + partial hold + flowable-only rebook + per-rail r2 refuse facts."
+  "Route subject + partial hold + flowable-only rebook + per-rail r2 refuse facts.
+   Disclosure-held freezes ALL rails (stronger than council housing-only hold)."
   [subject]
   (let [r (route-subject subject)
         rails (or (get-in subject [:stage-sustenance :rails]) [])
+        disc-held? (disclosure-held-subject? subject)
         pkg (case (:route r)
               "sbt-vote" (open-sbt-vote-package r)
               "council-lv7" (council-pending-package r)
@@ -212,42 +224,77 @@
                :subject-did (:subject-did r)
                :live false :cash-usd-micros 0 :score-surface []
                :priority-stack PRIORITY-STACK})
-        hold (entitlement-hold-for-route (:route r) rails)
+        hold0 (entitlement-hold-for-route (:route r) rails)
+        hold (if disc-held?
+               (let [all-held (entitlement-hold-for-route "refused" rails)]
+                 (assoc all-held
+                        :disclosure-held? true
+                        :entitlement-hold-reason "disclosure-held"
+                        :may-flow? false
+                        :may-flow-substrate? false
+                        :gov-route-hold hold0))
+               (assoc hold0 :disclosure-held? false))
         flowable-book
         (when-let [sp (:stage-sustenance subject)]
-          (dbook/book-flowable
-           (:subject-did subject) sp (:rail-flow hold)
-           :alloc-id (str "flow-" (:cohort-id subject) "-" (:subject-did subject))))
+          (if disc-held?
+            {:phase :held-offline
+             :subject-did (:subject-did subject)
+             :rails []
+             :in-kind-total-usd-micros 0
+             :entry-count 0
+             :note "disclosure-held — flowable book empty; floors remain plan-only"
+             :live false
+             :cash-usd-micros 0
+             :score-surface []}
+            (dbook/book-flowable
+             (:subject-did subject) sp (:rail-flow hold)
+             :alloc-id (str "flow-" (:cohort-id subject) "-" (:subject-did subject)))))
         r2-map (r2-status-for-rails subject (:rail-flow hold))
         out (merge r hold {:gov-package pkg
                            :flowable-booking flowable-book
                            :r2-by-rail r2-map
+                           :disclosure-held? disc-held?
                            :live false
                            :cash-usd-micros 0
                            :score-surface []
                            :priority-stack PRIORITY-STACK})]
-    (pp/assert-no-public-scores! (dissoc out :gov-package :rail-flow :r2-by-rail :flowable-booking))
+    (pp/assert-no-public-scores! (dissoc out :gov-package :rail-flow :r2-by-rail :flowable-booking :gov-route-hold))
     out))
 
 (defn apply-council-ratify-rebook
   "For council-lv7 gov subjects: offline ratify plan + rebook with housing included
-   in facts (still land-grant-executed=false, write_live refuse)."
+   in facts (still land-grant-executed=false, write_live refuse).
+   Disclosure-held subjects get empty post-ratify flowable book (housing still not granted live)."
   [gov-subject subject]
   (if-not (= "council-lv7" (:route gov-subject))
     gov-subject
     (let [plan (council-ratify-plan gov-subject)
+          disc-held? (or (true? (:disclosure-held? gov-subject))
+                         (disclosure-held-subject? subject))
           sp (:stage-sustenance subject)
           rebook (when sp
-                   (dbook/book-flowable
-                    (:subject-did subject) sp (:rail-flow-after plan)
-                    :alloc-id (str "ratify-" (:cohort-id subject) "-"
-                                   (:subject-did subject))
-                    :note "post-council-ratify offline book — land grant still not executed"))]
+                   (if disc-held?
+                     {:phase :held-offline
+                      :subject-did (:subject-did subject)
+                      :rails []
+                      :in-kind-total-usd-micros 0
+                      :entry-count 0
+                      :note "disclosure-held — post-ratify flowable empty; land-grant false"
+                      :live false
+                      :cash-usd-micros 0
+                      :score-surface []}
+                     (dbook/book-flowable
+                      (:subject-did subject) sp (:rail-flow-after plan)
+                      :alloc-id (str "ratify-" (:cohort-id subject) "-"
+                                     (:subject-did subject))
+                      :note "post-council-ratify offline book — land grant still not executed")))]
       (assoc gov-subject
              :council-ratify plan
              :post-ratify-booking rebook
              :post-ratify-includes-housing
-             (boolean (some #(= "housing-commons" %) (or (:rails rebook) [])))
+             (boolean (and (not disc-held?)
+                           (some #(= "housing-commons" %) (or (:rails rebook) []))))
+             :disclosure-held? disc-held?
              :land-grant-executed false
              :live false
              :cash-usd-micros 0))))

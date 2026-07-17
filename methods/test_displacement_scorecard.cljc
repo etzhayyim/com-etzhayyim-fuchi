@@ -33,12 +33,15 @@
        (is (pos? (:scorecard/tenure-gov-post-ratify-committed-usd-micros body)))
        (is (< (:scorecard/tenure-gov-flowable-committed-usd-micros body)
               (:scorecard/tenure-gov-post-ratify-committed-usd-micros body)))
+       (is (pos? (:scorecard/tenure-disclosure-open body)))
+       (is (zero? (:scorecard/tenure-disclosure-held body)))
        (is (= pp/PRIORITY-STACK (:scorecard/priority-stack body)))
        (let [md (sc/scorecard-md body)]
          (is (str/includes? md "scorecard"))
          (is (str/includes? md "wellbecoming"))
          (is (str/includes? md "tenure"))
          (is (str/includes? md "tenure gov flowable"))
+         (is (str/includes? md "disclosure open/held"))
          (is (str/includes? md "all live legs refused"))
          (is (not (str/includes? md "| rank |")))))))
 

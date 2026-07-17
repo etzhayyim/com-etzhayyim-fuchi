@@ -138,6 +138,24 @@
                (or (:tenure-gov-flowable-committed-usd-micros batch) 0)
                :scorecard/tenure-gov-post-ratify-committed-usd-micros
                (or (:tenure-gov-post-ratify-committed-usd-micros batch) 0)
+               :scorecard/l4-disclosure-open
+               (count (filter #(or (true? (:entitlements-may-flow? %))
+                                   (and (nil? (:entitlements-may-flow? %))
+                                        (not (true? (:disclosure-held? %)))
+                                        (not= :held (get-in % [:disclosure-hold :state]))
+                                        (not= :exit-suspended (get-in % [:disclosure-hold :state]))))
+                              subjects))
+               :scorecard/l4-disclosure-held
+               (count (filter #(or (true? (:disclosure-held? %))
+                                   (= :held (get-in % [:disclosure-hold :state]))
+                                   (false? (:entitlements-may-flow? %)))
+                              subjects))
+               :scorecard/tenure-disclosure-open
+               (or (:tenure-disclosure-open batch)
+                   (count (filter :entitlements-may-flow? tenure-subjects)))
+               :scorecard/tenure-disclosure-held
+               (or (:tenure-disclosure-held batch)
+                   (count (filter :disclosure-held? tenure-subjects)))
                :scorecard/itonami-ledger ledger
                :scorecard/cohorts
                (mapv (fn [p]
@@ -162,6 +180,8 @@
                         (or (:tenure-gov-flowable-committed-usd-micros p) 0)
                         :tenure-gov-post-ratify
                         (or (:tenure-gov-post-ratify-committed-usd-micros p) 0)
+                        :tenure-disclosure-open (or (:tenure-disclosure-open p) 0)
+                        :tenure-disclosure-held (or (:tenure-disclosure-held p) 0)
                         :cash-usd-micros 0
                         :live false
                         :score-surface []})
@@ -210,7 +230,13 @@
                 (str "- tenure gov flowable (housing held): "
                      (or (:scorecard/tenure-gov-flowable-committed-usd-micros body) 0) "\n")
                 (str "- tenure gov post-ratify (grant false): "
-                     (or (:scorecard/tenure-gov-post-ratify-committed-usd-micros body) 0) "\n\n")
+                     (or (:scorecard/tenure-gov-post-ratify-committed-usd-micros body) 0) "\n")
+                (str "- L4 disclosure open/held: "
+                     (or (:scorecard/l4-disclosure-open body) 0) "/"
+                     (or (:scorecard/l4-disclosure-held body) 0) "\n")
+                (str "- tenure disclosure open/held: "
+                     (or (:scorecard/tenure-disclosure-open body) 0) "/"
+                     (or (:scorecard/tenure-disclosure-held body) 0) "\n\n")
                 "## Cohorts\n\n"
                 "| actor | cohort | phase | n | L4-flow | L4-post | headroom | ten-flow | tenure | tenure-n |\n"
                 "|---|---|---|---|---|---|---|---|---|---|\n"])]

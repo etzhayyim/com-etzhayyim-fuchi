@@ -26,6 +26,8 @@ Priority: wellbecoming > mago(孫) > ko(子) > present. cash≡0. live=false. No
 - tenure gov routes: {"council-lv7" 4}
 - tenure gov flowable (housing held): 18800000000
 - tenure gov post-ratify (grant false): 42800000000
+- L4 disclosure open/held: 4/0
+- tenure disclosure open/held: 4/0
 
 ## Cohorts
 
