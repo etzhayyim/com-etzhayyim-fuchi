@@ -9,10 +9,41 @@
   Public surface only (facts). cash≡0. no scores. Portable .cljc."
   (:require [fuchi.methods.public-person :as pp]
             [fuchi.methods.pages-publish :as pages]
+            #?(:clj [fuchi.methods.pipeline-audit-ledger :as audit])
             #?(:clj [clojure.java.io :as io])))
 
 (def PRIORITY-STACK pp/PRIORITY-STACK)
 (def FLAG "FUCHI_ALLOW_PAGES_DEPLOY")
+(def DEFAULT-PROJECT "fuchi-public-surface")
+
+(defn operator-runbook-facts
+  "Facts-only operator runbook for plan-only Pages packaging.
+   Scaffold never deploys; wrangler/API remain out-of-band."
+  ([]
+   (operator-runbook-facts DEFAULT-PROJECT))
+  ([project-name]
+   (let [out {:flag FLAG
+              :project-name project-name
+              :deploy-target "cloudflare-pages"
+              :required-for-gated-plan [FLAG "=1" "operator-did non-blank"]
+              :scaffold-invokes-wrangler false
+              :scaffold-invokes-cloudflare-api false
+              :side-effect-execute "out-of-band only"
+              :live-disbursement false
+              :cash-usd-micros 0
+              :deployed false
+              :live false
+              :score-surface []
+              :priority-stack PRIORITY-STACK
+              :steps ["write-deploy-package! → refresh public/ static facts"
+                      "review index.html / facts.edn (no personal scores)"
+                      (str "optional gated plan: " FLAG "=1 + operator-did"
+                           " → phase=:gated-deploy-plan still deployed=false")
+                      "out-of-band: wrangler pages deploy public/"
+                      "never enable live sustenance disbursement from this package"]
+              :note "plan-only membrane; actual deploy is operator out-of-band"}]
+     (pp/assert-no-public-scores! out)
+     out)))
 
 (defn default-refuse-status
   "Bare env → not admissible."
@@ -39,20 +70,27 @@
               :deploy-target "cloudflare-pages"
               :admissible (boolean (get st "admissible"))
               :refusal-reason (get st "reason")
+              :authorized-to-deploy false
+              :wrangler-invoked false
+              :cloudflare-api-invoked false
+              :package-ready true
+              :operator-flag FLAG
+              :operator-runbook (operator-runbook-facts)
               :deployed false
               :live false
               :cash-usd-micros 0
               :score-surface []
               :priority-stack PRIORITY-STACK
-              :note "Pages deploy default refuse — static package only"}]
-     (pp/assert-no-public-scores! out)
+              :note "Pages deploy default refuse — static package only; plan-only membrane"}]
+     (pp/assert-no-public-scores! (dissoc out :operator-runbook))
+     (pp/assert-no-public-scores! (:operator-runbook out))
      out)))
 
 (defn gated-deploy-plan
   "Authorize a deploy PLAN only. Does not deploy. Requires FUCHI_ALLOW_PAGES_DEPLOY=1
    and non-blank operator-did."
   [{:keys [operator-did project-name]
-    :or {project-name "fuchi-public-surface"}}
+    :or {project-name DEFAULT-PROJECT}}
    & {:keys [env]}]
   (let [env (or env {})]
     (when-not (= "1" (get env FLAG))
@@ -63,16 +101,20 @@
                :deploy-target "cloudflare-pages"
                :project-name project-name
                :operator-did operator-did
+               :operator-flag FLAG
                :authorized-to-deploy true
+               :package-ready true
                :deployed false
                :wrangler-invoked false
                :cloudflare-api-invoked false
+               :operator-runbook (operator-runbook-facts project-name)
                :live false
                :cash-usd-micros 0
                :score-surface []
                :priority-stack PRIORITY-STACK
-               :note "gated deploy plan only — wrangler/API not invoked by scaffold"}]
-      (pp/assert-no-public-scores! out)
+               :note "gated deploy plan only — wrangler/API not invoked by scaffold; OOB deploy"}]
+      (pp/assert-no-public-scores! (dissoc out :operator-runbook))
+      (pp/assert-no-public-scores! (:operator-runbook out))
       out)))
 
 (defn gated-deploy-status
@@ -81,7 +123,7 @@
   [opts & {:keys [env]}]
   (let [env (or env {})
         operator-did (:operator-did opts)
-        project-name (or (:project-name opts) "fuchi-public-surface")]
+        project-name (or (:project-name opts) DEFAULT-PROJECT)]
     (try
       (let [plan (gated-deploy-plan
                   {:operator-did operator-did :project-name project-name}
@@ -90,26 +132,30 @@
                        :admissible true
                        :score-surface []
                        :priority-stack PRIORITY-STACK)]
-        (pp/assert-no-public-scores! out)
+        (pp/assert-no-public-scores! (dissoc out :operator-runbook))
         out)
       (catch #?(:clj Exception :cljs :default) ex
         (let [st (default-refuse-status env)
               out {:phase :refused
                    :deploy-target "cloudflare-pages"
                    :project-name project-name
+                   :operator-flag FLAG
                    :admissible false
                    :authorized-to-deploy false
+                   :package-ready true
                    :deployed false
                    :wrangler-invoked false
                    :cloudflare-api-invoked false
                    :refusal-reason (or (ex-message ex) (get st "reason"))
                    :gate-admissible (boolean (get st "admissible"))
+                   :operator-runbook (operator-runbook-facts project-name)
                    :live false
                    :cash-usd-micros 0
                    :score-surface []
                    :priority-stack PRIORITY-STACK
                    :note "Pages deploy gated status — no side-effect; static package only"}]
-          (pp/assert-no-public-scores! out)
+          (pp/assert-no-public-scores! (dissoc out :operator-runbook))
+          (pp/assert-no-public-scores! (:operator-runbook out))
           out)))))
 
 (defn deploy-or-refuse
@@ -122,21 +168,71 @@
              :refusal-reason (.getMessage e)
              :admissible false))))
 
+(defn- audit-package-snapshot
+  "Optional last-run audit facts for deploy-status package (facts only)."
+  []
+  #?(:clj
+     (try
+       (let [au (audit/summary)
+             out {:runs (or (:runs au) 0)
+                  :all-runs-live-refused (boolean (:all-runs-live-refused au true))
+                  :any-land-grant-executed? (boolean (:any-land-grant-executed? au))
+                  :last-run-gov-flowable-committed-usd-micros
+                  (or (:last-run-gov-flowable-committed-usd-micros au) 0)
+                  :last-run-gov-post-ratify-committed-usd-micros
+                  (or (:last-run-gov-post-ratify-committed-usd-micros au) 0)
+                  :last-run-tenure-gov-post-ratify-committed-usd-micros
+                  (or (:last-run-tenure-gov-post-ratify-committed-usd-micros au) 0)
+                  :last-run-housing-land-grant-executed
+                  (or (:last-run-housing-land-grant-executed au) 0)
+                  :live false
+                  :cash-usd-micros 0
+                  :score-surface []
+                  :priority-stack PRIORITY-STACK}]
+         (pp/assert-no-public-scores! out)
+         out)
+       (catch Exception _
+         {:runs 0 :live false :cash-usd-micros 0 :score-surface []
+          :any-land-grant-executed? false :all-runs-live-refused true
+          :priority-stack PRIORITY-STACK}))
+     :cljs
+     {:runs 0 :live false :cash-usd-micros 0 :score-surface []
+      :any-land-grant-executed? false :all-runs-live-refused true
+      :priority-stack PRIORITY-STACK}))
+
 #?(:clj
    (defn write-deploy-package!
-     "Refresh public/ via pages-publish + write wrangler.toml stub + deploy-status.edn.
-      Never deploys. Returns package map with deployed=false."
+     "Refresh public/ via pages-publish + write wrangler.toml stub + deploy-status.edn
+      + deploy-runbook.edn. Never deploys. Returns package map with deployed=false."
      ([]
       (write-deploy-package! {}))
      ([{:keys [env operator-did project-name]
-        :or {project-name "fuchi-public-surface"}}]
+        :or {project-name DEFAULT-PROJECT}}]
       (let [actor (or (System/getenv "FUCHI_ACTOR_DIR")
                       (-> *file* io/file .getParentFile .getParentFile .getCanonicalPath))
             env (or env {})
             published (pages/write-pages!)
-            status (deploy-or-refuse {:operator-did (or operator-did "")
-                                      :project-name project-name}
-                                     :env env)
+            status0 (deploy-or-refuse {:operator-did (or operator-did "")
+                                       :project-name project-name}
+                                      :env env)
+            runbook (or (:operator-runbook status0) (operator-runbook-facts project-name))
+            audit-snap (audit-package-snapshot)
+            status (assoc status0
+                          :operator-runbook runbook
+                          :audit-snapshot audit-snap
+                          :package-ready true
+                          :package-dir "public"
+                          :static-files ["index.html" "facts.edn" "scorecard.md"
+                                         "scorecard.edn" "audit-summary.edn"
+                                         "deploy-status.edn" "deploy-runbook.edn"
+                                         "wrangler.toml" "README.md"]
+                          :wrangler-invoked false
+                          :cloudflare-api-invoked false
+                          :deployed false
+                          :live false
+                          :cash-usd-micros 0
+                          :score-surface []
+                          :priority-stack PRIORITY-STACK)
             pub (io/file actor "public")
             wrangler (str "name = \"" project-name "\"\n"
                           "compatibility_date = \"2026-07-17\"\n"
@@ -144,28 +240,41 @@
                           "# Generated offline by fuchi.methods.pages-deploy\n"
                           "# Deploy is OUT OF BAND. Scaffold never invokes wrangler.\n"
                           "# cash≡0 live=false no personal scores\n")
-            readme-extra (str "\n## Deploy status\n\n"
-                              "- phase: " (:phase status) "\n"
-                              "- deployed: false\n"
-                              "- live disbursement: never from this package\n")]
+            readme (str "# fuchi public surface (static)\n\n"
+                        "Generated offline. cash≡0. live=false. No personal scores.\n"
+                        "Priority: wellbecoming > mago > ko > present.\n"
+                        "Includes displacement→L0 offline enroll + L6 tenure + audit.\n\n"
+                        "## Deploy membrane (plan-only)\n\n"
+                        "- Default: refused (`" FLAG "` unset).\n"
+                        "- Gated plan: flag=1 + operator-did → phase=:gated-deploy-plan,"
+                        " still `deployed=false` (no wrangler/API here).\n"
+                        "- Actual `wrangler pages deploy public/` is **operator out-of-band**.\n"
+                        "- Do not enable live sustenance disbursement from this package.\n"
+                        "- land-grant-executed stays 0 until Council-gated live path.\n\n"
+                        "### Operator runbook steps\n\n"
+                        (apply str (map #(str "1. " % "\n") (:steps runbook)))
+                        "\n## Deploy status\n\n"
+                        "- phase: " (:phase status) "\n"
+                        "- authorized-to-deploy: " (boolean (:authorized-to-deploy status)) "\n"
+                        "- package-ready: true\n"
+                        "- wrangler-invoked: false\n"
+                        "- cloudflare-api-invoked: false\n"
+                        "- deployed: false\n"
+                        "- live disbursement: never from this package\n"
+                        "- last-run land-grant-executed: "
+                        (or (:last-run-housing-land-grant-executed audit-snap) 0) "\n")]
         (spit (io/file pub "wrangler.toml") wrangler)
         (spit (io/file pub "deploy-status.edn") (pr-str status))
-        (spit (io/file pub "README.md")
-              (str "# fuchi public surface (static)\n\n"
-                   "Generated offline. cash≡0. live=false. No personal scores.\n"
-                   "Priority: wellbecoming > mago > ko > present.\n"
-                   "Includes displacement→L0 offline enroll facts when generated.\n\n"
-                   "## Deploy membrane\n\n"
-                   "- Default: refused (`FUCHI_ALLOW_PAGES_DEPLOY` unset).\n"
-                   "- Gated plan: flag=1 + operator-did → still no wrangler invoke here.\n"
-                   "- Actual `wrangler pages deploy` is operator out-of-band.\n"
-                   "- Do not enable live sustenance disbursement from this package.\n\n"
-                   "status phase: " (:phase status) "\n"
-                   readme-extra))
+        (spit (io/file pub "deploy-runbook.edn") (pr-str runbook))
+        (spit (io/file pub "README.md") readme)
         (merge published
                {:wrangler (str (io/file pub "wrangler.toml"))
                 :deploy-status status
+                :deploy-runbook (str (io/file pub "deploy-runbook.edn"))
                 :deployed false
+                :wrangler-invoked false
+                :cloudflare-api-invoked false
+                :package-ready true
                 :live false
                 :cash-usd-micros 0
                 :score-surface []

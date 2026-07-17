@@ -36,19 +36,43 @@
 
 (defn- pages-deploy-refuse-status
   "Default Pages deploy membrane status (no require of pages-deploy — cycle-safe).
-   Does not deploy. cash≡0. live=false."
+   Includes plan-only design facts. Does not deploy. cash≡0. live=false."
   []
-  (let [out {:phase :refused
+  (let [runbook {:flag "FUCHI_ALLOW_PAGES_DEPLOY"
+                 :required-for-gated-plan ["FUCHI_ALLOW_PAGES_DEPLOY=1" "operator-did non-blank"]
+                 :scaffold-invokes-wrangler false
+                 :scaffold-invokes-cloudflare-api false
+                 :side-effect-execute "out-of-band only"
+                 :live-disbursement false
+                 :deployed false
+                 :live false
+                 :cash-usd-micros 0
+                 :score-surface []
+                 :priority-stack PRIORITY-STACK
+                 :steps ["write-deploy-package! → refresh public/ static facts"
+                         "review index.html / facts.edn (no personal scores)"
+                         "optional gated plan: FUCHI_ALLOW_PAGES_DEPLOY=1 + operator-did"
+                         "out-of-band: wrangler pages deploy public/"
+                         "never enable live sustenance from this package"]
+                 :note "plan-only membrane; actual deploy is operator out-of-band"}
+        out {:phase :refused
              :deploy-target "cloudflare-pages"
              :admissible false
+             :authorized-to-deploy false
+             :package-ready true
+             :operator-flag "FUCHI_ALLOW_PAGES_DEPLOY"
              :refusal-reason "missing operator process flag 'FUCHI_ALLOW_PAGES_DEPLOY'"
+             :wrangler-invoked false
+             :cloudflare-api-invoked false
+             :operator-runbook runbook
              :deployed false
              :live false
              :cash-usd-micros 0
              :score-surface []
              :priority-stack PRIORITY-STACK
-             :note "Pages deploy default refuse — static package only"}]
-    (pp/assert-no-public-scores! out)
+             :note "Pages deploy default refuse — static package only; plan-only membrane"}]
+    (pp/assert-no-public-scores! (dissoc out :operator-runbook))
+    (pp/assert-no-public-scores! runbook)
     out))
 
 (defn- last-seg [s]
@@ -632,12 +656,21 @@
           (conj! lines (str "- land-grant-executed: " (:land-grant-executed st) "\n"))
           (conj! lines (str "- live: " (:live st) " cash: " (:cash-usd-micros st) "\n"))))))
     (when-let [dep (:report/pages-deploy-status body)]
-      (conj! lines "\n## Pages deploy (offline membrane)\n")
+      (conj! lines "\n## Pages deploy (offline membrane, plan-only)\n")
       (conj! lines (str "- phase: " (:phase dep) "\n"))
       (conj! lines (str "- admissible: " (:admissible dep) "\n"))
+      (conj! lines (str "- authorized-to-deploy: " (boolean (:authorized-to-deploy dep)) "\n"))
+      (conj! lines (str "- package-ready: " (boolean (:package-ready dep true)) "\n"))
+      (conj! lines (str "- wrangler-invoked: " (boolean (:wrangler-invoked dep)) "\n"))
+      (conj! lines (str "- cloudflare-api-invoked: " (boolean (:cloudflare-api-invoked dep)) "\n"))
+      (conj! lines (str "- operator-flag: " (or (:operator-flag dep) "FUCHI_ALLOW_PAGES_DEPLOY") "\n"))
       (conj! lines (str "- deployed: " (:deployed dep) "\n"))
       (conj! lines (str "- live: " (:live dep) " cash: " (:cash-usd-micros dep) "\n"))
-      (conj! lines (str "- note: " (or (:note dep) "default refuse") "\n")))
+      (conj! lines (str "- note: " (or (:note dep) "default refuse") "\n"))
+      (when-let [rb (:operator-runbook dep)]
+        (conj! lines "- operator runbook (OOB deploy only):\n")
+        (doseq [s (or (:steps rb) [])]
+          (conj! lines (str "  - " s "\n")))))
     (when-let [au (:report/pipeline-audit body)]
       (when (or (pos? (or (:runs au) 0)) (map? (:last-run au)))
         (conj! lines "\n## Pipeline audit summary (offline, append-only)\n")
@@ -836,13 +869,20 @@
              " cash=" (:cash-usd-micros st) ".</p>")))))
      (when-let [dep (:report/pages-deploy-status body)]
        (str
-        "<h2>Pages deploy (offline membrane)</h2>"
+        "<h2>Pages deploy (offline membrane, plan-only)</h2>"
         "<p class=\"note\">phase=" (:phase dep)
         " admissible=" (:admissible dep)
+        " authorized-to-deploy=" (boolean (:authorized-to-deploy dep))
+        " package-ready=" (boolean (:package-ready dep true))
+        " wrangler-invoked=" (boolean (:wrangler-invoked dep))
+        " cloudflare-api-invoked=" (boolean (:cloudflare-api-invoked dep))
+        " operator-flag=" (or (:operator-flag dep) "FUCHI_ALLOW_PAGES_DEPLOY")
         " deployed=" (:deployed dep)
         " live=" (:live dep)
         " cash=" (:cash-usd-micros dep)
         ". " (or (:note dep) "default refuse — static package only")
+        " Gated plan still requires flag+operator-did and never invokes wrangler here;"
+        " actual deploy is operator out-of-band."
         "</p>"))
      (when-let [au (:report/pipeline-audit body)]
        (when (or (pos? (or (:runs au) 0)) (map? (:last-run au)))
