@@ -62,14 +62,24 @@
                 :r2-executed (or (:scorecard/r2-executed scorecard) 0)
                 :all-r2-not-executed
                 (boolean (or (:scorecard/all-r2-not-executed scorecard)
-                             (zero? (or (:scorecard/r2-executed scorecard) 0))))}]
+                             (zero? (or (:scorecard/r2-executed scorecard) 0))))
+                :ss-priority-path (or (:scorecard/ss-priority-path scorecard) {})
+                :ss-all-rails-gated-refused
+                (boolean (get-in scorecard
+                                 [:scorecard/ss-priority-path :all-rails-gated-refused]
+                                 true))
+                :ss-all-r2-not-executed
+                (boolean (get-in scorecard
+                                 [:scorecard/ss-priority-path :all-r2-not-executed]
+                                 true))}]
        (pp/assert-no-public-scores!
         (select-keys out [:live :cash-usd-micros :score-surface :priority-stack
                           :admissible-cohorts :tenure-subjects :all-live-refused
                           :gov-flowable-committed-usd-micros
                           :gov-post-ratify-committed-usd-micros
                           :housing-land-grant-executed
-                          :r2-executed :r2-refused :all-r2-not-executed]))
+                          :r2-executed :r2-refused :all-r2-not-executed
+                          :ss-all-rails-gated-refused :ss-all-r2-not-executed]))
        out)))
 
 #?(:clj

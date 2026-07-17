@@ -12,6 +12,7 @@
             [fuchi.methods.displacement-gov :as dgov]
             [fuchi.methods.itonami-bridge :as itonami]
             [fuchi.methods.itonami-surplus-ledger :as led]
+            [fuchi.methods.ss-offline-path :as ss-path]
             #?(:clj [fuchi.methods.edn :as edn])
             #?(:clj [clojure.java.io :as io])))
 
@@ -47,6 +48,61 @@
              (concat (or (:subjects p) [])
                      (or (:tenure-subjects p) [])))))
     pkgs)))
+
+(defn ss-priority-path-scorecard-fact
+  "Embed ss_offline_path priority (1)(2)(3) demo into scorecard (facts only).
+   Full rails gated-live DESIGN refuse + R2 refuse. cash≡0. live=false."
+  []
+  (try
+    (let [path (ss-path/run-food-path
+                {:subject-did "did:web:etzhayyim.com:member:ss-scorecard-demo"
+                 :food-imputed-usd-micros-yr 2000000000
+                 :energy-imputed-usd-micros-yr 1500000000
+                 :care-imputed-usd-micros-yr 1000000000
+                 :housing-imputed-usd-micros-yr 12000000000
+                 :tooling-imputed-usd-micros-yr 500000000
+                 :compute-imputed-usd-micros-yr 800000000
+                 :liquidity-imputed-usd-micros-yr 1500000000
+                 :include-disclosure-stress true})
+          s (or (:priority-path-summary path) {})
+          out {:path (:path path)
+               :l0-stage (:l0-stage s)
+               :l0-published (boolean (:l0-published s))
+               :disclosure-state (:disclosure-state s)
+               :entitlements-may-flow? (boolean (:entitlements-may-flow? s))
+               :held-stress-held? (boolean (:held-stress-held? s))
+               :held-stress-food-phase (:held-stress-food-phase s)
+               :rails-gated-count (or (:rails-gated-count s) 0)
+               :rails-gated-admissible-count (or (:rails-gated-admissible-count s) 0)
+               :all-rails-gated-refused (boolean (:all-rails-gated-refused s))
+               :r2-status-count (or (:r2-status-count s) 0)
+               :r2-executed-count (or (:r2-executed-count s) 0)
+               :all-r2-not-executed (boolean (:all-r2-not-executed s true))
+               :mitsuho-gated-admissible (boolean (:mitsuho-gated-admissible s))
+               :hikari-gated-admissible (boolean (:hikari-gated-admissible s))
+               :care-gated-admissible (boolean (:care-gated-admissible s))
+               :housing-land-grant-executed (boolean (:housing-land-grant-executed s))
+               :liquidity-loan-executed (boolean (:liquidity-loan-executed s))
+               :liquidity-cash-usd-micros 0
+               :live false
+               :cash-usd-micros 0
+               :score-surface []
+               :priority-stack PRIORITY-STACK
+               :note "ss priority path offline — embedded in displacement scorecard"}]
+      (pp/assert-no-public-scores! out)
+      out)
+    (catch #?(:clj Exception :cljs :default) _
+      {:path "ss-offline-inkind-rails"
+       :error "ss-priority-path unavailable"
+       :all-rails-gated-refused true
+       :all-r2-not-executed true
+       :rails-gated-count 0
+       :r2-status-count 0
+       :r2-executed-count 0
+       :live false
+       :cash-usd-micros 0
+       :score-surface []
+       :priority-stack PRIORITY-STACK})))
 
 (defn r2-execute-summary
   "Facts-only R2 membrane aggregate: default refuse, executed always 0 offline."
@@ -338,15 +394,19 @@
                        :priority-stack PRIORITY-STACK
                        :note "stress only — open path unchanged; live refuse"}))
                   (catch Exception _ nil))
-         body (cond-> body
+         ss-path-fact (ss-priority-path-scorecard-fact)
+         body (cond-> (assoc body :scorecard/ss-priority-path ss-path-fact)
                 stress (assoc :scorecard/all-held-stress stress))]
      (pp/assert-no-public-scores!
       (dissoc body :scorecard/itonami-ledger :scorecard/cohorts :scorecard/live-legs
               :scorecard/tenure-stage-counts :scorecard/stage-counts
               :scorecard/gov-route-counts :scorecard/tenure-gov-route-counts
               :scorecard/r2-by-rail
+              :scorecard/ss-priority-path
               :scorecard/all-held-stress))
      (when stress (pp/assert-no-public-scores! stress))
+     (when-let [sp (:scorecard/ss-priority-path body)]
+       (pp/assert-no-public-scores! (dissoc sp :error)))
      (doseq [c (:scorecard/cohorts body)] (pp/assert-no-public-scores! c))
      body)))
 
@@ -434,6 +494,35 @@
                 (str "- all-r2-not-executed: "
                      (boolean (:scorecard/all-r2-not-executed body true)) "\n")
                 (str "- r2-by-rail: " (pr-str (or (:scorecard/r2-by-rail body) {})) "\n")])]
+    (when-let [sp (:scorecard/ss-priority-path body)]
+      (when (and (map? sp) (not (:error sp)))
+        (conj! lines "\n## SS priority path (L0 + disclosure + all rails gated)\n\n")
+        (conj! lines (str "- L0 stage/published: " (:l0-stage sp) "/"
+                         (boolean (:l0-published sp)) "\n"))
+        (conj! lines (str "- disclosure state / entitlements-may-flow: "
+                         (:disclosure-state sp) "/"
+                         (boolean (:entitlements-may-flow? sp)) "\n"))
+        (conj! lines (str "- held-stress held / food-r1: "
+                         (boolean (:held-stress-held? sp)) "/"
+                         (or (:held-stress-food-phase sp) "—") "\n"))
+        (conj! lines (str "- rails-gated-count / admissible / all-rails-gated-refused: "
+                         (or (:rails-gated-count sp) 0) "/"
+                         (or (:rails-gated-admissible-count sp) 0) "/"
+                         (boolean (:all-rails-gated-refused sp)) "\n"))
+        (conj! lines (str "- mitsuho/hikari/care gated-admissible: "
+                         (boolean (:mitsuho-gated-admissible sp)) "/"
+                         (boolean (:hikari-gated-admissible sp)) "/"
+                         (boolean (:care-gated-admissible sp)) "\n"))
+        (conj! lines (str "- housing land-grant / liquidity loan / cash: "
+                         (boolean (:housing-land-grant-executed sp)) "/"
+                         (boolean (:liquidity-loan-executed sp)) "/"
+                         (or (:liquidity-cash-usd-micros sp) 0) "\n"))
+        (conj! lines (str "- ss R2 statuses / executed / all-not-executed: "
+                         (or (:r2-status-count sp) 0) "/"
+                         (or (:r2-executed-count sp) 0) "/"
+                         (boolean (:all-r2-not-executed sp true)) "\n"))
+        (conj! lines (str "- live: " (boolean (:live sp))
+                         " cash: " (or (:cash-usd-micros sp) 0) "\n"))))
     (when-let [st (:scorecard/all-held-stress body)]
       (conj! lines "\n## All-disclosure-held stress (priority #2, offline)\n\n")
       (conj! lines (str "- stress: " (:stress st) "\n"))

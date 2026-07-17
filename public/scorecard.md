@@ -41,6 +41,17 @@ Priority: wellbecoming > mago(孫) > ko(子) > present. cash≡0. live=false. No
 - all-r2-not-executed: true
 - r2-by-rail: {"care" 8, "housing" 8, "food" 8, "energy" 8, "tooling" 8, "compute" 8}
 
+## SS priority path (L0 + disclosure + all rails gated)
+
+- L0 stage/published: L0/false
+- disclosure state / entitlements-may-flow: open/true
+- held-stress held / food-r1: true/refused
+- rails-gated-count / admissible / all-rails-gated-refused: 7/0/true
+- mitsuho/hikari/care gated-admissible: false/false/false
+- housing land-grant / liquidity loan / cash: false/false/0
+- ss R2 statuses / executed / all-not-executed: 7/0/true
+- live: false cash: 0
+
 ## All-disclosure-held stress (priority #2, offline)
 
 - stress: all-disclosure-held

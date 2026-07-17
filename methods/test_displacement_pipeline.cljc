@@ -43,7 +43,12 @@
        (is (pos? (:r2-status-count out)))
        (is (pos? (:r2-refused out)))
        (is (zero? (:r2-executed out)))
-       (is (true? (:all-r2-not-executed out))))))
+       (is (true? (:all-r2-not-executed out)))
+       (is (map? (:ss-priority-path out)))
+       (is (true? (:ss-all-rails-gated-refused out)))
+       (is (true? (:ss-all-r2-not-executed out)))
+       (is (false? (get-in out [:ss-priority-path :l0-published])))
+       (is (= 7 (get-in out [:ss-priority-path :rails-gated-count]))))))
 
 #?(:clj
    (deftest test-write-all

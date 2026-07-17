@@ -778,6 +778,12 @@
                          (or (:last-run-r2-executed au) 0)
                          " all-r2-not-executed="
                          (boolean (:last-run-all-r2-not-executed au true)) "\n"))
+        (conj! lines (str "- last-run SS rails-gated / all-rails-gated-refused: "
+                         (or (:last-run-ss-rails-gated-count au) 0) "/"
+                         (boolean (:last-run-ss-all-rails-gated-refused au true)) "\n"))
+        (conj! lines (str "- last-run SS all-r2-not-executed / l0-published: "
+                         (boolean (:last-run-ss-all-r2-not-executed au true)) "/"
+                         (boolean (:last-run-ss-l0-published au)) "\n"))
         (conj! lines (str "- cumulative liquidity member-principal / cash-usd-micros: "
                          (or (:total-liquidity-member-principal au) 0) "/"
                          (or (:total-liquidity-cash-usd-micros au) 0) "\n"))
@@ -1051,6 +1057,11 @@
           (or (:last-run-r2-executed au) 0)
           " all-r2-not-executed="
           (boolean (:last-run-all-r2-not-executed au true))
+          " last-run SS rails-gated/all-refused="
+          (or (:last-run-ss-rails-gated-count au) 0) "/"
+          (boolean (:last-run-ss-all-rails-gated-refused au true))
+          " ss-all-r2-not-executed="
+          (boolean (:last-run-ss-all-r2-not-executed au true))
           " liquidity member-principal/cash="
           (or (:total-liquidity-member-principal au) 0) "/"
           (or (:total-liquidity-cash-usd-micros au) 0)

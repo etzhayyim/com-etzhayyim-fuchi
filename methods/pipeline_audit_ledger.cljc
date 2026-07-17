@@ -76,6 +76,25 @@
             :audit/all-r2-not-executed
             (boolean (or (:scorecard/all-r2-not-executed sc)
                          (zero? (or (:scorecard/r2-executed sc) 0))))
+            ;; SS priority path (L0 + disclosure + all-rails gated) embedded facts
+            :audit/ss-rails-gated-count
+            (or (get-in sc [:scorecard/ss-priority-path :rails-gated-count]) 0)
+            :audit/ss-rails-gated-admissible-count
+            (or (get-in sc [:scorecard/ss-priority-path :rails-gated-admissible-count]) 0)
+            :audit/ss-all-rails-gated-refused
+            (boolean (get-in sc [:scorecard/ss-priority-path :all-rails-gated-refused] true))
+            :audit/ss-r2-status-count
+            (or (get-in sc [:scorecard/ss-priority-path :r2-status-count]) 0)
+            :audit/ss-r2-executed-count
+            (or (get-in sc [:scorecard/ss-priority-path :r2-executed-count]) 0)
+            :audit/ss-all-r2-not-executed
+            (boolean (get-in sc [:scorecard/ss-priority-path :all-r2-not-executed] true))
+            :audit/ss-l0-published
+            (boolean (get-in sc [:scorecard/ss-priority-path :l0-published]))
+            :audit/ss-disclosure-state
+            (or (get-in sc [:scorecard/ss-priority-path :disclosure-state]) "n/a")
+            :audit/ss-housing-land-grant-executed
+            (boolean (get-in sc [:scorecard/ss-priority-path :housing-land-grant-executed]))
             :audit/all-held-stress-gov-flowable
             (or (get-in sc [:scorecard/all-held-stress :gov-flowable]) 0)
             :audit/all-held-stress-held-subjects
@@ -159,6 +178,15 @@
                :all-r2-not-executed
                (boolean (or (:audit/all-r2-not-executed ev)
                             (zero? (or (:audit/r2-executed ev) 0))))
+               :ss-rails-gated-count (or (:audit/ss-rails-gated-count ev) 0)
+               :ss-all-rails-gated-refused
+               (boolean (:audit/ss-all-rails-gated-refused ev true))
+               :ss-r2-status-count (or (:audit/ss-r2-status-count ev) 0)
+               :ss-r2-executed-count (or (:audit/ss-r2-executed-count ev) 0)
+               :ss-all-r2-not-executed
+               (boolean (:audit/ss-all-r2-not-executed ev true))
+               :ss-l0-published (boolean (:audit/ss-l0-published ev))
+               :ss-disclosure-state (or (:audit/ss-disclosure-state ev) "n/a")
                :all-live-refused (boolean (:audit/all-live-refused ev))
                :l4-disclosure-open (or (:audit/l4-disclosure-open ev) 0)
                :l4-disclosure-held (or (:audit/l4-disclosure-held ev) 0)
@@ -230,6 +258,16 @@
                  :last-run-all-r2-not-executed
                  (boolean (or (:audit/all-r2-not-executed last-ev)
                               (zero? (or (:audit/r2-executed last-ev) 0))))
+                 :last-run-ss-rails-gated-count
+                 (or (:audit/ss-rails-gated-count last-ev) 0)
+                 :last-run-ss-all-rails-gated-refused
+                 (boolean (:audit/ss-all-rails-gated-refused last-ev true))
+                 :last-run-ss-r2-status-count
+                 (or (:audit/ss-r2-status-count last-ev) 0)
+                 :last-run-ss-all-r2-not-executed
+                 (boolean (:audit/ss-all-r2-not-executed last-ev true))
+                 :last-run-ss-l0-published
+                 (boolean (:audit/ss-l0-published last-ev))
                  :cash-usd-micros 0
                  :cash-to-workers-usd-micros 0
                  :live false

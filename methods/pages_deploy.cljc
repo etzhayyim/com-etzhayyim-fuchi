@@ -185,6 +185,14 @@
                   (or (:last-run-tenure-gov-post-ratify-committed-usd-micros au) 0)
                   :last-run-housing-land-grant-executed
                   (or (:last-run-housing-land-grant-executed au) 0)
+                  :last-run-ss-rails-gated-count
+                  (or (:last-run-ss-rails-gated-count au) 0)
+                  :last-run-ss-all-rails-gated-refused
+                  (boolean (:last-run-ss-all-rails-gated-refused au true))
+                  :last-run-ss-all-r2-not-executed
+                  (boolean (:last-run-ss-all-r2-not-executed au true))
+                  :last-run-ss-l0-published
+                  (boolean (:last-run-ss-l0-published au))
                   :live false
                   :cash-usd-micros 0
                   :score-surface []

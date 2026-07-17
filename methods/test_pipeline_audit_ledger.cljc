@@ -44,7 +44,17 @@
                           :scorecard/r2-status-count 12
                           :scorecard/r2-refused 12
                           :scorecard/r2-executed 0
-                          :scorecard/all-r2-not-executed true}}
+                          :scorecard/all-r2-not-executed true
+                          :scorecard/ss-priority-path
+                          {:rails-gated-count 7
+                           :rails-gated-admissible-count 0
+                           :all-rails-gated-refused true
+                           :r2-status-count 7
+                           :r2-executed-count 0
+                           :all-r2-not-executed true
+                           :l0-published false
+                           :disclosure-state "open"
+                           :housing-land-grant-executed false}}}
         ev (audit/event-from-pipeline fake :run-id "test-run-1")]
     (is (= "test-run-1" (:audit/id ev)))
     (is (true? (:audit/all-live-refused ev)))
@@ -62,6 +72,14 @@
     (is (= 12 (:audit/r2-refused ev)))
     (is (= 0 (:audit/r2-executed ev)))
     (is (true? (:audit/all-r2-not-executed ev)))
+    (is (= 7 (:audit/ss-rails-gated-count ev)))
+    (is (true? (:audit/ss-all-rails-gated-refused ev)))
+    (is (= 7 (:audit/ss-r2-status-count ev)))
+    (is (zero? (:audit/ss-r2-executed-count ev)))
+    (is (true? (:audit/ss-all-r2-not-executed ev)))
+    (is (false? (:audit/ss-l0-published ev)))
+    (is (= "open" (:audit/ss-disclosure-state ev)))
+    (is (false? (:audit/ss-housing-land-grant-executed ev)))
     (is (= 0 (:audit/cash-usd-micros ev)))
     (is (= 0 (:audit/cash-to-workers-usd-micros ev)))
     (is (false? (:audit/live ev)))
@@ -97,6 +115,10 @@
        (is (pos? (:last-run-r2-refused sum)))
        (is (zero? (:last-run-r2-executed sum)))
        (is (true? (:last-run-all-r2-not-executed sum)))
+       (is (pos? (:last-run-ss-rails-gated-count sum)))
+       (is (true? (:last-run-ss-all-rails-gated-refused sum)))
+       (is (true? (:last-run-ss-all-r2-not-executed sum)))
+       (is (false? (:last-run-ss-l0-published sum)))
        (is (map? (:last-run sum)))
        (is (zero? (get-in sum [:last-run :housing-land-grant-executed])))
        (is (zero? (get-in sum [:last-run :r2-executed])))
