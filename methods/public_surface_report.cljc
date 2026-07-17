@@ -362,7 +362,7 @@
         (conj! lines (str "- tenure-subjects (L6): " (:scorecard/tenure-subjects sc) "\n"))
         (conj! lines (str "- tenure-stages: " (pr-str (:scorecard/tenure-stage-counts sc)) "\n"))
         (conj! lines (str "- gov-routes: " (pr-str (:scorecard/gov-route-counts sc)) "\n"))
-        (conj! lines (str "  (housing/multi-gen → council-lv7 holds entitlements until Council)\n")))))
+        (conj! lines (str "  (housing held for council-lv7; care/food/energy substrate may dry-flow)\n")))))
     (when-let [l0 (:report/l0-demo body)]
       (conj! lines "\n## L0 demo (offline)\n")
       (conj! lines (str "- did: " (last-seg (:did l0)) " stage=" (:stage l0)
@@ -461,7 +461,7 @@
         (get-in body [:report/displacement-scorecard :scorecard/committed-usd-micros-yr])
         " gov-routes="
         (pr-str (get-in body [:report/displacement-scorecard :scorecard/gov-route-counts]))
-        " (multi-gen housing → council-lv7 holds entitlements).</p>"))
+        " (housing held for Council; care/food/energy substrate may dry-flow).</p>"))
      "<p class=\"note\">G2: no live displacement without a funded cohort. "
      "Recipient scores are unrepresentable. Live rails default refuse.</p>"
      "</body></html>")))

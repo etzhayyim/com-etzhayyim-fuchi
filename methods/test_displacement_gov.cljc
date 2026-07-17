@@ -1,5 +1,6 @@
 (ns fuchi.methods.test-displacement-gov
   (:require [clojure.test :refer [deftest is]]
+            [clojure.string :as str]
             [fuchi.methods.displacement-gov :as g]
             [fuchi.methods.displacement-l0-path :as d]
             [fuchi.methods.couple :as couple]
@@ -21,11 +22,18 @@
     (is (true? (:invariant-touch r)))
     (is (= :council-pending-offline (get-in r [:gov-package :phase])))
     (is (true? (:entitlements-held? r)))
-    (is (false? (:may-flow? r)))
-    (is (= "awaiting-council-lv7-multi-gen-housing" (:entitlement-hold-reason r)))
+    (is (true? (:may-flow? r)))
+    (is (true? (:may-flow-substrate? r)))
+    (is (false? (get-in r [:rail-flow "housing"])))
+    (is (true? (get-in r [:rail-flow "care"])))
+    (is (true? (get-in r [:rail-flow "food"])))
+    (is (true? (get-in r [:rail-flow "energy"])))
+    (is (some #{"housing"} (:held-rails r)))
+    (is (some #{"care"} (:flow-rails r)))
+    (is (str/includes? (str (:entitlement-hold-reason r)) "housing-held"))
     (is (false? (:live r)))
     (is (= 0 (:cash-usd-micros r)))
-    (pp/assert-no-public-scores! (dissoc r :gov-package))))
+    (pp/assert-no-public-scores! (dissoc r :gov-package :rail-flow))))
 
 (deftest test-sbt-vote-package-not-finalized
   (let [route {:subject-did "did:x" :route "sbt-vote" :committed-usd-micros-yr 30000000000}
@@ -51,11 +59,23 @@
         gp (first (:packages out))]
     (is (pos? (get-in out [:gov-route-counts "council-lv7"] 0)))
     (is (pos? (:gov-entitlements-held gp)))
-    (is (zero? (:gov-entitlements-may-flow gp)))
+    (is (pos? (:gov-entitlements-may-flow gp)))
+    (is (pos? (:gov-substrate-may-flow gp)))
     (is (false? (:live out)))
     (is (= 0 (:cash-usd-micros out)))))
 
 (deftest test-auto-may-flow
   (let [hold (g/entitlement-hold-for-route "auto")]
     (is (false? (:entitlements-held? hold)))
-    (is (true? (:may-flow? hold)))))
+    (is (true? (:may-flow? hold)))
+    (is (true? (:may-flow-substrate? hold)))))
+
+(deftest test-council-partial-hold
+  (let [hold (g/entitlement-hold-for-route "council-lv7"
+                                           ["care" "food" "energy" "housing" "tooling"])]
+    (is (true? (:entitlements-held? hold)))
+    (is (true? (:may-flow? hold)))
+    (is (true? (:may-flow-substrate? hold)))
+    (is (= ["housing"] (:held-rails hold)))
+    (is (false? (get-in hold [:rail-flow "housing"])))
+    (is (true? (get-in hold [:rail-flow "care"])))))

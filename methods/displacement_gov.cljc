@@ -100,31 +100,58 @@
     (pp/assert-no-public-scores! out)
     out))
 
-(defn entitlement-hold-for-route
-  "Entitlements flow only on auto. Council/vote/refused hold floors (facts, not scores).
-   Multi-gen care/housing waits for Council — no free-ride auto grant."
-  [route]
+;; wellbecoming > 孫 > 子: substrate may dry-flow under Council; housing grant waits.
+(def SUBSTRATE-RAILS #{"care" "food" "energy"})
+(def COUNCIL-HELD-RAILS #{"housing"})
+
+(defn rail-may-flow?
+  "Per-rail dry-flow permission under a G7 route (facts only; still not live execute)."
+  [route rail]
   (case route
-    "auto" {:entitlements-held? false
-            :entitlement-hold-reason nil
-            :may-flow? true}
-    "council-lv7" {:entitlements-held? true
-                   :entitlement-hold-reason "awaiting-council-lv7-multi-gen-housing"
-                   :may-flow? false}
-    "sbt-vote" {:entitlements-held? true
-                :entitlement-hold-reason "awaiting-sbt-vote-timelock"
-                :may-flow? false}
-    "refused" {:entitlements-held? true
-               :entitlement-hold-reason "gov-refused"
-               :may-flow? false}
-    {:entitlements-held? true
-     :entitlement-hold-reason "unknown-route"
-     :may-flow? false}))
+    "auto" true
+    "council-lv7" (not (contains? COUNCIL-HELD-RAILS rail))
+    "sbt-vote" false
+    "refused" false
+    false))
+
+(defn entitlement-hold-for-route
+  "Partial holds: council holds housing only; care/food/energy may-flow (multi-gen substrate).
+   sbt-vote/refused hold all. Still offline — no live produce."
+  ([route]
+   (entitlement-hold-for-route route ["care" "food" "energy" "housing" "tooling" "compute"]))
+  ([route rails]
+   (let [rails (vec (or rails []))
+         flow-map (into {} (map (fn [r] [r (rail-may-flow? route r)]) rails))
+         held-rails (vec (filter #(false? (get flow-map %)) rails))
+         flow-rails (vec (filter #(true? (get flow-map %)) rails))
+         substrate-ok (every? #(or (not (contains? (set rails) %))
+                                   (true? (get flow-map %)))
+                              SUBSTRATE-RAILS)
+         any-held (boolean (seq held-rails))
+         any-flow (boolean (seq flow-rails))
+         reason (case route
+                  "auto" nil
+                  "council-lv7" "housing-held-awaiting-council-lv7;substrate-may-flow"
+                  "sbt-vote" "awaiting-sbt-vote-timelock"
+                  "refused" "gov-refused"
+                  "unknown-route")]
+     {:entitlements-held? any-held
+      :entitlement-hold-reason reason
+      :may-flow? any-flow
+      :may-flow-substrate? substrate-ok
+      :rail-flow flow-map
+      :held-rails held-rails
+      :flow-rails flow-rails
+      :priority-stack PRIORITY-STACK
+      :live false
+      :cash-usd-micros 0
+      :score-surface []})))
 
 (defn package-subject
-  "Route subject and attach dry vote/council package + entitlement hold facts."
+  "Route subject and attach dry vote/council package + partial entitlement hold facts."
   [subject]
   (let [r (route-subject subject)
+        rails (or (get-in subject [:stage-sustenance :rails]) [])
         pkg (case (:route r)
               "sbt-vote" (open-sbt-vote-package r)
               "council-lv7" (council-pending-package r)
@@ -136,13 +163,13 @@
                :subject-did (:subject-did r)
                :live false :cash-usd-micros 0 :score-surface []
                :priority-stack PRIORITY-STACK})
-        hold (entitlement-hold-for-route (:route r))
+        hold (entitlement-hold-for-route (:route r) rails)
         out (merge r hold {:gov-package pkg
                            :live false
                            :cash-usd-micros 0
                            :score-surface []
                            :priority-stack PRIORITY-STACK})]
-    (pp/assert-no-public-scores! (dissoc out :gov-package))
+    (pp/assert-no-public-scores! (dissoc out :gov-package :rail-flow))
     out))
 
 (defn package-cohort
@@ -154,11 +181,13 @@
           routes (frequencies (map :route govs))
           held (count (filter :entitlements-held? govs))
           flow (count (filter :may-flow? govs))
+          substrate (count (filter :may-flow-substrate? govs))
           out (assoc pkg
                      :gov-subjects govs
                      :gov-route-counts routes
                      :gov-entitlements-held held
                      :gov-entitlements-may-flow flow
+                     :gov-substrate-may-flow substrate
                      :gov-live false
                      :live false
                      :cash-usd-micros 0
