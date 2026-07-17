@@ -33,6 +33,19 @@ Priority: wellbecoming > mago(孫) > ko(子) > present. cash≡0. live=false. No
 - care-iyashi R1-dry / gated-refused / care-delivery-executed: 8/8/0
 - housing-commons R1-dry / gated-refused / land-grant-executed: 8/8/0
 - housing council-held (awaiting Lv7): 8
+- tooling-okaimono R1-dry / gated-refused / fulfillment-executed: 8/8/0
+- compute-murakumo R1-dry / gated-refused / quota-executed: 8/8/0
+
+## All-disclosure-held stress (priority #2, offline)
+
+- stress: all-disclosure-held
+- held subjects: 8
+- open-path gov flowable: 18800000000
+- all-held gov flowable: 0
+- all-held tenure gov flowable: 0
+- all-held G2 admissible cohorts: 2
+- land-grant-executed: 0
+- live: false cash: 0
 
 ## Cohorts
 

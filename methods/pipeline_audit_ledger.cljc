@@ -59,6 +59,16 @@
             :audit/housing-gated-refused (or (:scorecard/housing-gated-refused sc) 0)
             :audit/housing-land-grant-executed (or (:scorecard/housing-land-grant-executed sc) 0)
             :audit/housing-council-held (or (:scorecard/housing-council-held sc) 0)
+            :audit/tooling-r1-dry (or (:scorecard/tooling-r1-dry sc) 0)
+            :audit/tooling-gated-refused (or (:scorecard/tooling-gated-refused sc) 0)
+            :audit/tooling-fulfillment-executed (or (:scorecard/tooling-fulfillment-executed sc) 0)
+            :audit/compute-r1-dry (or (:scorecard/compute-r1-dry sc) 0)
+            :audit/compute-gated-refused (or (:scorecard/compute-gated-refused sc) 0)
+            :audit/compute-quota-executed (or (:scorecard/compute-quota-executed sc) 0)
+            :audit/all-held-stress-gov-flowable
+            (or (get-in sc [:scorecard/all-held-stress :gov-flowable]) 0)
+            :audit/all-held-stress-held-subjects
+            (or (get-in sc [:scorecard/all-held-stress :held-subjects]) 0)
             :audit/cash-usd-micros 0
             :audit/cash-to-workers-usd-micros 0
             :audit/live false

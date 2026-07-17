@@ -20,6 +20,8 @@
             [fuchi.methods.rail-hikari :as hikari]
             [fuchi.methods.rail-care-iyashi :as care]
             [fuchi.methods.rail-housing-commons :as housing]
+            [fuchi.methods.rail-tooling-okaimono :as tooling]
+            [fuchi.methods.rail-compute-murakumo :as compute]
             [fuchi.methods.r2-execute :as r2]))
 
 (def PRIORITY-STACK pp/PRIORITY-STACK)
@@ -339,6 +341,16 @@
   (or (:housing-package subject)
       (get-in subject [:stage-sustenance :packages "housing" :package])))
 
+(defn- tooling-pkg-of
+  [subject]
+  (or (:tooling-package subject)
+      (get-in subject [:stage-sustenance :packages "tooling" :package])))
+
+(defn- compute-pkg-of
+  [subject]
+  (or (:compute-package subject)
+      (get-in subject [:stage-sustenance :packages "compute" :package])))
+
 (defn- housing-held-by-gov?
   "True when gov partial hold freezes housing (council-lv7 flowable omits housing)."
   [subject]
@@ -349,15 +361,17 @@
                       (or (get-in subject [:flowable-booking :rails]) []))))))
 
 (defn attach-substrate-gated-status
-  "Multi-gen substrate: care + food + energy + housing R1→gated-live DESIGN status.
-   Housing always land-grant-executed=false; Council hold freezes housing gate.
-   Default membrane refuses. cash≡0. no scores."
+  "All in-kind rails R1→gated-live DESIGN: care/food/energy/housing + tooling/compute.
+   Housing land-grant-executed=false; Council hold freezes housing. Default refuse.
+   cash≡0. no scores."
   [subject]
   (let [hold (:disclosure-hold subject)
         food (food-pkg-of subject)
         energy (energy-pkg-of subject)
         care-p (care-pkg-of subject)
         hous (housing-pkg-of subject)
+        tool (tooling-pkg-of subject)
+        comp (compute-pkg-of subject)
         council-held? (housing-held-by-gov? subject)
         food-st (when food (mitsuho/gated-live-status food :hold-machine hold))
         energy-st (when energy (hikari/gated-live-status energy :hold-machine hold))
@@ -366,6 +380,8 @@
                   (housing/gated-live-status hous
                                             :hold-machine hold
                                             :council-housing-held? council-held?))
+        tool-st (when tool (tooling/gated-live-status tool :hold-machine hold))
+        comp-st (when comp (compute/gated-live-status comp :hold-machine hold))
         out (cond-> subject
               food-st (assoc :food-gated-live-status food-st
                              :food-package (or (:food-package subject) food))
@@ -375,11 +391,13 @@
                              :care-package (or (:care-package subject) care-p))
               hous-st (assoc :housing-gated-live-status hous-st
                              :housing-package (or (:housing-package subject) hous)
-                             :land-grant-executed false))]
-    (when food-st (pp/assert-no-public-scores! food-st))
-    (when energy-st (pp/assert-no-public-scores! energy-st))
-    (when care-st (pp/assert-no-public-scores! care-st))
-    (when hous-st (pp/assert-no-public-scores! hous-st))
+                             :land-grant-executed false)
+              tool-st (assoc :tooling-gated-live-status tool-st
+                             :tooling-package (or (:tooling-package subject) tool))
+              comp-st (assoc :compute-gated-live-status comp-st
+                             :compute-package (or (:compute-package subject) comp)))]
+    (doseq [st [food-st energy-st care-st hous-st tool-st comp-st]]
+      (when st (pp/assert-no-public-scores! st)))
     out))
 
 (defn- package-subject-row

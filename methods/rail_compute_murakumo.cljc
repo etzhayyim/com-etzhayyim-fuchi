@@ -110,3 +110,70 @@
 
 (defn default-refuse-status []
   (live-gate/gate-status (live-gate/make-live-gate {:leg "provision"}) {}))
+
+(defn gated-live-status
+  "Non-raising R1→gated-live DESIGN status for compute-murakumo (vocation/learning).
+   Default gate/env refuses. Never allocates mesh quota; cash≡0; live false."
+  [r1-pkg & {:keys [gate env hold-machine]}]
+  (cond
+    (nil? r1-pkg)
+    nil
+
+    (= :refused (:phase r1-pkg))
+    {:rail-kind RAIL-KIND
+     :provider-did PROVIDER-DID
+     :phase :refused
+     :r1-phase :refused
+     :admissible false
+     :authorized-to-publish false
+     :quota-executed false
+     :refusal-reason (or (:refusal-reason r1-pkg) "r1 refused")
+     :disclosure-state (or (:disclosure-state r1-pkg) "n/a")
+     :live false
+     :cash-usd-micros 0
+     :score-surface []
+     :priority-stack PRIORITY-STACK
+     :note "R1 refused — gated-live not attempted"}
+
+    :else
+    (let [g (or gate (live-gate/make-live-gate {:leg "provision"}))
+          e (or env {})]
+      (try
+        (let [plan (gated-live-plan r1-pkg g :env e :hold-machine hold-machine)
+              out {:rail-kind RAIL-KIND
+                   :provider-did PROVIDER-DID
+                   :phase :gated-live-plan
+                   :r1-phase (:phase r1-pkg)
+                   :admissible true
+                   :authorized-to-publish (boolean (:authorized-to-publish plan))
+                   :quota-executed false
+                   :published false
+                   :disclosure-state (or (:disclosure-state r1-pkg) "open")
+                   :live false
+                   :cash-usd-micros 0
+                   :score-surface []
+                   :priority-stack PRIORITY-STACK
+                   :note "gated-live plan authorized — murakumo quota not invoked"}]
+          (pp/assert-no-public-scores! out)
+          out)
+        (catch #?(:clj Exception :cljs :default) ex
+          (let [st (live-gate/gate-status g e)
+                out {:rail-kind RAIL-KIND
+                     :provider-did PROVIDER-DID
+                     :phase :refused
+                     :r1-phase (:phase r1-pkg)
+                     :admissible false
+                     :authorized-to-publish false
+                     :quota-executed false
+                     :refusal-reason (or (ex-message ex)
+                                         (get st "reason")
+                                         "live gate default refuse")
+                     :disclosure-state (or (:disclosure-state r1-pkg) "open")
+                     :gate-admissible (boolean (get st "admissible"))
+                     :live false
+                     :cash-usd-micros 0
+                     :score-surface []
+                     :priority-stack PRIORITY-STACK
+                     :note "R1 dry ok; gated-live refused by default membrane"}]
+            (pp/assert-no-public-scores! out)
+            out))))))

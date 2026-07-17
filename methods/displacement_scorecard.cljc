@@ -202,6 +202,26 @@
                :scorecard/housing-council-held
                (count (filter #(true? (get-in % [:housing-gated-live-status :council-housing-held?]))
                               (concat subjects tenure-subjects)))
+               :scorecard/tooling-r1-dry
+               (count (filter #(= :R1-dry (get-in % [:tooling-package :phase]))
+                              (concat subjects tenure-subjects)))
+               :scorecard/tooling-gated-refused
+               (count (filter #(and (:tooling-gated-live-status %)
+                                    (false? (get-in % [:tooling-gated-live-status :admissible])))
+                              (concat subjects tenure-subjects)))
+               :scorecard/tooling-fulfillment-executed
+               (count (filter #(true? (get-in % [:tooling-produce-plan :fulfillment-executed]))
+                              (concat subjects tenure-subjects)))
+               :scorecard/compute-r1-dry
+               (count (filter #(= :R1-dry (get-in % [:compute-package :phase]))
+                              (concat subjects tenure-subjects)))
+               :scorecard/compute-gated-refused
+               (count (filter #(and (:compute-gated-live-status %)
+                                    (false? (get-in % [:compute-gated-live-status :admissible])))
+                              (concat subjects tenure-subjects)))
+               :scorecard/compute-quota-executed
+               (count (filter #(true? (get-in % [:compute-produce-plan :quota-executed]))
+                              (concat subjects tenure-subjects)))
                :scorecard/itonami-ledger ledger
                :scorecard/cohorts
                (mapv (fn [p]
@@ -231,11 +251,36 @@
                         :cash-usd-micros 0
                         :live false
                         :score-surface []})
-                     pkgs)}]
+                     pkgs)}
+         ;; Priority #2: offline all-disclosure-held stress projection (does not mutate open batch)
+         stress (try
+                  (when-not (= :all-held (:disclosure-stress batch))
+                    (let [sb (dgov/package-batch-all-disclosure-held batch)
+                          enr (filter #(= :offline-enrolled (:phase %)) (:packages sb))]
+                      {:stress "all-disclosure-held"
+                       :held-subjects (or (:disclosure-stress-held-subjects sb) 0)
+                       :gov-flowable (long (or (:gov-flowable-committed-usd-micros sb) 0))
+                       :tenure-gov-flowable
+                       (long (or (:tenure-gov-flowable-committed-usd-micros sb) 0))
+                       :g2-admissible-cohorts
+                       (count (filter #(true? (get-in % [:couple :admissible])) enr))
+                       :open-gov-flowable
+                       (long (or (:gov-flowable-committed-usd-micros batch) 0))
+                       :land-grant-executed 0
+                       :live false
+                       :cash-usd-micros 0
+                       :score-surface []
+                       :priority-stack PRIORITY-STACK
+                       :note "stress only — open path unchanged; live refuse"}))
+                  (catch Exception _ nil))
+         body (cond-> body
+                stress (assoc :scorecard/all-held-stress stress))]
      (pp/assert-no-public-scores!
       (dissoc body :scorecard/itonami-ledger :scorecard/cohorts :scorecard/live-legs
               :scorecard/tenure-stage-counts :scorecard/stage-counts
-              :scorecard/gov-route-counts :scorecard/tenure-gov-route-counts))
+              :scorecard/gov-route-counts :scorecard/tenure-gov-route-counts
+              :scorecard/all-held-stress))
+     (when stress (pp/assert-no-public-scores! stress))
      (doseq [c (:scorecard/cohorts body)] (pp/assert-no-public-scores! c))
      body)))
 
@@ -300,10 +345,29 @@
                      (or (:scorecard/housing-gated-refused body) 0) "/"
                      (or (:scorecard/housing-land-grant-executed body) 0) "\n")
                 (str "- housing council-held (awaiting Lv7): "
-                     (or (:scorecard/housing-council-held body) 0) "\n\n")
-                "## Cohorts\n\n"
-                "| actor | cohort | phase | n | L4-flow | L4-post | headroom | ten-flow | tenure | tenure-n |\n"
-                "|---|---|---|---|---|---|---|---|---|---|\n"])]
+                     (or (:scorecard/housing-council-held body) 0) "\n")
+                (str "- tooling-okaimono R1-dry / gated-refused / fulfillment-executed: "
+                     (or (:scorecard/tooling-r1-dry body) 0) "/"
+                     (or (:scorecard/tooling-gated-refused body) 0) "/"
+                     (or (:scorecard/tooling-fulfillment-executed body) 0) "\n")
+                (str "- compute-murakumo R1-dry / gated-refused / quota-executed: "
+                     (or (:scorecard/compute-r1-dry body) 0) "/"
+                     (or (:scorecard/compute-gated-refused body) 0) "/"
+                     (or (:scorecard/compute-quota-executed body) 0) "\n")])]
+    (when-let [st (:scorecard/all-held-stress body)]
+      (conj! lines "\n## All-disclosure-held stress (priority #2, offline)\n\n")
+      (conj! lines (str "- stress: " (:stress st) "\n"))
+      (conj! lines (str "- held subjects: " (:held-subjects st) "\n"))
+      (conj! lines (str "- open-path gov flowable: " (:open-gov-flowable st) "\n"))
+      (conj! lines (str "- all-held gov flowable: " (:gov-flowable st) "\n"))
+      (conj! lines (str "- all-held tenure gov flowable: " (:tenure-gov-flowable st) "\n"))
+      (conj! lines (str "- all-held G2 admissible cohorts: " (:g2-admissible-cohorts st) "\n"))
+      (conj! lines (str "- land-grant-executed: " (:land-grant-executed st) "\n"))
+      (conj! lines (str "- live: " (:live st) " cash: " (:cash-usd-micros st) "\n")))
+    (conj! lines "\n## Cohorts\n\n")
+    (conj! lines
+           "| actor | cohort | phase | n | L4-flow | L4-post | headroom | ten-flow | tenure | tenure-n |\n")
+    (conj! lines "|---|---|---|---|---|---|---|---|---|---|\n")
     (doseq [c (:scorecard/cohorts body)]
       (conj! lines
              (str "| " (:displacing-actor c) " | " (:cohort-id c) " | "
@@ -326,7 +390,6 @@
       (conj! lines (str "- cash-to-workers: " (or (:cash-to-workers-usd-micros led) 0) "\n")))
     (conj! lines "\n_No personal scores, ranks, or percentiles. No live disbursement._\n")
     (apply str (persistent! lines))))
-
 #?(:clj
    (defn write-scorecard!
      "Write out/displacement-scorecard.{md,edn}."

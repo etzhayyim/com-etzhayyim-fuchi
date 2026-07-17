@@ -22,6 +22,8 @@
             [fuchi.methods.rail-hikari :as hikari]
             [fuchi.methods.rail-care-iyashi :as care]
             [fuchi.methods.rail-housing-commons :as housing]
+            [fuchi.methods.rail-tooling-okaimono :as tooling]
+            [fuchi.methods.rail-compute-murakumo :as compute]
             #?(:clj [fuchi.methods.edn :as edn])
             #?(:clj [clojure.java.io :as io])))
 
@@ -174,17 +176,21 @@
         hous-st (when-let [hp (:housing-package out)]
                   (housing/gated-live-status hp :hold-machine hold
                                              :council-housing-held? false))
+        tool-st (when-let [tp (:tooling-package out)]
+                  (tooling/gated-live-status tp :hold-machine hold))
+        comp-st (when-let [cp (:compute-package out)]
+                  (compute/gated-live-status cp :hold-machine hold))
         out (cond-> out
               food-st (assoc :food-gated-live-status food-st)
               energy-st (assoc :energy-gated-live-status energy-st)
               care-st (assoc :care-gated-live-status care-st)
               hous-st (assoc :housing-gated-live-status hous-st
-                             :land-grant-executed false))]
+                             :land-grant-executed false)
+              tool-st (assoc :tooling-gated-live-status tool-st)
+              comp-st (assoc :compute-gated-live-status comp-st))]
     (pp/assert-no-public-scores! (:public-person out))
-    (when food-st (pp/assert-no-public-scores! food-st))
-    (when energy-st (pp/assert-no-public-scores! energy-st))
-    (when care-st (pp/assert-no-public-scores! care-st))
-    (when hous-st (pp/assert-no-public-scores! hous-st))
+    (doseq [st [food-st energy-st care-st hous-st tool-st comp-st]]
+      (when st (pp/assert-no-public-scores! st)))
     out))
 
 (defn run-for-event
