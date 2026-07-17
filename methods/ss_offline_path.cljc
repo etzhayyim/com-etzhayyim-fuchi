@@ -20,7 +20,12 @@
             [fuchi.methods.care-iyashi-receive :as crecv]
             [fuchi.methods.care-iyashi-produce-plan :as cprod]
             [fuchi.methods.tooling-okaimono-receive :as trecv]
+            [fuchi.methods.tooling-okaimono-produce-plan :as tprod]
             [fuchi.methods.compute-murakumo-receive :as mrecv]
+            [fuchi.methods.compute-murakumo-produce-plan :as cmpprod]
+            [fuchi.methods.housing-commons-receive :as housrecv]
+            [fuchi.methods.housing-commons-produce-plan :as housprod]
+            [fuchi.methods.liquidity-warifu-receive :as wrecv]
             [fuchi.methods.public-person :as pp]
             [fuchi.methods.disclosure-hold :as dh]
             [fuchi.methods.itonami-bridge :as itonami]
@@ -120,10 +125,20 @@
                     (cprod/plan-from-r1 care-pkg))
         care-ack (when (and care-pkg (not= :refused (:phase care-pkg)))
                    (crecv/receive-from-r1-package care-pkg))
+        housing-plan (when (and housing-pkg (not= :refused (:phase housing-pkg)))
+                       (housprod/plan-from-r1 housing-pkg))
+        housing-ack (when (and housing-pkg (not= :refused (:phase housing-pkg)))
+                      (housrecv/receive-from-r1-package housing-pkg))
+        tooling-plan (when (and tooling-pkg (not= :refused (:phase tooling-pkg)))
+                       (tprod/plan-from-r1 tooling-pkg))
         tooling-ack (when (and tooling-pkg (not= :refused (:phase tooling-pkg)))
                       (trecv/receive-from-r1-package tooling-pkg))
+        compute-plan (when (and compute-pkg (not= :refused (:phase compute-pkg)))
+                       (cmpprod/plan-from-r1 compute-pkg))
         compute-ack (when (and compute-pkg (not= :refused (:phase compute-pkg)))
                       (mrecv/receive-from-r1-package compute-pkg))
+        liquidity-ack (when (and liquidity-pkg (not= :refused (:phase liquidity-pkg)))
+                        (wrecv/receive-from-r1-package liquidity-pkg))
         out {:path "ss-offline-inkind-rails"
              :priority-stack PRIORITY-STACK
              :live false
@@ -142,11 +157,16 @@
              :care-produce-plan care-plan
              :care-receive care-ack
              :housing-package housing-pkg
+             :housing-produce-plan housing-plan
+             :housing-receive housing-ack
              :tooling-package tooling-pkg
+             :tooling-produce-plan tooling-plan
              :tooling-receive tooling-ack
              :compute-package compute-pkg
+             :compute-produce-plan compute-plan
              :compute-receive compute-ack
-             :liquidity-package liquidity-pkg}]
+             :liquidity-package liquidity-pkg
+             :liquidity-receive liquidity-ack}]
     (pp/assert-no-public-scores! (:public-person out))
     out))
 

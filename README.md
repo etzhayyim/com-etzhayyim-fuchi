@@ -83,10 +83,15 @@ bb -cp . -e '(require (quote fuchi.methods.public-surface-report)) (fuchi.method
 | [`methods/rail_housing_commons.cljc`](methods/rail_housing_commons.cljc) | housing-commons (LANDS.md) R1+gated plan |
 | [`methods/rail_tooling_okaimono.cljc`](methods/rail_tooling_okaimono.cljc) | tooling-okaimono R1+gated plan (vocation recovery) |
 | [`methods/tooling_okaimono_receive.cljc`](methods/tooling_okaimono_receive.cljc) | tooling dry-ack (fulfillment not invoked) |
+| [`methods/tooling_okaimono_produce_plan.cljc`](methods/tooling_okaimono_produce_plan.cljc) | dry tool-units floor (fulfillment-executed=false) |
 | [`methods/rail_compute_murakumo.cljc`](methods/rail_compute_murakumo.cljc) | compute-murakumo R1+gated plan (mesh access) |
 | [`methods/compute_murakumo_receive.cljc`](methods/compute_murakumo_receive.cljc) | compute dry-ack (quota not invoked) |
+| [`methods/compute_murakumo_produce_plan.cljc`](methods/compute_murakumo_produce_plan.cljc) | dry GPU-hours floor (quota-executed=false) |
+| [`methods/housing_commons_receive.cljc`](methods/housing_commons_receive.cljc) | housing dry-ack (land grant not invoked) |
+| [`methods/housing_commons_produce_plan.cljc`](methods/housing_commons_produce_plan.cljc) | dry housing-months floor (grant-executed=false) |
 | [`methods/rail_liquidity_warifu.cljc`](methods/rail_liquidity_warifu.cljc) | liquidity-warifu member-principal residual (cash≡0) |
-| [`methods/ss_offline_path.cljc`](methods/ss_offline_path.cljc) | L0→all in-kind rails + liquidity residual E2E offline |
+| [`methods/liquidity_warifu_receive.cljc`](methods/liquidity_warifu_receive.cljc) | warifu dry-ack (loan not invoked) |
+| [`methods/ss_offline_path.cljc`](methods/ss_offline_path.cljc) | L0→all rails R1→receive→produce-plan E2E offline |
 | [`methods/rail_care_iyashi.cljc`](methods/rail_care_iyashi.cljc) | care-iyashi (子・孫 wellbecoming) R1+gated plan |
 | [`methods/pages_publish.cljc`](methods/pages_publish.cljc) | Pages-ready `public/` static package (no deploy) |
 
