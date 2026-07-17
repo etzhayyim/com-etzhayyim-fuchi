@@ -101,6 +101,14 @@
             (boolean (get-in sc [:scorecard/ss-priority-path :ladder-published]))
             :audit/ss-held-stress-ladder-refused
             (boolean (get-in sc [:scorecard/ss-priority-path :held-stress-ladder-refused]))
+            :audit/ss-stage-rails-first
+            (or (get-in sc [:scorecard/ss-priority-path :stage-rails-first]) "n/a")
+            :audit/ss-stage-rails-second
+            (or (get-in sc [:scorecard/ss-priority-path :stage-rails-second]) "n/a")
+            :audit/ss-stage-r2-all-refused
+            (boolean (get-in sc [:scorecard/ss-priority-path :stage-r2-all-refused] true))
+            :audit/ss-stage-land-grant-executed
+            (boolean (get-in sc [:scorecard/ss-priority-path :stage-land-grant-executed]))
             :audit/ss-disclosure-state
             (or (get-in sc [:scorecard/ss-priority-path :disclosure-state]) "n/a")
             :audit/ss-housing-land-grant-executed

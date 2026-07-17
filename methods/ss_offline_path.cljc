@@ -5,6 +5,7 @@
     (1) L0 enroll scaffold + liberation ladder climb (disclosure-gated, care-first for 孫/子)
     (2) disclosure hold machine + continuity tick (+ optional held stress)
     (3) mitsuho/hikari (and other rails) R1 → gated-live DESIGN status (default refuse)
+    + stage_sustenance floors from ladder rails-hint (care/housing first at L4)
     + dry receive / dry produce plans + R2 execute refuse
     + optional itonami displacement facts
 
@@ -12,6 +13,7 @@
   Portable .cljc."
   (:require [fuchi.methods.l0-enroll :as l0]
             [fuchi.methods.liberation-ladder :as lad]
+            [fuchi.methods.stage-sustenance :as stage]
             [fuchi.methods.rail-mitsuho :as food]
             [fuchi.methods.rail-hikari :as energy]
             [fuchi.methods.rail-care-iyashi :as care]
@@ -102,6 +104,20 @@
         person-ladder (or (:person ladder-open) person-open)
         ladder-hist (or (:history ladder-open) [])
         ladder-last (last ladder-hist)
+        ;; stage floors from ladder rails-hint (L4: care → housing first)
+        stage-pkg (stage/build-for-stage
+                   person-ladder hold
+                   :imputed-overrides
+                   (cond-> {}
+                     (pos? food-imputed-usd-micros-yr) (assoc "food" food-imputed-usd-micros-yr)
+                     (pos? energy-imputed-usd-micros-yr) (assoc "energy" energy-imputed-usd-micros-yr)
+                     (pos? care-imputed-usd-micros-yr) (assoc "care" care-imputed-usd-micros-yr)
+                     (pos? housing-imputed-usd-micros-yr) (assoc "housing" housing-imputed-usd-micros-yr)
+                     (pos? tooling-imputed-usd-micros-yr) (assoc "tooling" tooling-imputed-usd-micros-yr)
+                     (pos? compute-imputed-usd-micros-yr) (assoc "compute" compute-imputed-usd-micros-yr)))
+        stage-row (stage/public-floor-row stage-pkg)
+        stage-r2-phases (map (fn [[_ v]] (get-in v [:r2 :phase]))
+                             (or (:packages stage-pkg) {}))
         cont-series (when include-disclosure-stress
                       (disc/tick-series person [FRESH-DISC STALE-DISC FRESH-DISC]))
         held-stress (when include-disclosure-stress
@@ -299,6 +315,26 @@
                  :held-stress-ladder-refused
                  (boolean (and held-stress
                                (= "refused" (:ladder-advance-phase held-stress))))
+                 ;; stage_sustenance after ladder (care/housing first at L4)
+                 :stage-sustenance-stage (:stage stage-pkg)
+                 :stage-rails (vec (or (:rails stage-pkg) []))
+                 :stage-rails-first (first (:rails stage-pkg))
+                 :stage-rails-second (second (:rails stage-pkg))
+                 :stage-label (:label stage-pkg)
+                 :stage-multi-gen-fact (:multi-gen-fact stage-pkg)
+                 :stage-floor-usd-micros-yr (or (:floor-usd-micros-yr stage-pkg) 0)
+                 :stage-care-hours-floor-yr
+                 (or (get-in stage-pkg [:packages "care" :floor :care-hours-floor-yr]) 0)
+                 :stage-housing-months-floor-yr
+                 (or (get-in stage-pkg [:packages "housing" :floor :housing-months-floor-yr]) 0)
+                 :stage-land-grant-executed
+                 (boolean (get-in stage-pkg [:packages "housing" :plan :land-grant-executed]))
+                 :stage-r2-count (count stage-r2-phases)
+                 :stage-r2-all-refused
+                 (and (seq stage-r2-phases)
+                      (every? #(= :refused %) stage-r2-phases))
+                 :stage-live false
+                 :stage-cash-usd-micros 0
                  :disclosure-state (name (or (:state hold) :open))
                  :entitlements-may-flow? (disc/entitlements-may-flow? hold)
                  :continuity-action (:action cont-open)
@@ -350,6 +386,8 @@
              :l0 enrolled
              :ladder ladder-open
              :person-after-ladder person-ladder
+             :stage-sustenance stage-pkg
+             :stage-sustenance-public stage-row
              :disclosure-hold hold
              :disclosure-continuity cont-open
              :disclosure-continuity-series cont-series
@@ -393,7 +431,9 @@
              :liquidity-r2-execute-status liquidity-r2
              :priority-path-summary summary}]
     (pp/assert-no-public-scores! (:public-person out))
-    (pp/assert-no-public-scores! (dissoc summary :rail-gated :continuity-action))
+    (pp/assert-no-public-scores! (dissoc summary :rail-gated :continuity-action
+                                         :stage-rails :ladder-rails-hint))
+    (pp/assert-no-public-scores! stage-row)
     (doseq [g (remove nil? gated-statuses)] (pp/assert-no-public-scores! g))
     out))
 

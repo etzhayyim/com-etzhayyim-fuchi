@@ -270,6 +270,16 @@
               :ladder-multi-gen-fact (:ladder-multi-gen-fact s)
               :ladder-published false
               :held-stress-ladder-refused (boolean (:held-stress-ladder-refused s))
+              :stage-sustenance-stage (:stage-sustenance-stage s)
+              :stage-rails (vec (or (:stage-rails s) []))
+              :stage-rails-first (:stage-rails-first s)
+              :stage-rails-second (:stage-rails-second s)
+              :stage-floor-usd-micros-yr (or (:stage-floor-usd-micros-yr s) 0)
+              :stage-care-hours-floor-yr (or (:stage-care-hours-floor-yr s) 0)
+              :stage-housing-months-floor-yr (or (:stage-housing-months-floor-yr s) 0)
+              :stage-land-grant-executed (boolean (:stage-land-grant-executed s))
+              :stage-r2-all-refused (boolean (:stage-r2-all-refused s))
+              :stage-live false
               :disclosure-state (:disclosure-state s)
               :entitlements-may-flow? (boolean (:entitlements-may-flow? s))
               :continuity-action (when-let [a (:continuity-action s)]
@@ -819,6 +829,18 @@
         (conj! lines (str "- (1) ladder rails-hint (care-first for 孫/子): "
                          (str/join "," (or (:ladder-rails-hint sp) []))
                          " first=" (or (:ladder-rails-hint-first sp) "—") "\n"))
+        (conj! lines (str "- (1) stage_sustenance after ladder: stage="
+                         (or (:stage-sustenance-stage sp) "—")
+                         " rails=" (str/join "," (or (:stage-rails sp) []))
+                         " first/second="
+                         (or (:stage-rails-first sp) "—") "/"
+                         (or (:stage-rails-second sp) "—") "\n"))
+        (conj! lines (str "- (1) stage floors care-h/housing-mo/floor-micros/land-grant/r2-all-refused: "
+                         (or (:stage-care-hours-floor-yr sp) 0) "/"
+                         (or (:stage-housing-months-floor-yr sp) 0) "/"
+                         (or (:stage-floor-usd-micros-yr sp) 0) "/"
+                         (boolean (:stage-land-grant-executed sp)) "/"
+                         (boolean (:stage-r2-all-refused sp)) "\n"))
         (conj! lines (str "- (2) disclosure open path: state="
                          (:disclosure-state sp)
                          " entitlements-may-flow="
@@ -1101,6 +1123,12 @@
           " ladder=" (or (:ladder-from sp) "L0") "→" (or (:ladder-to sp) "—")
           " rails-hint-first=" (or (:ladder-rails-hint-first sp) "—")
           " ladder-published=" (boolean (:ladder-published sp))
+          " stage=" (or (:stage-sustenance-stage sp) "—")
+          " stage-rails-first/second="
+          (or (:stage-rails-first sp) "—") "/"
+          (or (:stage-rails-second sp) "—")
+          " stage-r2-all-refused=" (boolean (:stage-r2-all-refused sp))
+          " land-grant=" (boolean (:stage-land-grant-executed sp))
           ". (2) disclosure=" (:disclosure-state sp)
           " entitlements-may-flow=" (boolean (:entitlements-may-flow? sp))
           " held-stress-held=" (boolean (:held-stress-held? sp))

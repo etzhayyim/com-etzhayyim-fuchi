@@ -76,6 +76,14 @@
                :ladder-rails-hint-first (:ladder-rails-hint-first s)
                :ladder-published false
                :held-stress-ladder-refused (boolean (:held-stress-ladder-refused s))
+               :stage-sustenance-stage (:stage-sustenance-stage s)
+               :stage-rails-first (:stage-rails-first s)
+               :stage-rails-second (:stage-rails-second s)
+               :stage-floor-usd-micros-yr (or (:stage-floor-usd-micros-yr s) 0)
+               :stage-care-hours-floor-yr (or (:stage-care-hours-floor-yr s) 0)
+               :stage-housing-months-floor-yr (or (:stage-housing-months-floor-yr s) 0)
+               :stage-land-grant-executed (boolean (:stage-land-grant-executed s))
+               :stage-r2-all-refused (boolean (:stage-r2-all-refused s))
                :disclosure-state (:disclosure-state s)
                :entitlements-may-flow? (boolean (:entitlements-may-flow? s))
                :held-stress-held? (boolean (:held-stress-held? s))
@@ -513,6 +521,16 @@
                          " steps=" (or (:ladder-steps sp) 0)
                          " rails-hint-first=" (or (:ladder-rails-hint-first sp) "—")
                          " published=" (boolean (:ladder-published sp)) "\n"))
+        (conj! lines (str "- stage_sustenance: stage="
+                         (or (:stage-sustenance-stage sp) "—")
+                         " rails-first/second="
+                         (or (:stage-rails-first sp) "—") "/"
+                         (or (:stage-rails-second sp) "—")
+                         " care-h/housing-mo="
+                         (or (:stage-care-hours-floor-yr sp) 0) "/"
+                         (or (:stage-housing-months-floor-yr sp) 0)
+                         " land-grant=" (boolean (:stage-land-grant-executed sp))
+                         " r2-all-refused=" (boolean (:stage-r2-all-refused sp)) "\n"))
         (conj! lines (str "- disclosure state / entitlements-may-flow: "
                          (:disclosure-state sp) "/"
                          (boolean (:entitlements-may-flow? sp)) "\n"))
