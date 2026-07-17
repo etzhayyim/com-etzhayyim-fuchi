@@ -232,6 +232,11 @@
                            :hikari-gated-refused
                            (count (filter #(false? (get-in % [:energy-gated-live-status :admissible]))
                                           (filter :energy-gated-live-status subs)))
+                           :care-r1-dry
+                           (count (filter #(= :R1-dry (get-in % [:care-package :phase])) subs))
+                           :care-gated-refused
+                           (count (filter #(false? (get-in % [:care-gated-live-status :admissible]))
+                                          (filter :care-gated-live-status subs)))
                            :refusal-reason (:refusal-reason p)
                            :cash-usd-micros 0
                            :live false
@@ -251,6 +256,8 @@
      :mitsuho-gated-refused (reduce + 0 (map #(or (:mitsuho-gated-refused %) 0) pkgs))
      :hikari-r1-dry (reduce + 0 (map #(or (:hikari-r1-dry %) 0) pkgs))
      :hikari-gated-refused (reduce + 0 (map #(or (:hikari-gated-refused %) 0) pkgs))
+     :care-r1-dry (reduce + 0 (map #(or (:care-r1-dry %) 0) pkgs))
+     :care-gated-refused (reduce + 0 (map #(or (:care-gated-refused %) 0) pkgs))
      :packages pkgs
      :cash-usd-micros 0
      :live false

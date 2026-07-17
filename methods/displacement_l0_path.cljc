@@ -20,6 +20,7 @@
             [fuchi.methods.displacement-couple :as dcouple]
             [fuchi.methods.rail-mitsuho :as mitsuho]
             [fuchi.methods.rail-hikari :as hikari]
+            [fuchi.methods.rail-care-iyashi :as care]
             #?(:clj [fuchi.methods.edn :as edn])
             #?(:clj [clojure.java.io :as io])))
 
@@ -167,12 +168,16 @@
                   (mitsuho/gated-live-status fp :hold-machine hold))
         energy-st (when-let [ep (:energy-package out)]
                     (hikari/gated-live-status ep :hold-machine hold))
+        care-st (when-let [cp (:care-package out)]
+                  (care/gated-live-status cp :hold-machine hold))
         out (cond-> out
               food-st (assoc :food-gated-live-status food-st)
-              energy-st (assoc :energy-gated-live-status energy-st))]
+              energy-st (assoc :energy-gated-live-status energy-st)
+              care-st (assoc :care-gated-live-status care-st))]
     (pp/assert-no-public-scores! (:public-person out))
     (when food-st (pp/assert-no-public-scores! food-st))
     (when energy-st (pp/assert-no-public-scores! energy-st))
+    (when care-st (pp/assert-no-public-scores! care-st))
     out))
 
 (defn run-for-event

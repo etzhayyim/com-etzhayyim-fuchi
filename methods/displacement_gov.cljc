@@ -18,6 +18,7 @@
             [fuchi.methods.couple :as couple]
             [fuchi.methods.rail-mitsuho :as mitsuho]
             [fuchi.methods.rail-hikari :as hikari]
+            [fuchi.methods.rail-care-iyashi :as care]
             [fuchi.methods.r2-execute :as r2]))
 
 (def PRIORITY-STACK pp/PRIORITY-STACK)
@@ -327,22 +328,32 @@
   (or (:energy-package subject)
       (get-in subject [:stage-sustenance :packages "energy" :package])))
 
+(defn- care-pkg-of
+  [subject]
+  (or (:care-package subject)
+      (get-in subject [:stage-sustenance :packages "care" :package])))
+
 (defn attach-substrate-gated-status
-  "Priority #3 slice: mitsuho food + hikari energy R1→gated-live DESIGN status.
-   Default membrane refuses; produce/generate stay false. cash≡0. no scores."
+  "Multi-gen substrate: care (子・孫) + food + energy R1→gated-live DESIGN status.
+   Default membrane refuses; care-delivery/produce/generate stay false. cash≡0. no scores."
   [subject]
   (let [hold (:disclosure-hold subject)
         food (food-pkg-of subject)
         energy (energy-pkg-of subject)
+        care-p (care-pkg-of subject)
         food-st (when food (mitsuho/gated-live-status food :hold-machine hold))
         energy-st (when energy (hikari/gated-live-status energy :hold-machine hold))
+        care-st (when care-p (care/gated-live-status care-p :hold-machine hold))
         out (cond-> subject
               food-st (assoc :food-gated-live-status food-st
                              :food-package (or (:food-package subject) food))
               energy-st (assoc :energy-gated-live-status energy-st
-                               :energy-package (or (:energy-package subject) energy)))]
+                               :energy-package (or (:energy-package subject) energy))
+              care-st (assoc :care-gated-live-status care-st
+                             :care-package (or (:care-package subject) care-p)))]
     (when food-st (pp/assert-no-public-scores! food-st))
     (when energy-st (pp/assert-no-public-scores! energy-st))
+    (when care-st (pp/assert-no-public-scores! care-st))
     out))
 
 (defn- package-subject-row

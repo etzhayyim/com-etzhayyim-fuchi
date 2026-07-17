@@ -41,6 +41,9 @@
        (is (pos? (:scorecard/hikari-r1-dry body)))
        (is (pos? (:scorecard/hikari-gated-refused body)))
        (is (zero? (:scorecard/hikari-generate-executed body)))
+       (is (pos? (:scorecard/care-r1-dry body)))
+       (is (pos? (:scorecard/care-gated-refused body)))
+       (is (zero? (:scorecard/care-delivery-executed body)))
        (is (= pp/PRIORITY-STACK (:scorecard/priority-stack body)))
        (let [md (sc/scorecard-md body)]
          (is (str/includes? md "scorecard"))
@@ -50,6 +53,7 @@
          (is (str/includes? md "disclosure open/held"))
          (is (str/includes? md "mitsuho food"))
          (is (str/includes? md "hikari energy"))
+         (is (str/includes? md "care-iyashi"))
          (is (str/includes? md "all live legs refused"))
          (is (not (str/includes? md "| rank |")))))))
 

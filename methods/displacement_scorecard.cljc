@@ -177,6 +177,16 @@
                :scorecard/hikari-generate-executed
                (count (filter #(true? (get-in % [:energy-produce-plan :generate-executed]))
                               (concat subjects tenure-subjects)))
+               :scorecard/care-r1-dry
+               (count (filter #(= :R1-dry (get-in % [:care-package :phase]))
+                              (concat subjects tenure-subjects)))
+               :scorecard/care-gated-refused
+               (count (filter #(and (:care-gated-live-status %)
+                                    (false? (get-in % [:care-gated-live-status :admissible])))
+                              (concat subjects tenure-subjects)))
+               :scorecard/care-delivery-executed
+               (count (filter #(true? (get-in % [:care-produce-plan :care-delivery-executed]))
+                              (concat subjects tenure-subjects)))
                :scorecard/itonami-ledger ledger
                :scorecard/cohorts
                (mapv (fn [p]
@@ -265,7 +275,11 @@
                 (str "- hikari energy R1-dry / gated-refused / generate-executed: "
                      (or (:scorecard/hikari-r1-dry body) 0) "/"
                      (or (:scorecard/hikari-gated-refused body) 0) "/"
-                     (or (:scorecard/hikari-generate-executed body) 0) "\n\n")
+                     (or (:scorecard/hikari-generate-executed body) 0) "\n")
+                (str "- care-iyashi R1-dry / gated-refused / care-delivery-executed: "
+                     (or (:scorecard/care-r1-dry body) 0) "/"
+                     (or (:scorecard/care-gated-refused body) 0) "/"
+                     (or (:scorecard/care-delivery-executed body) 0) "\n\n")
                 "## Cohorts\n\n"
                 "| actor | cohort | phase | n | L4-flow | L4-post | headroom | ten-flow | tenure | tenure-n |\n"
                 "|---|---|---|---|---|---|---|---|---|---|\n"])]
