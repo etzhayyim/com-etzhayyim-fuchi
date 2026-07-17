@@ -187,6 +187,21 @@
                :scorecard/care-delivery-executed
                (count (filter #(true? (get-in % [:care-produce-plan :care-delivery-executed]))
                               (concat subjects tenure-subjects)))
+               :scorecard/housing-r1-dry
+               (count (filter #(= :R1-dry (get-in % [:housing-package :phase]))
+                              (concat subjects tenure-subjects)))
+               :scorecard/housing-gated-refused
+               (count (filter #(and (:housing-gated-live-status %)
+                                    (false? (get-in % [:housing-gated-live-status :admissible])))
+                              (concat subjects tenure-subjects)))
+               :scorecard/housing-land-grant-executed
+               (count (filter #(true? (or (get-in % [:housing-gated-live-status :land-grant-executed])
+                                          (get-in % [:housing-produce-plan :land-grant-executed])
+                                          (:land-grant-executed %)))
+                              (concat subjects tenure-subjects)))
+               :scorecard/housing-council-held
+               (count (filter #(true? (get-in % [:housing-gated-live-status :council-housing-held?]))
+                              (concat subjects tenure-subjects)))
                :scorecard/itonami-ledger ledger
                :scorecard/cohorts
                (mapv (fn [p]
@@ -279,7 +294,13 @@
                 (str "- care-iyashi R1-dry / gated-refused / care-delivery-executed: "
                      (or (:scorecard/care-r1-dry body) 0) "/"
                      (or (:scorecard/care-gated-refused body) 0) "/"
-                     (or (:scorecard/care-delivery-executed body) 0) "\n\n")
+                     (or (:scorecard/care-delivery-executed body) 0) "\n")
+                (str "- housing-commons R1-dry / gated-refused / land-grant-executed: "
+                     (or (:scorecard/housing-r1-dry body) 0) "/"
+                     (or (:scorecard/housing-gated-refused body) 0) "/"
+                     (or (:scorecard/housing-land-grant-executed body) 0) "\n")
+                (str "- housing council-held (awaiting Lv7): "
+                     (or (:scorecard/housing-council-held body) 0) "\n\n")
                 "## Cohorts\n\n"
                 "| actor | cohort | phase | n | L4-flow | L4-post | headroom | ten-flow | tenure | tenure-n |\n"
                 "|---|---|---|---|---|---|---|---|---|---|\n"])]

@@ -122,6 +122,11 @@
     (is (= 1 (get-in gp [:tenure-gov-route-counts "council-lv7"])))
     (is (= 1 (get-in out [:gov-route-counts "council-lv7"])))
     (is (= 1 (get-in out [:tenure-gov-route-counts "council-lv7"])))
+    (let [ts (first (:tenure-subjects gp))]
+      (is (map? (:housing-gated-live-status ts)))
+      (is (false? (get-in ts [:housing-gated-live-status :admissible])))
+      (is (false? (get-in ts [:housing-gated-live-status :land-grant-executed])))
+      (is (true? (get-in ts [:housing-gated-live-status :council-housing-held?]))))
     (is (false? (:live out)))
     (is (= 0 (:cash-usd-micros out)))))
 

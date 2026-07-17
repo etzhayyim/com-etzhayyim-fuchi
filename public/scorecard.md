@@ -31,6 +31,8 @@ Priority: wellbecoming > mago(孫) > ko(子) > present. cash≡0. live=false. No
 - mitsuho food R1-dry / gated-refused / produce-executed: 8/8/0
 - hikari energy R1-dry / gated-refused / generate-executed: 8/8/0
 - care-iyashi R1-dry / gated-refused / care-delivery-executed: 8/8/0
+- housing-commons R1-dry / gated-refused / land-grant-executed: 8/8/0
+- housing council-held (awaiting Lv7): 8
 
 ## Cohorts
 

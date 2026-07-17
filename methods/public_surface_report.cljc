@@ -237,6 +237,14 @@
                            :care-gated-refused
                            (count (filter #(false? (get-in % [:care-gated-live-status :admissible]))
                                           (filter :care-gated-live-status subs)))
+                           :housing-r1-dry
+                           (count (filter #(= :R1-dry (get-in % [:housing-package :phase])) subs))
+                           :housing-gated-refused
+                           (count (filter #(false? (get-in % [:housing-gated-live-status :admissible]))
+                                          (filter :housing-gated-live-status subs)))
+                           :housing-land-grant-executed
+                           (count (filter #(true? (get-in % [:housing-gated-live-status :land-grant-executed]))
+                                          (filter :housing-gated-live-status subs)))
                            :refusal-reason (:refusal-reason p)
                            :cash-usd-micros 0
                            :live false
@@ -258,6 +266,10 @@
      :hikari-gated-refused (reduce + 0 (map #(or (:hikari-gated-refused %) 0) pkgs))
      :care-r1-dry (reduce + 0 (map #(or (:care-r1-dry %) 0) pkgs))
      :care-gated-refused (reduce + 0 (map #(or (:care-gated-refused %) 0) pkgs))
+     :housing-r1-dry (reduce + 0 (map #(or (:housing-r1-dry %) 0) pkgs))
+     :housing-gated-refused (reduce + 0 (map #(or (:housing-gated-refused %) 0) pkgs))
+     :housing-land-grant-executed
+     (reduce + 0 (map #(or (:housing-land-grant-executed %) 0) pkgs))
      :packages pkgs
      :cash-usd-micros 0
      :live false

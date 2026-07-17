@@ -44,6 +44,10 @@
        (is (pos? (:scorecard/care-r1-dry body)))
        (is (pos? (:scorecard/care-gated-refused body)))
        (is (zero? (:scorecard/care-delivery-executed body)))
+       (is (pos? (:scorecard/housing-r1-dry body)))
+       (is (pos? (:scorecard/housing-gated-refused body)))
+       (is (zero? (:scorecard/housing-land-grant-executed body)))
+       (is (pos? (:scorecard/housing-council-held body)))
        (is (= pp/PRIORITY-STACK (:scorecard/priority-stack body)))
        (let [md (sc/scorecard-md body)]
          (is (str/includes? md "scorecard"))
@@ -54,6 +58,8 @@
          (is (str/includes? md "mitsuho food"))
          (is (str/includes? md "hikari energy"))
          (is (str/includes? md "care-iyashi"))
+         (is (str/includes? md "housing-commons"))
+         (is (str/includes? md "land-grant-executed"))
          (is (str/includes? md "all live legs refused"))
          (is (not (str/includes? md "| rank |")))))))
 

@@ -21,6 +21,7 @@
             [fuchi.methods.rail-mitsuho :as mitsuho]
             [fuchi.methods.rail-hikari :as hikari]
             [fuchi.methods.rail-care-iyashi :as care]
+            [fuchi.methods.rail-housing-commons :as housing]
             #?(:clj [fuchi.methods.edn :as edn])
             #?(:clj [clojure.java.io :as io])))
 
@@ -170,14 +171,20 @@
                     (hikari/gated-live-status ep :hold-machine hold))
         care-st (when-let [cp (:care-package out)]
                   (care/gated-live-status cp :hold-machine hold))
+        hous-st (when-let [hp (:housing-package out)]
+                  (housing/gated-live-status hp :hold-machine hold
+                                             :council-housing-held? false))
         out (cond-> out
               food-st (assoc :food-gated-live-status food-st)
               energy-st (assoc :energy-gated-live-status energy-st)
-              care-st (assoc :care-gated-live-status care-st))]
+              care-st (assoc :care-gated-live-status care-st)
+              hous-st (assoc :housing-gated-live-status hous-st
+                             :land-grant-executed false))]
     (pp/assert-no-public-scores! (:public-person out))
     (when food-st (pp/assert-no-public-scores! food-st))
     (when energy-st (pp/assert-no-public-scores! energy-st))
     (when care-st (pp/assert-no-public-scores! care-st))
+    (when hous-st (pp/assert-no-public-scores! hous-st))
     out))
 
 (defn run-for-event

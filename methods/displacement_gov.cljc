@@ -19,6 +19,7 @@
             [fuchi.methods.rail-mitsuho :as mitsuho]
             [fuchi.methods.rail-hikari :as hikari]
             [fuchi.methods.rail-care-iyashi :as care]
+            [fuchi.methods.rail-housing-commons :as housing]
             [fuchi.methods.r2-execute :as r2]))
 
 (def PRIORITY-STACK pp/PRIORITY-STACK)
@@ -333,27 +334,52 @@
   (or (:care-package subject)
       (get-in subject [:stage-sustenance :packages "care" :package])))
 
+(defn- housing-pkg-of
+  [subject]
+  (or (:housing-package subject)
+      (get-in subject [:stage-sustenance :packages "housing" :package])))
+
+(defn- housing-held-by-gov?
+  "True when gov partial hold freezes housing (council-lv7 flowable omits housing)."
+  [subject]
+  (or (false? (get-in subject [:rail-flow "housing"]))
+      (contains? (set (or (:held-rails subject) [])) "housing")
+      (and (map? (:flowable-booking subject))
+           (not (some #{"housing-commons" "housing"}
+                      (or (get-in subject [:flowable-booking :rails]) []))))))
+
 (defn attach-substrate-gated-status
-  "Multi-gen substrate: care (子・孫) + food + energy R1→gated-live DESIGN status.
-   Default membrane refuses; care-delivery/produce/generate stay false. cash≡0. no scores."
+  "Multi-gen substrate: care + food + energy + housing R1→gated-live DESIGN status.
+   Housing always land-grant-executed=false; Council hold freezes housing gate.
+   Default membrane refuses. cash≡0. no scores."
   [subject]
   (let [hold (:disclosure-hold subject)
         food (food-pkg-of subject)
         energy (energy-pkg-of subject)
         care-p (care-pkg-of subject)
+        hous (housing-pkg-of subject)
+        council-held? (housing-held-by-gov? subject)
         food-st (when food (mitsuho/gated-live-status food :hold-machine hold))
         energy-st (when energy (hikari/gated-live-status energy :hold-machine hold))
         care-st (when care-p (care/gated-live-status care-p :hold-machine hold))
+        hous-st (when hous
+                  (housing/gated-live-status hous
+                                            :hold-machine hold
+                                            :council-housing-held? council-held?))
         out (cond-> subject
               food-st (assoc :food-gated-live-status food-st
                              :food-package (or (:food-package subject) food))
               energy-st (assoc :energy-gated-live-status energy-st
                                :energy-package (or (:energy-package subject) energy))
               care-st (assoc :care-gated-live-status care-st
-                             :care-package (or (:care-package subject) care-p)))]
+                             :care-package (or (:care-package subject) care-p))
+              hous-st (assoc :housing-gated-live-status hous-st
+                             :housing-package (or (:housing-package subject) hous)
+                             :land-grant-executed false))]
     (when food-st (pp/assert-no-public-scores! food-st))
     (when energy-st (pp/assert-no-public-scores! energy-st))
     (when care-st (pp/assert-no-public-scores! care-st))
+    (when hous-st (pp/assert-no-public-scores! hous-st))
     out))
 
 (defn- package-subject-row
