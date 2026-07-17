@@ -238,7 +238,7 @@
 
 (defn ss-priority-path-public-fact
   "Facts-only projection of ss_offline_path priority (1)(2)(3) demo.
-   L0 enroll + disclosure continuity + mitsuho/hikari gated-live DESIGN refuse + R2 refuse.
+   L0 enroll + disclosure continuity + all rails gated-live DESIGN refuse + R2 refuse.
    No personal scores. cash≡0. live=false."
   ([]
    (ss-priority-path-public-fact
@@ -249,6 +249,10 @@
                 :food-imputed-usd-micros-yr 2000000000
                 :energy-imputed-usd-micros-yr 1500000000
                 :care-imputed-usd-micros-yr 1000000000
+                :housing-imputed-usd-micros-yr 12000000000
+                :tooling-imputed-usd-micros-yr 500000000
+                :compute-imputed-usd-micros-yr 800000000
+                :liquidity-imputed-usd-micros-yr 1500000000
                 :include-disclosure-stress true})
          s (or (:priority-path-summary path) {})
          out {:path (:path path)
@@ -267,6 +271,27 @@
               :hikari-r1-phase (:hikari-r1-phase s)
               :hikari-gated-admissible (boolean (:hikari-gated-admissible s))
               :hikari-generate-executed false
+              :care-r1-phase (:care-r1-phase s)
+              :care-gated-admissible (boolean (:care-gated-admissible s))
+              :housing-r1-phase (:housing-r1-phase s)
+              :housing-gated-admissible (boolean (:housing-gated-admissible s))
+              :housing-land-grant-executed false
+              :tooling-r1-phase (:tooling-r1-phase s)
+              :tooling-gated-admissible (boolean (:tooling-gated-admissible s))
+              :compute-r1-phase (:compute-r1-phase s)
+              :compute-gated-admissible (boolean (:compute-gated-admissible s))
+              :liquidity-r1-phase (:liquidity-r1-phase s)
+              :liquidity-gated-admissible (boolean (:liquidity-gated-admissible s))
+              :liquidity-loan-executed false
+              :liquidity-member-principal (boolean (:liquidity-member-principal s true))
+              :liquidity-cash-usd-micros 0
+              :rails-gated-count (or (:rails-gated-count s) 0)
+              :rails-gated-admissible-count (or (:rails-gated-admissible-count s) 0)
+              :all-rails-gated-refused (boolean (:all-rails-gated-refused s))
+              :r2-status-count (or (:r2-status-count s) 0)
+              :r2-executed-count (or (:r2-executed-count s) 0)
+              :all-r2-not-executed (boolean (:all-r2-not-executed s true))
+              :rail-gated (or (:rail-gated s) {})
               :r2-food-phase (:r2-food-phase s)
               :r2-food-executed (boolean (:r2-food-executed s))
               :r2-energy-phase (:r2-energy-phase s)
@@ -276,8 +301,8 @@
               :cash-usd-micros 0
               :score-surface []
               :priority-stack PRIORITY-STACK
-              :note "priority path offline demo — L0 + disclosure + mitsuho/hikari gate refuse"}]
-     (pp/assert-no-public-scores! out)
+              :note "priority path offline — L0 + disclosure + all rails gated refuse + R2 refuse"}]
+     (pp/assert-no-public-scores! (dissoc out :rail-gated))
      out)))
 
 (defn displacement-l0-public-summary
@@ -783,6 +808,24 @@
                          (or (:hikari-r1-phase sp) "—") "/"
                          (boolean (:hikari-gated-admissible sp)) "/"
                          (boolean (:hikari-generate-executed sp)) "\n"))
+        (conj! lines (str "- (3) care/housing/tooling/compute/liquidity gated-admissible: "
+                         (boolean (:care-gated-admissible sp)) "/"
+                         (boolean (:housing-gated-admissible sp)) "/"
+                         (boolean (:tooling-gated-admissible sp)) "/"
+                         (boolean (:compute-gated-admissible sp)) "/"
+                         (boolean (:liquidity-gated-admissible sp)) "\n"))
+        (conj! lines (str "- (3) rails-gated-count/admissible/all-rails-gated-refused: "
+                         (or (:rails-gated-count sp) 0) "/"
+                         (or (:rails-gated-admissible-count sp) 0) "/"
+                         (boolean (:all-rails-gated-refused sp)) "\n"))
+        (conj! lines (str "- housing land-grant-executed / liquidity loan-executed/cash: "
+                         (boolean (:housing-land-grant-executed sp)) "/"
+                         (boolean (:liquidity-loan-executed sp)) "/"
+                         (or (:liquidity-cash-usd-micros sp) 0) "\n"))
+        (conj! lines (str "- R2 statuses/executed/all-not-executed: "
+                         (or (:r2-status-count sp) 0) "/"
+                         (or (:r2-executed-count sp) 0) "/"
+                         (boolean (:all-r2-not-executed sp true)) "\n"))
         (conj! lines (str "- R2 food/energy executed: "
                          (boolean (:r2-food-executed sp)) "/"
                          (boolean (:r2-energy-executed sp))
@@ -1025,17 +1068,22 @@
           " entitlements-may-flow=" (boolean (:entitlements-may-flow? sp))
           " held-stress-held=" (boolean (:held-stress-held? sp))
           " held-food-r1=" (or (:held-stress-food-phase sp) "—")
-          ". (3) mitsuho R1/gated/produce="
-          (or (:mitsuho-r1-phase sp) "—") "/"
+          ". (3) mitsuho/hikari gated="
           (boolean (:mitsuho-gated-admissible sp)) "/"
-          (boolean (:mitsuho-produce-executed sp))
-          " hikari R1/gated/generate="
-          (or (:hikari-r1-phase sp) "—") "/"
-          (boolean (:hikari-gated-admissible sp)) "/"
-          (boolean (:hikari-generate-executed sp))
-          " R2 food/energy executed="
-          (boolean (:r2-food-executed sp)) "/"
-          (boolean (:r2-energy-executed sp))
+          (boolean (:hikari-gated-admissible sp))
+          " care/housing/tooling/compute/liquidity gated="
+          (boolean (:care-gated-admissible sp)) "/"
+          (boolean (:housing-gated-admissible sp)) "/"
+          (boolean (:tooling-gated-admissible sp)) "/"
+          (boolean (:compute-gated-admissible sp)) "/"
+          (boolean (:liquidity-gated-admissible sp))
+          " rails-gated=" (or (:rails-gated-count sp) 0)
+          " all-rails-gated-refused=" (boolean (:all-rails-gated-refused sp))
+          " land-grant=" (boolean (:housing-land-grant-executed sp))
+          " R2 statuses/executed="
+          (or (:r2-status-count sp) 0) "/"
+          (or (:r2-executed-count sp) 0)
+          " all-r2-not-executed=" (boolean (:all-r2-not-executed sp true))
           " live=" (boolean (:live sp))
           " cash=" (or (:cash-usd-micros sp) 0)
           ".</p>")))

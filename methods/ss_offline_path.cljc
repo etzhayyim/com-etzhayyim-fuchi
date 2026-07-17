@@ -164,11 +164,21 @@
                           :imputed-usd-micros-yr liquidity-imputed-usd-micros-yr
                           :person person-open
                           :hold-machine hold}))
-        ;; priority (3): R1 → gated-live DESIGN status (default env refuse)
+        ;; priority (3): all in-kind rails R1 → gated-live DESIGN (default env refuse)
         food-gated (when (and food-pkg (not= :refused (:phase food-pkg)))
                      (food/gated-live-status food-pkg :hold-machine hold))
         energy-gated (when (and energy-pkg (not= :refused (:phase energy-pkg)))
                        (energy/gated-live-status energy-pkg :hold-machine hold))
+        care-gated (when (and care-pkg (not= :refused (:phase care-pkg)))
+                     (care/gated-live-status care-pkg :hold-machine hold))
+        housing-gated (when (and housing-pkg (not= :refused (:phase housing-pkg)))
+                        (housing/gated-live-status housing-pkg :hold-machine hold))
+        tooling-gated (when (and tooling-pkg (not= :refused (:phase tooling-pkg)))
+                        (tooling/gated-live-status tooling-pkg :hold-machine hold))
+        compute-gated (when (and compute-pkg (not= :refused (:phase compute-pkg)))
+                        (compute/gated-live-status compute-pkg :hold-machine hold))
+        liquidity-gated (when (and liquidity-pkg (not= :refused (:phase liquidity-pkg)))
+                          (liquidity/gated-live-status liquidity-pkg :hold-machine hold))
         food-plan (when (and food-pkg (not= :refused (:phase food-pkg)))
                     (mprod/plan-from-r1 food-pkg))
         energy-plan (when (and energy-pkg (not= :refused (:phase energy-pkg)))
@@ -193,9 +203,55 @@
                       (mrecv/receive-from-r1-package compute-pkg))
         liquidity-ack (when (and liquidity-pkg (not= :refused (:phase liquidity-pkg)))
                         (wrecv/receive-from-r1-package liquidity-pkg))
-        ;; R2 execute membrane (default refuse; executed=false)
+        ;; R2 execute membrane (default refuse; executed=false) — all legs present offline
         food-r2 (when food-plan (r2/refuse-without-gate "produce" food-plan))
         energy-r2 (when energy-plan (r2/refuse-without-gate "generate" energy-plan))
+        care-r2 (when care-plan (r2/refuse-without-gate "produce" care-plan))
+        housing-r2 (when housing-plan (r2/refuse-without-gate "grant" housing-plan))
+        tooling-r2 (when tooling-plan (r2/refuse-without-gate "produce" tooling-plan))
+        compute-r2 (when compute-plan (r2/refuse-without-gate "quota" compute-plan))
+        liquidity-r2 (when liquidity-pkg
+                       ;; liquidity residual: R2 loan refuse without dry produce plan map
+                       (r2/refuse-without-gate
+                        "loan"
+                        (assoc liquidity-pkg
+                               :cash-usd-micros 0
+                               :published false
+                               :server-held-key false)))
+        gated-statuses [food-gated energy-gated care-gated housing-gated
+                        tooling-gated compute-gated liquidity-gated]
+        r2-statuses [food-r2 energy-r2 care-r2 housing-r2 tooling-r2 compute-r2 liquidity-r2]
+        gated-n (count (remove nil? gated-statuses))
+        gated-admissible-n (count (filter #(true? (:admissible %)) gated-statuses))
+        r2-n (count (remove nil? r2-statuses))
+        r2-executed-n (count (filter #(true? (:executed %)) r2-statuses))
+        rail-gated
+        (cond-> {}
+          food-gated (assoc :food {:r1 (when food-pkg (name (:phase food-pkg)))
+                                   :gated-admissible (boolean (:admissible food-gated))
+                                   :executed false})
+          energy-gated (assoc :energy {:r1 (when energy-pkg (name (:phase energy-pkg)))
+                                       :gated-admissible (boolean (:admissible energy-gated))
+                                       :executed false})
+          care-gated (assoc :care {:r1 (when care-pkg (name (:phase care-pkg)))
+                                   :gated-admissible (boolean (:admissible care-gated))
+                                   :executed false})
+          housing-gated (assoc :housing {:r1 (when housing-pkg (name (:phase housing-pkg)))
+                                         :gated-admissible (boolean (:admissible housing-gated))
+                                         :land-grant-executed false
+                                         :executed false})
+          tooling-gated (assoc :tooling {:r1 (when tooling-pkg (name (:phase tooling-pkg)))
+                                         :gated-admissible (boolean (:admissible tooling-gated))
+                                         :executed false})
+          compute-gated (assoc :compute {:r1 (when compute-pkg (name (:phase compute-pkg)))
+                                         :gated-admissible (boolean (:admissible compute-gated))
+                                         :executed false})
+          liquidity-gated (assoc :liquidity {:r1 (when liquidity-pkg (name (:phase liquidity-pkg)))
+                                             :gated-admissible (boolean (:admissible liquidity-gated))
+                                             :loan-executed false
+                                             :member-principal true
+                                             :cash-usd-micros 0
+                                             :executed false}))
         summary {:l0-stage (or (get-in enrolled [:public-person :stage])
                                (get-in enrolled [:entitlement :stage])
                                (get-in enrolled [:vow :stage])
@@ -213,6 +269,28 @@
                  :hikari-r1-phase (when energy-pkg (name (:phase energy-pkg)))
                  :hikari-gated-admissible (boolean (:admissible energy-gated))
                  :hikari-generate-executed false
+                 :care-r1-phase (when care-pkg (name (:phase care-pkg)))
+                 :care-gated-admissible (boolean (:admissible care-gated))
+                 :care-delivery-executed false
+                 :housing-r1-phase (when housing-pkg (name (:phase housing-pkg)))
+                 :housing-gated-admissible (boolean (:admissible housing-gated))
+                 :housing-land-grant-executed false
+                 :tooling-r1-phase (when tooling-pkg (name (:phase tooling-pkg)))
+                 :tooling-gated-admissible (boolean (:admissible tooling-gated))
+                 :compute-r1-phase (when compute-pkg (name (:phase compute-pkg)))
+                 :compute-gated-admissible (boolean (:admissible compute-gated))
+                 :liquidity-r1-phase (when liquidity-pkg (name (:phase liquidity-pkg)))
+                 :liquidity-gated-admissible (boolean (:admissible liquidity-gated))
+                 :liquidity-loan-executed false
+                 :liquidity-member-principal (boolean (:member-principal liquidity-pkg))
+                 :liquidity-cash-usd-micros 0
+                 :rails-gated-count gated-n
+                 :rails-gated-admissible-count gated-admissible-n
+                 :all-rails-gated-refused (and (pos? gated-n) (zero? gated-admissible-n))
+                 :r2-status-count r2-n
+                 :r2-executed-count r2-executed-n
+                 :all-r2-not-executed (zero? r2-executed-n)
+                 :rail-gated rail-gated
                  :r2-food-phase (when food-r2 (name (:phase food-r2)))
                  :r2-food-executed (boolean (:executed food-r2))
                  :r2-energy-phase (when energy-r2 (name (:phase energy-r2)))
@@ -248,24 +326,33 @@
                                (hrecv/receive-from-r1-package energy-pkg))
              :energy-r2-execute-status energy-r2
              :care-package care-pkg
+             :care-gated-live-status care-gated
              :care-produce-plan care-plan
              :care-receive care-ack
+             :care-r2-execute-status care-r2
              :housing-package housing-pkg
+             :housing-gated-live-status housing-gated
              :housing-produce-plan housing-plan
              :housing-receive housing-ack
+             :housing-r2-execute-status housing-r2
              :tooling-package tooling-pkg
+             :tooling-gated-live-status tooling-gated
              :tooling-produce-plan tooling-plan
              :tooling-receive tooling-ack
+             :tooling-r2-execute-status tooling-r2
              :compute-package compute-pkg
+             :compute-gated-live-status compute-gated
              :compute-produce-plan compute-plan
              :compute-receive compute-ack
+             :compute-r2-execute-status compute-r2
              :liquidity-package liquidity-pkg
+             :liquidity-gated-live-status liquidity-gated
              :liquidity-receive liquidity-ack
+             :liquidity-r2-execute-status liquidity-r2
              :priority-path-summary summary}]
     (pp/assert-no-public-scores! (:public-person out))
-    (pp/assert-no-public-scores! summary)
-    (when food-gated (pp/assert-no-public-scores! food-gated))
-    (when energy-gated (pp/assert-no-public-scores! energy-gated))
+    (pp/assert-no-public-scores! (dissoc summary :rail-gated :continuity-action))
+    (doseq [g (remove nil? gated-statuses)] (pp/assert-no-public-scores! g))
     out))
 
 #?(:clj
