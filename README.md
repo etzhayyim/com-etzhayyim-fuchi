@@ -50,6 +50,18 @@ Live mint/pin/mail remain refuse-by-default (G10).
 
 Disclosure held → refuse. Live gate default refuse. cash≡0 / score empty.
 
+### energy-hikari + public surface report
+
+| Module | Role |
+|---|---|
+| [`methods/rail_hikari.cljc`](methods/rail_hikari.cljc) | energy-hikari R1 + gated-live plan |
+| [`methods/public_surface_report.cljc`](methods/public_surface_report.cljc) | facts-only MD/EDN public surface (`out/public-surface.*`) |
+
+```bash
+# optional report emit (after tests classpath)
+bb -cp . -e '(require (quote fuchi.methods.public-surface-report)) (fuchi.methods.public-surface-report/write-report!)'
+```
+
 ## Why it exists
 
 Real-world maintainers must be able to live; robotics/remote-control work cannot maintain itself.

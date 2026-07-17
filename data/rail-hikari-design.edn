@@ -1,0 +1,43 @@
+;; rail-hikari-design.edn — energy-hikari single-rail R1 → gated-live DESIGN
+;; Sibling of food-mitsuho (ADR-2607177000 / 2606052300 / 2605261100 hikari).
+;; Live produce remains default-refuse. Energy floor = multi-gen wellbecoming substrate.
+{:rail/id "energy-hikari"
+ :rail/kind "energy-hikari"
+ :rail/provider-did "did:web:etzhayyim.com:actor:hikari"
+ :rail/provider-kind "actor"
+ :rail/label "hikari 光 — renewable energy in-kind"
+ :rail/adr ["2606052300" "2607177000" "2605261000" "2605261100"]
+ :rail/priority-stack [:wellbecoming :mago-wellbecoming :ko-wellbecoming :present-adherent]
+ :rail/cash-usd-micros 0
+ :rail/published-default false
+ :rail/server-held-key false
+ :rail/score-surface []
+
+ :rail/phases
+ {:R1-dry
+  {:writes ["provisioningIntent published=false"]
+   :reads ["route energy line" "public-person?" "disclosure-gate"]
+   :live false}
+  :gated-live-design
+  {:requires ["FUCHI_ALLOW_LIVE_PROVISION=1"
+              "operator-did"
+              "Council Lv6+"
+              "member-signature"
+              "disclosure state ≠ held"
+              "public-person? or L0 floor"]
+   :still-does-not ["call hikari live generation API"
+                    "move cash"
+                    "publish true without gate"
+                    "personal scores"]
+   :live false}}
+
+ :rail/multi-gen-facts
+ ["kwh-floor-supports-household-care-and-learning"
+  "no-fossil-no-nuclear-constitutional"
+  "not-a-happiness-score"
+  "imputed-usd-is-accounting-fact-only"]
+
+ :rail/hold-coupling
+ {:on-disclosure-held :refuse-dispatch
+  :on-exit-suspended :refuse-dispatch
+  :on-open :allow-r1-and-gated-plan}}
