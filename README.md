@@ -60,7 +60,13 @@ Disclosure held → refuse. Live gate default refuse. cash≡0 / score empty.
 ```bash
 # optional report emit (after tests classpath)
 bb -cp . -e '(require (quote fuchi.methods.public-surface-report)) (fuchi.methods.public-surface-report/write-report!)'
+# → out/public-surface.{md,edn,html}  (facts only; displacement earmark table included)
 ```
+
+### Displacement surface (itonami/robotics coupling)
+
+[`methods/displacement_surface.cljc`](methods/displacement_surface.cljc) projects
+`:cohort/displacement` → public earmark facts (G2 funded cohort). No worker ranking scores.
 
 ## Why it exists
 
