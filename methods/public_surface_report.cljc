@@ -197,11 +197,18 @@
         pkgs (mapv
               (fn [p]
                 (let [stages (frequencies (map :stage (:subjects p)))
+                      c (:couple p)
                       row {:cohort-id (:cohort-id p)
                            :displacing-actor (:displacing-actor p)
                            :phase (name (:phase p))
                            :subject-count (count (:subjects p))
                            :stages stages
+                           :committed-usd-micros-yr (or (:committed-usd-micros-yr c) 0)
+                           :earmark-usd-micros-yr (or (:earmark-usd-micros-yr c)
+                                                      (get-in p [:earmark :earmark-usd-micros-yr])
+                                                      0)
+                           :headroom-usd-micros-yr (or (:headroom-usd-micros-yr c) 0)
+                           :g2-admissible (boolean (if (nil? c) true (boolean (:admissible c))))
                            :refusal-reason (:refusal-reason p)
                            :cash-usd-micros 0
                            :live false
@@ -214,6 +221,7 @@
      :refused-cohorts (or (:refused-cohorts batch) 0)
      :enrolled-subjects (or (:enrolled-subjects batch) 0)
      :stage-counts (or (:stage-counts batch) (frequencies (map :stage subjects)))
+     :committed-usd-micros-yr (or (:committed-usd-micros-yr batch) 0)
      :packages pkgs
      :cash-usd-micros 0
      :live false
@@ -329,12 +337,13 @@
                           " refused-cohorts=" (:refused-cohorts dl0)
                           " enrolled-subjects=" (:enrolled-subjects dl0)
                           " stages=" (pr-str (:stage-counts dl0)) "\n"))
-        (conj! lines "| actor | cohort | phase | subjects | stages |\n|---|---|---|---|---|\n")
+        (conj! lines "| actor | cohort | phase | subjects | committed | headroom |\n|---|---|---|---|---|---|\n")
         (doseq [p (:packages dl0)]
           (conj! lines
                  (str "| " (:displacing-actor p) " | " (:cohort-id p) " | "
                       (:phase p) " | " (:subject-count p) " | "
-                      (pr-str (:stages p)) " |\n")))))
+                      (:committed-usd-micros-yr p) " | "
+                      (:headroom-usd-micros-yr p) " |\n")))))
     (when-let [l0 (:report/l0-demo body)]
       (conj! lines "\n## L0 demo (offline)\n")
       (conj! lines (str "- did: " (last-seg (:did l0)) " stage=" (:stage l0)

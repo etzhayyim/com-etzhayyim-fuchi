@@ -18,6 +18,7 @@
             [fuchi.methods.liberation-ladder :as ladder]
             [fuchi.methods.stage-sustenance :as stage]
             [fuchi.methods.displacement-book :as dbook]
+            [fuchi.methods.displacement-couple :as dcouple]
             #?(:clj [fuchi.methods.edn :as edn])
             #?(:clj [clojure.java.io :as io])))
 
@@ -161,22 +162,25 @@
     out))
 
 (defn run-for-event
-  "One funded displacement event → slot plan + offline L0→L3 paths (or refuse package)."
+  "One funded displacement event → slot plan + offline L0→L3 + book + G2 re-gate.
+   If booked floors exceed earmark, phase becomes :refused-over-earmark (subjects retained
+   as dry plan for diagnosis, not admissible)."
   [event & {:keys [max-slots climb-steps] :or {max-slots 5 climb-steps 3}}]
   (let [ear (couple/earmark-from-surplus event)
-        gate (couple/coupling-gate event ear 0)]
-    (if-not (true? (get gate "admissible"))
+        gate0 (couple/coupling-gate event ear 0)]
+    (if-not (true? (get gate0 "admissible"))
       {:path "displacement-l0"
        :cohort-id (:cohort-id event)
        :displacing-actor (:displacing-actor event)
        :phase :refused
-       :refusal-reason (get gate "reason")
-       :g2-gate gate
+       :refusal-reason (get gate0 "reason")
+       :g2-gate gate0
        :live false
        :cash-usd-micros 0
        :score-surface []
        :priority-stack PRIORITY-STACK
-       :subjects []}
+       :subjects []
+       :couple nil}
       (let [slots-plan (plan-cohort-slots event :max-slots max-slots)
             subjects
             (mapv
@@ -186,20 +190,28 @@
                  :cohort-id (:cohort-id event)
                  :displacing-actor (:displacing-actor event)
                  :climb-steps climb-steps}))
-             (range (:slots slots-plan)))]
+             (range (:slots slots-plan)))
+            couple-ev (dcouple/commit-offline-plan event ear subjects)
+            ok? (true? (:admissible couple-ev))]
         {:path "displacement-l0"
          :cohort-id (:cohort-id event)
          :displacing-actor (:displacing-actor event)
-         :phase :offline-enrolled
-         :g2-gate gate
+         :phase (if ok? :offline-enrolled :refused-over-earmark)
+         :refusal-reason (when-not ok? (:reason couple-ev))
+         :g2-gate gate0
+         :g2-committed couple-ev
          :earmark ear
          :slots-plan slots-plan
-         :subjects subjects
+         :subjects (if ok? subjects [])
+         :subjects-dry (when-not ok? subjects)
+         :couple couple-ev
          :live false
          :cash-usd-micros 0
          :score-surface []
          :priority-stack PRIORITY-STACK
-         :note "offline L0→L3 multi-gen+vocation dry floors — no live mint/execute"}))))
+         :note (if ok?
+                 "offline L0→L3 floors booked within earmark — no live mint/execute/commit"
+                 "booked floors exceed earmark — G2 refuse over-commit")}))))
 
 (defn run-from-itonami-seed
   "All itonami seed events → displacement packages (admissible + refused)."
@@ -215,9 +227,12 @@
              :priority-stack PRIORITY-STACK
              :packages packages
              :enrolled-subjects (count (mapcat :subjects packages))
-             :refused-cohorts (count (filter #(= :refused (:phase %)) packages))
+             :refused-cohorts (count (filter #(#{:refused :refused-over-earmark} (:phase %)) packages))
              :admissible-cohorts (count (filter #(= :offline-enrolled (:phase %)) packages))
-             :stage-counts (frequencies (map :stage (mapcat :subjects packages)))}]
+             :stage-counts (frequencies (map :stage (mapcat :subjects packages)))
+             :committed-usd-micros-yr
+             (reduce + 0 (map #(or (get-in % [:couple :committed-usd-micros-yr]) 0)
+                              (filter #(= :offline-enrolled (:phase %)) packages)))}]
     (doseq [p packages
             s (:subjects p)]
       (pp/assert-no-public-scores! (:public-person s)))

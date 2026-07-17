@@ -19,6 +19,11 @@
     (is (false? (:live pkg)))
     (is (= 0 (:cash-usd-micros pkg)))
     (is (= [] (:score-surface pkg)))
+    (is (true? (get-in pkg [:couple :admissible])))
+    (is (= :committed-offline-plan (get-in pkg [:couple :phase])))
+    (is (false? (get-in pkg [:couple :commit-live-admissible])))
+    (is (pos? (get-in pkg [:couple :committed-usd-micros-yr])))
+    (is (pos? (get-in pkg [:couple :headroom-usd-micros-yr])))
     (let [s (first (:subjects pkg))]
       (is (true? (get-in s [:public-person :public-person?])))
       (is (= :dry-produce-plan (get-in s [:food-produce-plan :phase])))
