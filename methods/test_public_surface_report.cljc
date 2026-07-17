@@ -84,17 +84,28 @@
 #?(:clj
    (deftest test-public-md-html-liquidity-and-rails
      (let [md (rep/report-md seed :include-l0-demo true :include-itonami true)
-           html (rep/report-html seed :include-l0-demo true :include-itonami true)]
+           html (rep/report-html seed :include-l0-demo true :include-itonami true)
+           body (rep/report-edn seed :include-l0-demo true :include-itonami true)]
        (is (str/includes? md "liquidity-warifu"))
        (is (str/includes? md "member-principal"))
        (is (str/includes? md "All-disclosure-held stress"))
        (is (str/includes? md "housing-commons"))
        (is (str/includes? md "care-iyashi"))
+       (is (str/includes? md "disc-open"))
+       (is (str/includes? md "disc-held"))
+       (is (str/includes? md "Pages deploy"))
+       (is (str/includes? md "default refuse"))
        (is (str/includes? html "liquidity-warifu"))
        (is (str/includes? html "member-principal"))
        (is (str/includes? html "All-disclosure-held stress"))
        (is (str/includes? html "land-grant-executed"))
        (is (str/includes? html "cash-usd-micros"))
+       (is (str/includes? html "disc-open"))
+       (is (str/includes? html "Pages deploy"))
+       (is (= :refused (get-in body [:report/pages-deploy-status :phase])))
+       (is (false? (get-in body [:report/pages-deploy-status :deployed])))
+       (is (false? (get-in body [:report/pages-deploy-status :live])))
+       (is (= 0 (get-in body [:report/pages-deploy-status :cash-usd-micros])))
        (is (not (str/includes? md "| rank |")))
        (is (not (re-find #"(?i)percentile" html))))))
 

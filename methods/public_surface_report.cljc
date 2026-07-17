@@ -31,6 +31,23 @@
 
 (def PRIORITY-STACK pp/PRIORITY-STACK)
 
+(defn- pages-deploy-refuse-status
+  "Default Pages deploy membrane status (no require of pages-deploy — cycle-safe).
+   Does not deploy. cash≡0. live=false."
+  []
+  (let [out {:phase :refused
+             :deploy-target "cloudflare-pages"
+             :admissible false
+             :refusal-reason "missing operator process flag 'FUCHI_ALLOW_PAGES_DEPLOY'"
+             :deployed false
+             :live false
+             :cash-usd-micros 0
+             :score-surface []
+             :priority-stack PRIORITY-STACK
+             :note "Pages deploy default refuse — static package only"}]
+    (pp/assert-no-public-scores! out)
+    out))
+
 (defn- last-seg [s]
   (last (str/split (str s) #":")))
 
@@ -351,6 +368,7 @@
               :report/itonami-displacement (or itonami-rows [])
               :report/displacement-l0 (or dl0-sum {})
               :report/displacement-scorecard (or scard {})
+              :report/pages-deploy-status (pages-deploy-refuse-status)
               :report/l0-demo (when include-l0-demo
                                 (l0-demo-fact "did:web:etzhayyim.com:member:lot"))}]
     (doseq [f facts] (pp/assert-no-public-scores! f))
@@ -427,11 +445,15 @@
                           " refused-cohorts=" (:refused-cohorts dl0)
                           " enrolled-subjects=" (:enrolled-subjects dl0)
                           " stages=" (pr-str (:stage-counts dl0)) "\n"))
-        (conj! lines "| actor | cohort | phase | subjects | committed | headroom |\n|---|---|---|---|---|---|\n")
+        (conj! lines (str "disclosure-open=" (or (:disclosure-open dl0) 0)
+                          " disclosure-held=" (or (:disclosure-held dl0) 0) "\n"))
+        (conj! lines "| actor | cohort | phase | subjects | disc-open | disc-held | committed | headroom |\n|---|---|---|---|---|---|---|---|\n")
         (doseq [p (:packages dl0)]
           (conj! lines
                  (str "| " (:displacing-actor p) " | " (:cohort-id p) " | "
                       (:phase p) " | " (:subject-count p) " | "
+                      (or (:disclosure-open p) 0) " | "
+                      (or (:disclosure-held p) 0) " | "
                       (:committed-usd-micros-yr p) " | "
                       (:headroom-usd-micros-yr p) " |\n"))))
     (when-let [sc (:report/displacement-scorecard body)]
@@ -489,6 +511,13 @@
           (conj! lines (str "- all-held gov flowable: " (:gov-flowable st) "\n"))
           (conj! lines (str "- land-grant-executed: " (:land-grant-executed st) "\n"))
           (conj! lines (str "- live: " (:live st) " cash: " (:cash-usd-micros st) "\n"))))))
+    (when-let [dep (:report/pages-deploy-status body)]
+      (conj! lines "\n## Pages deploy (offline membrane)\n")
+      (conj! lines (str "- phase: " (:phase dep) "\n"))
+      (conj! lines (str "- admissible: " (:admissible dep) "\n"))
+      (conj! lines (str "- deployed: " (:deployed dep) "\n"))
+      (conj! lines (str "- live: " (:live dep) " cash: " (:cash-usd-micros dep) "\n"))
+      (conj! lines (str "- note: " (or (:note dep) "default refuse") "\n")))
     (when-let [l0 (:report/l0-demo body)]
       (conj! lines "\n## L0 demo (offline)\n")
       (conj! lines (str "- did: " (last-seg (:did l0)) " stage=" (:stage l0)
@@ -565,14 +594,19 @@
         "<p class=\"note\">Funded cohorts open L0 climb to L4 multi-gen (care/housing first); unfunded refuse. "
         "enrolled-subjects=" (get-in body [:report/displacement-l0 :enrolled-subjects])
         " refused-cohorts=" (get-in body [:report/displacement-l0 :refused-cohorts])
-        " stages=" (pr-str (get-in body [:report/displacement-l0 :stage-counts])) ".</p>"
+        " stages=" (pr-str (get-in body [:report/displacement-l0 :stage-counts]))
+        " disclosure-open=" (or (get-in body [:report/displacement-l0 :disclosure-open]) 0)
+        " disclosure-held=" (or (get-in body [:report/displacement-l0 :disclosure-held]) 0)
+        ".</p>"
         "<table><thead>"
-        (rows "th" ["actor" "cohort" "phase" "subjects" "committed" "headroom"])
+        (rows "th" ["actor" "cohort" "phase" "subjects" "disc-open" "disc-held" "committed" "headroom"])
         "</thead><tbody>"
         (apply str
                (for [p (get-in body [:report/displacement-l0 :packages])]
                  (rows "td" [(:displacing-actor p) (:cohort-id p)
                              (:phase p) (:subject-count p)
+                             (or (:disclosure-open p) 0)
+                             (or (:disclosure-held p) 0)
                              (:committed-usd-micros-yr p)
                              (:headroom-usd-micros-yr p)])))
         "</tbody></table>"))
@@ -637,10 +671,19 @@
              " land-grant-executed=" (:land-grant-executed st)
              " live=" (:live st)
              " cash=" (:cash-usd-micros st) ".</p>")))))
+     (when-let [dep (:report/pages-deploy-status body)]
+       (str
+        "<h2>Pages deploy (offline membrane)</h2>"
+        "<p class=\"note\">phase=" (:phase dep)
+        " admissible=" (:admissible dep)
+        " deployed=" (:deployed dep)
+        " live=" (:live dep)
+        " cash=" (:cash-usd-micros dep)
+        ". " (or (:note dep) "default refuse — static package only")
+        "</p>"))
      "<p class=\"note\">G2: no live displacement without a funded cohort. "
      "Recipient scores are unrepresentable. Live rails default refuse. cash≡0.</p>"
-     "</body></html>")))
-#?(:clj
+     "</body></html>")))#?(:clj
    (defn write-report!
      "Write out/public-surface.{md,edn,html} from seed path."
      ([]
