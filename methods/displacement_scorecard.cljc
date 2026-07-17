@@ -390,14 +390,19 @@
       (conj! lines (str "- live: " (:live st) " cash: " (:cash-usd-micros st) "\n")))
     (conj! lines "\n## Cohorts\n\n")
     (conj! lines
-           "| actor | cohort | phase | n | L4-flow | L4-post | headroom | ten-flow | tenure | tenure-n |\n")
-    (conj! lines "|---|---|---|---|---|---|---|---|---|---|\n")
+           (str "| actor | cohort | phase | n | L4-flow | L4-post | ten-flow | ten-post "
+                "| land-grant | headroom | tenure | tenure-n |\n"))
+    (conj! lines "|---|---|---|---|---|---|---|---|---|---|---|---|\n")
     (doseq [c (:scorecard/cohorts body)]
       (conj! lines
              (str "| " (:displacing-actor c) " | " (:cohort-id c) " | "
                   (:phase c) " | " (:subjects c) " | " (:committed c) " | "
-                  (or (:committed-post-ratify c) 0) " | "
-                  (:headroom c) " | " (or (:tenure-gov-flowable c) 0) " | "
+                  (or (:committed-post-ratify c)
+                      (:gov-post-ratify c) 0) " | "
+                  (or (:tenure-gov-flowable c) 0) " | "
+                  (or (:tenure-gov-post-ratify c) 0) " | "
+                  0 " | "
+                  (:headroom c) " | "
                   (or (:tenure-phase c) "—") " | "
                   (:tenure-subjects c) " |\n")))
     (conj! lines "\n## Live legs (default refuse)\n\n")

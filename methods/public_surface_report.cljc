@@ -28,6 +28,7 @@
             [fuchi.methods.displacement-tenure :as ten]
             [fuchi.methods.displacement-gov :as dgov]
             [fuchi.methods.displacement-scorecard :as dsc]
+            #?(:clj [fuchi.methods.pipeline-audit-ledger :as audit])
             #?(:clj [fuchi.methods.edn :as edn])
             #?(:clj [clojure.java.io :as io])))
 
@@ -391,8 +392,8 @@
 (defn report-edn
   "Full facts-only report structure."
   [seed & {:keys [include-l0-demo include-itonami include-displacement-l0
-                  include-scorecard]
-           :or {include-displacement-l0 true include-scorecard true}}]
+                  include-scorecard include-audit]
+           :or {include-displacement-l0 true include-scorecard true include-audit true}}]
   (let [facts (seed-public-facts seed)
         rails (inkind-rail-packages seed)
         drows (disp/public-displacement-facts seed)
@@ -428,6 +429,15 @@
                      (if dl0-batch (dsc/build dl0-batch) (dsc/build))
                      (catch Exception _ nil))
                    :cljs nil))
+        audit-sum (when include-audit
+                    #?(:clj
+                       (try (audit/summary)
+                            (catch Exception _ {:runs 0 :live false :cash-usd-micros 0
+                                                :score-surface []
+                                                :priority-stack PRIORITY-STACK
+                                                :any-land-grant-executed? false
+                                                :all-runs-live-refused true}))
+                       :cljs nil))
         body {:report/id "fuchi.public-surface"
               :report/adr ["2607177000" "2606032130"]
               :report/priority-stack PRIORITY-STACK
@@ -441,6 +451,7 @@
               :report/itonami-displacement (or itonami-rows [])
               :report/displacement-l0 (or dl0-sum {})
               :report/displacement-scorecard (or scard {})
+              :report/pipeline-audit (or audit-sum {})
               :report/pages-deploy-status (pages-deploy-refuse-status)
               :report/l0-demo (when include-l0-demo
                                 (l0-demo-fact "did:web:etzhayyim.com:member:lot"))}]
@@ -627,6 +638,26 @@
       (conj! lines (str "- deployed: " (:deployed dep) "\n"))
       (conj! lines (str "- live: " (:live dep) " cash: " (:cash-usd-micros dep) "\n"))
       (conj! lines (str "- note: " (or (:note dep) "default refuse") "\n")))
+    (when-let [au (:report/pipeline-audit body)]
+      (when (or (pos? (or (:runs au) 0)) (map? (:last-run au)))
+        (conj! lines "\n## Pipeline audit summary (offline, append-only)\n")
+        (conj! lines (str "- runs: " (or (:runs au) 0) "\n"))
+        (conj! lines (str "- all-runs-live-refused: " (boolean (:all-runs-live-refused au)) "\n"))
+        (conj! lines (str "- any-land-grant-executed: " (boolean (:any-land-grant-executed? au)) "\n"))
+        (conj! lines (str "- last-run gov-flowable / gov-post-ratify: "
+                         (or (:last-run-gov-flowable-committed-usd-micros au) 0) "/"
+                         (or (:last-run-gov-post-ratify-committed-usd-micros au) 0) "\n"))
+        (conj! lines (str "- last-run tenure-gov-flowable / tenure-gov-post-ratify: "
+                         (or (:last-run-tenure-gov-flowable-committed-usd-micros au) 0) "/"
+                         (or (:last-run-tenure-gov-post-ratify-committed-usd-micros au) 0) "\n"))
+        (conj! lines (str "- last-run land-grant-executed: "
+                         (or (:last-run-housing-land-grant-executed au) 0)
+                         " (post-ratify plan keeps land-grant=false)\n"))
+        (conj! lines (str "- cumulative liquidity member-principal / cash-usd-micros: "
+                         (or (:total-liquidity-member-principal au) 0) "/"
+                         (or (:total-liquidity-cash-usd-micros au) 0) "\n"))
+        (conj! lines (str "- live: " (boolean (:live au))
+                         " cash: " (or (:cash-usd-micros au) 0) "\n"))))
     (when-let [l0 (:report/l0-demo body)]
       (conj! lines "\n## L0 demo (offline)\n")
       (conj! lines (str "- did: " (last-seg (:did l0)) " stage=" (:stage l0)
@@ -813,6 +844,28 @@
         " cash=" (:cash-usd-micros dep)
         ". " (or (:note dep) "default refuse — static package only")
         "</p>"))
+     (when-let [au (:report/pipeline-audit body)]
+       (when (or (pos? (or (:runs au) 0)) (map? (:last-run au)))
+         (str
+          "<h2>Pipeline audit summary (offline)</h2>"
+          "<p class=\"note\">runs=" (or (:runs au) 0)
+          " all-runs-live-refused=" (boolean (:all-runs-live-refused au))
+          " any-land-grant-executed=" (boolean (:any-land-grant-executed? au))
+          " last-run gov-flowable/gov-post-ratify="
+          (or (:last-run-gov-flowable-committed-usd-micros au) 0) "/"
+          (or (:last-run-gov-post-ratify-committed-usd-micros au) 0)
+          " tenure-gov-flowable/tenure-gov-post-ratify="
+          (or (:last-run-tenure-gov-flowable-committed-usd-micros au) 0) "/"
+          (or (:last-run-tenure-gov-post-ratify-committed-usd-micros au) 0)
+          " land-grant-executed="
+          (or (:last-run-housing-land-grant-executed au) 0)
+          " (post-ratify keeps land-grant=false)."
+          " liquidity member-principal/cash="
+          (or (:total-liquidity-member-principal au) 0) "/"
+          (or (:total-liquidity-cash-usd-micros au) 0)
+          " live=" (boolean (:live au))
+          " cash=" (or (:cash-usd-micros au) 0)
+          ".</p>")))
      "<p class=\"note\">G2: no live displacement without a funded cohort. "
      "Recipient scores are unrepresentable. Live rails default refuse. cash≡0.</p>"
      "</body></html>")))

@@ -51,12 +51,12 @@ Priority: wellbecoming > mago(孫) > ko(子) > present. cash≡0. live=false. No
 
 ## Cohorts
 
-| actor | cohort | phase | n | L4-flow | L4-post | headroom | ten-flow | tenure | tenure-n |
-|---|---|---|---|---|---|---|---|---|---|
-| sanae | cohort-sanae-2026 | offline-enrolled | 2 | 9400000000 | 21400000000 | 44600000000 | 9400000000 | tenure-offline | 2 |
-| hataori | cohort-hataori-2026 | refused | 0 | 0 | 0 | 0 | 0 | — | 0 |
-| itonami-robotics | cohort-robotics-remote-2026 | offline-enrolled | 2 | 9400000000 | 21400000000 | 98600000000 | 9400000000 | tenure-offline | 2 |
-| warehouse-amr | cohort-warehouse-amr-2026 | refused | 0 | 0 | 0 | 0 | 0 | — | 0 |
+| actor | cohort | phase | n | L4-flow | L4-post | ten-flow | ten-post | land-grant | headroom | tenure | tenure-n |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| sanae | cohort-sanae-2026 | offline-enrolled | 2 | 9400000000 | 21400000000 | 9400000000 | 21400000000 | 0 | 44600000000 | tenure-offline | 2 |
+| hataori | cohort-hataori-2026 | refused | 0 | 0 | 0 | 0 | 0 | 0 | 0 | — | 0 |
+| itonami-robotics | cohort-robotics-remote-2026 | offline-enrolled | 2 | 9400000000 | 21400000000 | 9400000000 | 21400000000 | 0 | 98600000000 | tenure-offline | 2 |
+| warehouse-amr | cohort-warehouse-amr-2026 | refused | 0 | 0 | 0 | 0 | 0 | 0 | 0 | — | 0 |
 
 ## Live legs (default refuse)
 

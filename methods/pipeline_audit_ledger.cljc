@@ -125,13 +125,49 @@
               (remove str/blank?)
               (mapv read-string))))))
 
+(defn- last-run-snapshot
+  "Facts-only projection of the most recent audit event (no scores)."
+  [ev]
+  (when ev
+    (let [out {:run-id (:audit/id ev)
+               :enrolled-subjects (or (:audit/enrolled-subjects ev) 0)
+               :tenure-subjects (or (:audit/tenure-subjects ev) 0)
+               :gov-flowable-committed-usd-micros
+               (or (:audit/gov-flowable-committed-usd-micros ev) 0)
+               :gov-post-ratify-committed-usd-micros
+               (or (:audit/gov-post-ratify-committed-usd-micros ev) 0)
+               :tenure-gov-flowable-committed-usd-micros
+               (or (:audit/tenure-gov-flowable-committed-usd-micros ev) 0)
+               :tenure-gov-post-ratify-committed-usd-micros
+               (or (:audit/tenure-gov-post-ratify-committed-usd-micros ev) 0)
+               :housing-land-grant-executed
+               (or (:audit/housing-land-grant-executed ev) 0)
+               :housing-council-held (or (:audit/housing-council-held ev) 0)
+               :liquidity-member-principal
+               (or (:audit/liquidity-member-principal ev) 0)
+               :liquidity-cash-usd-micros
+               (or (:audit/liquidity-cash-usd-micros ev) 0)
+               :all-live-refused (boolean (:audit/all-live-refused ev))
+               :l4-disclosure-open (or (:audit/l4-disclosure-open ev) 0)
+               :l4-disclosure-held (or (:audit/l4-disclosure-held ev) 0)
+               :live false
+               :cash-usd-micros 0
+               :score-surface []
+               :priority-stack PRIORITY-STACK}]
+      (pp/assert-no-public-scores! out)
+      out)))
+
 #?(:clj
    (defn summary
-     "Aggregate facts across ledger (no scores)."
+     "Aggregate facts across ledger (no scores).
+      Includes last-run post-ratify/flowable snapshot (USD micros are not summed across runs —
+      each run is a full offline recompute, so last-run is the authoritative latest package)."
      ([]
       (summary (read-all)))
      ([events]
-      (let [out {:runs (count events)
+      (let [last-ev (last events)
+            empty? (empty? events)
+            out {:runs (count events)
                  :total-enrolled (reduce + 0 (map :audit/enrolled-subjects events))
                  :total-tenure (reduce + 0 (map :audit/tenure-subjects events))
                  :total-l4-disclosure-open
@@ -150,15 +186,38 @@
                  (reduce + 0 (map #(or (:audit/care-gated-refused %) 0) events))
                  :total-housing-gated-refused
                  (reduce + 0 (map #(or (:audit/housing-gated-refused %) 0) events))
+                 :total-tooling-gated-refused
+                 (reduce + 0 (map #(or (:audit/tooling-gated-refused %) 0) events))
+                 :total-compute-gated-refused
+                 (reduce + 0 (map #(or (:audit/compute-gated-refused %) 0) events))
+                 :total-liquidity-gated-refused
+                 (reduce + 0 (map #(or (:audit/liquidity-gated-refused %) 0) events))
+                 :total-liquidity-member-principal
+                 (reduce + 0 (map #(or (:audit/liquidity-member-principal %) 0) events))
+                 :total-liquidity-cash-usd-micros
+                 (reduce + 0 (map #(or (:audit/liquidity-cash-usd-micros %) 0) events))
                  :total-housing-land-grant-executed
                  (reduce + 0 (map #(or (:audit/housing-land-grant-executed %) 0) events))
-                 :all-runs-live-refused (every? :audit/all-live-refused events)
+                 :all-runs-live-refused (if empty? true (every? :audit/all-live-refused events))
                  :any-land-grant-executed?
                  (boolean (some #(pos? (or (:audit/housing-land-grant-executed %) 0)) events))
+                 ;; last offline package facts (post-ratify vs flowable; land-grant stays 0)
+                 :last-run (last-run-snapshot last-ev)
+                 :last-run-gov-flowable-committed-usd-micros
+                 (or (:audit/gov-flowable-committed-usd-micros last-ev) 0)
+                 :last-run-gov-post-ratify-committed-usd-micros
+                 (or (:audit/gov-post-ratify-committed-usd-micros last-ev) 0)
+                 :last-run-tenure-gov-flowable-committed-usd-micros
+                 (or (:audit/tenure-gov-flowable-committed-usd-micros last-ev) 0)
+                 :last-run-tenure-gov-post-ratify-committed-usd-micros
+                 (or (:audit/tenure-gov-post-ratify-committed-usd-micros last-ev) 0)
+                 :last-run-housing-land-grant-executed
+                 (or (:audit/housing-land-grant-executed last-ev) 0)
                  :cash-usd-micros 0
                  :cash-to-workers-usd-micros 0
                  :live false
                  :score-surface []
                  :priority-stack PRIORITY-STACK}]
-        (pp/assert-no-public-scores! out)
+        (pp/assert-no-public-scores! (dissoc out :last-run))
+        (when-let [lr (:last-run out)] (pp/assert-no-public-scores! lr))
         out))))
