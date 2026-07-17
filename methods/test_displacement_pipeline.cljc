@@ -20,4 +20,7 @@
      (let [out (pipe/write-all! :max-slots 1)]
        (is (.exists (io/file (get-in out [:paths :md]))))
        (is (false? (:deployed out)))
-       (is (false? (:live out))))))
+       (is (false? (:live out)))
+       (is (map? (:audit out)))
+       (is (.exists (io/file (get-in out [:audit :path]))))
+       (is (true? (get-in out [:audit :event :audit/all-live-refused]))))))

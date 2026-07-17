@@ -1,0 +1,100 @@
+(ns fuchi.methods.pipeline-audit-ledger
+  "pipeline_audit_ledger.cljc — append-only offline audit of displacement SS pipeline runs.
+
+  Each line is one EDN map (facts only). No personal scores. cash≡0. live=false.
+  Does not execute produce/book/couple live. Portable .cljc; I/O at #?(:clj) edge."
+  (:require [fuchi.methods.public-person :as pp]
+            #?(:clj [clojure.java.io :as io])
+            #?(:clj [clojure.string :as str])))
+
+(def PRIORITY-STACK pp/PRIORITY-STACK)
+
+(defn event-from-pipeline
+  "Project a pipeline run! result into one audit event (no nested batch bodies)."
+  [pipeline-result & {:keys [run-id note]}]
+  (let [sc (:scorecard pipeline-result)
+        ev {:audit/id (or run-id (str "run-" (hash (str (System/currentTimeMillis)
+                                                          (:scorecard/committed-usd-micros-yr sc)))))
+            :audit/pipeline (or (:pipeline pipeline-result) "displacement-ss-offline")
+            :audit/ts-ms #?(:clj (System/currentTimeMillis) :cljs 0)
+            :audit/admissible-cohorts (or (:admissible-cohorts pipeline-result)
+                                          (:scorecard/admissible-cohorts sc) 0)
+            :audit/refused-cohorts (or (:scorecard/refused-cohorts sc) 0)
+            :audit/enrolled-subjects (or (:scorecard/enrolled-subjects sc) 0)
+            :audit/tenure-subjects (or (:tenure-subjects pipeline-result)
+                                       (:scorecard/tenure-subjects sc) 0)
+            :audit/tenure-stages (or (:scorecard/tenure-stage-counts sc) {})
+            :audit/committed-usd-micros-yr (or (:scorecard/committed-usd-micros-yr sc) 0)
+            :audit/headroom-usd-micros-yr (or (:scorecard/headroom-usd-micros-yr sc) 0)
+            :audit/booked-entries (or (:scorecard/booked-entries sc) 0)
+            :audit/tenure-booked-entries (or (:scorecard/tenure-booked-entries sc) 0)
+            :audit/all-live-refused (boolean (or (:all-live-refused pipeline-result)
+                                                 (:scorecard/all-live-refused sc)))
+            :audit/cash-usd-micros 0
+            :audit/cash-to-workers-usd-micros 0
+            :audit/live false
+            :audit/score-surface []
+            :audit/priority-stack PRIORITY-STACK
+            :audit/note (or note "offline pipeline audit — no live side-effects")}]
+    (pp/assert-no-public-scores! ev)
+    ev))
+
+#?(:clj
+   (defn ledger-path
+     ([]
+      (let [actor (or (System/getenv "FUCHI_ACTOR_DIR")
+                      (-> *file* io/file .getParentFile .getParentFile .getCanonicalPath))]
+        (io/file actor "out" "pipeline-audit-ledger.ednl")))
+     ([actor-dir]
+      (io/file actor-dir "out" "pipeline-audit-ledger.ednl"))))
+
+#?(:clj
+   (defn append!
+     "Append one event line to out/pipeline-audit-ledger.ednl. Returns path + event."
+     [event]
+     (let [f (ledger-path)
+           _ (.mkdirs (.getParentFile f))
+           line (str (pr-str event) "\n")]
+       (spit f line :append true)
+       {:path (str f)
+        :event event
+        :live false
+        :cash-usd-micros 0
+        :score-surface []
+        :priority-stack PRIORITY-STACK
+        :deployed false})))
+
+#?(:clj
+   (defn append-from-pipeline!
+     "Append audit line from a pipeline run result."
+     [pipeline-result & opts]
+     (append! (apply event-from-pipeline pipeline-result opts))))
+
+#?(:clj
+   (defn read-all
+     "Read all audit events (vector). Empty if missing."
+     []
+     (let [f (ledger-path)]
+       (if-not (.exists f)
+         []
+         (->> (str/split-lines (slurp f))
+              (remove str/blank?)
+              (mapv read-string))))))
+
+#?(:clj
+   (defn summary
+     "Aggregate facts across ledger (no scores)."
+     ([]
+      (summary (read-all)))
+     ([events]
+      (let [out {:runs (count events)
+                 :total-enrolled (reduce + 0 (map :audit/enrolled-subjects events))
+                 :total-tenure (reduce + 0 (map :audit/tenure-subjects events))
+                 :all-runs-live-refused (every? :audit/all-live-refused events)
+                 :cash-usd-micros 0
+                 :cash-to-workers-usd-micros 0
+                 :live false
+                 :score-surface []
+                 :priority-stack PRIORITY-STACK}]
+        (pp/assert-no-public-scores! out)
+        out))))

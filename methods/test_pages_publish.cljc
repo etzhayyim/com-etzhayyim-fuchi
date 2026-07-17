@@ -15,6 +15,8 @@
        (is (= [] (:score-surface paths)))
        (is (true? (:all-live-refused paths)))
        (is (.exists (io/file (:scorecard paths))))
+       (is (.exists (io/file (:audit-summary paths))))
+       (is (>= (:audit-runs paths) 0))
        (let [html (slurp (:index paths))]
          (is (str/includes? html "public surface"))
          (is (str/includes? html "wellbecoming"))

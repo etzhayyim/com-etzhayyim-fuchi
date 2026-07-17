@@ -7,6 +7,7 @@
   (:require [fuchi.methods.displacement-l0-path :as dl0]
             [fuchi.methods.displacement-tenure :as ten]
             [fuchi.methods.displacement-scorecard :as sc]
+            [fuchi.methods.pipeline-audit-ledger :as audit]
             [fuchi.methods.itonami-bridge :as itonami]
             [fuchi.methods.public-person :as pp]
             #?(:clj [fuchi.methods.edn :as edn])
@@ -45,14 +46,24 @@
 
 #?(:clj
    (defn write-all!
-     "Run pipeline + write scorecard under out/ (and optional public/ via pages)."
+     "Run pipeline + write scorecard + append audit ledger line under out/."
      [& opts]
-     (let [actor (or (System/getenv "FUCHI_ACTOR_DIR")
+     (let [result (apply run! opts)
+           ;; rebuild scorecard files from same batch to avoid double heavy seed run
+           scard (:scorecard result)
+           actor (or (System/getenv "FUCHI_ACTOR_DIR")
                      (-> *file* io/file .getParentFile .getParentFile .getCanonicalPath))
-           result (apply run! opts)
-           paths (sc/write-scorecard!)]
+           outd (io/file actor "out")
+           _ (.mkdirs outd)
+           _ (spit (io/file outd "displacement-scorecard.md") (sc/scorecard-md scard))
+           _ (spit (io/file outd "displacement-scorecard.edn") (pr-str scard))
+           paths {:md (str (io/file outd "displacement-scorecard.md"))
+                  :edn (str (io/file outd "displacement-scorecard.edn"))}
+           audit-out (audit/append-from-pipeline! result)]
        (assoc result
               :paths paths
+              :audit audit-out
               :live false
               :cash-usd-micros 0
+              :score-surface []
               :deployed false))))

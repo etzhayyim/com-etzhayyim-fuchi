@@ -1,0 +1,43 @@
+(ns fuchi.methods.test-pipeline-audit-ledger
+  (:require [clojure.test :refer [deftest is]]
+            [fuchi.methods.pipeline-audit-ledger :as audit]
+            [fuchi.methods.public-person :as pp]
+            #?(:clj [fuchi.methods.displacement-pipeline :as pipe])
+            #?(:clj [clojure.java.io :as io])))
+
+(deftest test-event-from-pipeline-shape
+  (let [fake {:pipeline "displacement-ss-offline"
+              :admissible-cohorts 1
+              :tenure-subjects 2
+              :all-live-refused true
+              :scorecard {:scorecard/admissible-cohorts 1
+                          :scorecard/refused-cohorts 1
+                          :scorecard/enrolled-subjects 2
+                          :scorecard/tenure-subjects 2
+                          :scorecard/tenure-stage-counts {"L6" 2}
+                          :scorecard/committed-usd-micros-yr 100
+                          :scorecard/headroom-usd-micros-yr 50
+                          :scorecard/booked-entries 12
+                          :scorecard/tenure-booked-entries 12
+                          :scorecard/all-live-refused true}}
+        ev (audit/event-from-pipeline fake :run-id "test-run-1")]
+    (is (= "test-run-1" (:audit/id ev)))
+    (is (true? (:audit/all-live-refused ev)))
+    (is (= 0 (:audit/cash-usd-micros ev)))
+    (is (= 0 (:audit/cash-to-workers-usd-micros ev)))
+    (is (false? (:audit/live ev)))
+    (is (= [] (:audit/score-surface ev)))
+    (pp/assert-no-public-scores! ev)))
+
+#?(:clj
+   (deftest test-append-and-summary
+     (let [result (pipe/run! :max-slots 1)
+           a (audit/append-from-pipeline! result :run-id (str "t-" (System/currentTimeMillis)))
+           events (audit/read-all)
+           sum (audit/summary)]
+       (is (.exists (io/file (:path a))))
+       (is (seq events))
+       (is (pos? (:runs sum)))
+       (is (true? (:all-runs-live-refused sum)))
+       (is (= 0 (:cash-usd-micros sum)))
+       (is (false? (:live sum))))))

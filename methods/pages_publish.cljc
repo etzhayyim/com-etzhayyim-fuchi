@@ -7,6 +7,7 @@
   (:require [fuchi.methods.public-surface-report :as rep]
             [fuchi.methods.public-person :as pp]
             [fuchi.methods.displacement-scorecard :as dsc]
+            [fuchi.methods.pipeline-audit-ledger :as audit]
             #?(:clj [fuchi.methods.edn :as edn])
             #?(:clj [clojure.java.io :as io])))
 
@@ -15,7 +16,7 @@
 #?(:clj
    (defn write-pages!
      "Generate Pages-ready static files under public/ (and out/ mirror).
-     Includes displacement L4 scorecard snapshot. Never deploys."
+     Includes L4+L6 scorecard + audit summary. Never deploys."
      ([]
       (let [actor (or (System/getenv "FUCHI_ACTOR_DIR")
                       (-> *file* io/file .getParentFile .getParentFile .getCanonicalPath))
@@ -25,6 +26,7 @@
             edn-body (rep/report-edn seed :include-l0-demo true :include-itonami true
                                      :include-scorecard true)
             scard (get edn-body :report/displacement-scorecard {})
+            audit-sum (try (audit/summary) (catch Exception _ {:runs 0}))
             pub (io/file actor "public")
             outd (io/file actor "out")]
         (.mkdirs pub)
@@ -39,6 +41,7 @@
           (spit (io/file pub "scorecard.edn") (pr-str scard))
           (spit (io/file outd "displacement-scorecard.md") (dsc/scorecard-md scard))
           (spit (io/file outd "displacement-scorecard.edn") (pr-str scard)))
+        (spit (io/file pub "audit-summary.edn") (pr-str audit-sum))
         (spit (io/file pub "_headers")
               (str "/*\n  X-Frame-Options: DENY\n  X-Content-Type-Options: nosniff\n"
                    "  Referrer-Policy: no-referrer\n"
@@ -48,16 +51,19 @@
               (str "# fuchi public surface (static)\n\n"
                    "Generated offline. cash≡0. live=false. No personal scores.\n"
                    "Priority: wellbecoming > mago > ko > present.\n"
-                   "Includes displacement L0→L4 multi-gen path + scorecard snapshot.\n"
+                   "Includes displacement L0→L4 multi-gen + L6 tenure scorecard.\n"
+                   "Audit summary: public/audit-summary.edn (pipeline runs append-only).\n"
                    "Deploy: point Cloudflare Pages (or any static host) at this directory.\n"
                    "Do not enable live disbursement from this package.\n"))
         (spit (io/file outd "public-surface.html") html)
         {:index (str (io/file pub "index.html"))
          :facts (str (io/file pub "facts.edn"))
          :scorecard (when (seq scard) (str (io/file pub "scorecard.md")))
+         :audit-summary (str (io/file pub "audit-summary.edn"))
          :live false
          :cash-usd-micros 0
          :score-surface []
          :priority-stack PRIORITY-STACK
          :all-live-refused (boolean (:scorecard/all-live-refused scard))
+         :audit-runs (or (:runs audit-sum) 0)
          :deployed false}))))
