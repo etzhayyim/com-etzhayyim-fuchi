@@ -45,6 +45,20 @@
             :audit/l4-disclosure-held (or (:scorecard/l4-disclosure-held sc) 0)
             :audit/tenure-disclosure-open (or (:scorecard/tenure-disclosure-open sc) 0)
             :audit/tenure-disclosure-held (or (:scorecard/tenure-disclosure-held sc) 0)
+            ;; multi-gen substrate R1→gated-live design facts (executed always 0 offline)
+            :audit/mitsuho-r1-dry (or (:scorecard/mitsuho-r1-dry sc) 0)
+            :audit/mitsuho-gated-refused (or (:scorecard/mitsuho-gated-refused sc) 0)
+            :audit/mitsuho-produce-executed (or (:scorecard/mitsuho-produce-executed sc) 0)
+            :audit/hikari-r1-dry (or (:scorecard/hikari-r1-dry sc) 0)
+            :audit/hikari-gated-refused (or (:scorecard/hikari-gated-refused sc) 0)
+            :audit/hikari-generate-executed (or (:scorecard/hikari-generate-executed sc) 0)
+            :audit/care-r1-dry (or (:scorecard/care-r1-dry sc) 0)
+            :audit/care-gated-refused (or (:scorecard/care-gated-refused sc) 0)
+            :audit/care-delivery-executed (or (:scorecard/care-delivery-executed sc) 0)
+            :audit/housing-r1-dry (or (:scorecard/housing-r1-dry sc) 0)
+            :audit/housing-gated-refused (or (:scorecard/housing-gated-refused sc) 0)
+            :audit/housing-land-grant-executed (or (:scorecard/housing-land-grant-executed sc) 0)
+            :audit/housing-council-held (or (:scorecard/housing-council-held sc) 0)
             :audit/cash-usd-micros 0
             :audit/cash-to-workers-usd-micros 0
             :audit/live false
@@ -113,7 +127,19 @@
                  (reduce + 0 (map #(or (:audit/tenure-disclosure-open %) 0) events))
                  :total-tenure-disclosure-held
                  (reduce + 0 (map #(or (:audit/tenure-disclosure-held %) 0) events))
+                 :total-mitsuho-gated-refused
+                 (reduce + 0 (map #(or (:audit/mitsuho-gated-refused %) 0) events))
+                 :total-hikari-gated-refused
+                 (reduce + 0 (map #(or (:audit/hikari-gated-refused %) 0) events))
+                 :total-care-gated-refused
+                 (reduce + 0 (map #(or (:audit/care-gated-refused %) 0) events))
+                 :total-housing-gated-refused
+                 (reduce + 0 (map #(or (:audit/housing-gated-refused %) 0) events))
+                 :total-housing-land-grant-executed
+                 (reduce + 0 (map #(or (:audit/housing-land-grant-executed %) 0) events))
                  :all-runs-live-refused (every? :audit/all-live-refused events)
+                 :any-land-grant-executed?
+                 (boolean (some #(pos? (or (:audit/housing-land-grant-executed %) 0)) events))
                  :cash-usd-micros 0
                  :cash-to-workers-usd-micros 0
                  :live false

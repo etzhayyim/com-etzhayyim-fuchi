@@ -130,6 +130,34 @@
     (is (false? (:live out)))
     (is (= 0 (:cash-usd-micros out)))))
 
+(deftest test-all-disclosure-held-freezes-flowable
+  "Priority #2 stress: all subjects disclosure-held → flowable 0; G2 may stay admissible."
+  (let [ev (couple/make-displacement-event
+            {:displacing-actor "itonami-robotics"
+             :cohort-id "c-all-held"
+             :displaced-count 10
+             :surplus-usd-micros-yr 120000000000
+             :funded true})
+        pkg0 (d/run-for-event ev :max-slots 2 :climb-steps 4)
+        pkg (ten/run-tenure-for-package pkg0 ev :target-stage "L6")
+        open (g/package-batch {:packages [pkg] :path "open"})
+        held (g/package-batch-all-disclosure-held open)
+        gp (first (:packages held))]
+    (is (= :all-held (:disclosure-stress held)))
+    (is (pos? (:disclosure-stress-held-subjects held)))
+    (is (zero? (:gov-flowable-committed-usd-micros held)))
+    (is (zero? (:tenure-gov-flowable-committed-usd-micros held)))
+    (is (zero? (:gov-flowable-after-all-held held)))
+    (is (pos? (:gov-flowable-committed-usd-micros open)))
+    (is (true? (get-in gp [:couple :admissible])))
+    (is (zero? (get-in gp [:couple :committed-usd-micros-yr])))
+    (is (every? :disclosure-held? (:subjects gp)))
+    (is (every? #(false? (:entitlements-may-flow? %)) (:subjects gp)))
+    (is (every? #(false? (get-in % [:housing-gated-live-status :land-grant-executed]))
+                (concat (:subjects gp) (:tenure-subjects gp))))
+    (is (false? (:live held)))
+    (is (= 0 (:cash-usd-micros held)))))
+
 (deftest test-mixed-disclosure-held-reduces-flowable
   "One open + one disclosure-held subject: flowable uses only open; G2 still admissible."
   (let [ev (couple/make-displacement-event

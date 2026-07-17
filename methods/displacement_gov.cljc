@@ -511,3 +511,76 @@
              :cash-usd-micros 0
              :score-surface []
              :priority-stack PRIORITY-STACK))))
+
+(defn force-disclosure-held
+  "Offline stress: mark subject disclosure held (entitlements freeze). No scores."
+  [subject & {:keys [reason]
+              :or {reason "stress-stale-disclosure-all-held"}}]
+  (let [hold0 (or (:disclosure-hold subject)
+                  {:state :open :entitlements-held? false :history []})
+        hold (assoc hold0
+                    :state :held
+                    :entitlements-held? true
+                    :hold-reason reason
+                    :public-person? (or (:public-person? hold0) true))
+        out (assoc subject
+                   :disclosure-hold hold
+                   :disclosure-state :held
+                   :disclosure-held? true
+                   :entitlements-may-flow? false
+                   :live false
+                   :cash-usd-micros 0
+                   :score-surface []
+                   :priority-stack PRIORITY-STACK)]
+    (pp/assert-no-public-scores!
+     (select-keys out [:disclosure-state :disclosure-held? :entitlements-may-flow?
+                       :live :cash-usd-micros :score-surface]))
+    out))
+
+(defn package-batch-all-disclosure-held
+  "Priority #2 stress: force every enrolled/tenure subject held, re-run G7 package.
+   Expectation: gov flowable → 0; land-grant false; live false; G2 may stay admissible
+   (funded earmark covers zero committed). cash≡0. no scores."
+  [batch & opts]
+  (let [pkgs
+        (mapv
+         (fn [p]
+           (if-not (= :offline-enrolled (:phase p))
+             (dissoc p :gov-packaged?)
+             (assoc p
+                    :subjects (mapv force-disclosure-held (or (:subjects p) []))
+                    :tenure-subjects (mapv force-disclosure-held
+                                           (or (:tenure-subjects p) []))
+                    :tenure-disclosure-open 0
+                    :tenure-disclosure-held (count (or (:tenure-subjects p) []))
+                    :gov-packaged? false)))
+         (or (:packages batch) []))
+        base (assoc batch
+                    :packages pkgs
+                    :gov-packaged? false
+                    :tenure-disclosure-open 0
+                    :tenure-disclosure-held
+                    (reduce + 0 (map #(count (or (:tenure-subjects %) [])) pkgs))
+                    :disclosure-stress :all-held
+                    :live false
+                    :cash-usd-micros 0
+                    :score-surface []
+                    :priority-stack PRIORITY-STACK)
+        out (apply package-batch base opts)
+        held-n (reduce + 0
+                       (map (fn [p]
+                              (+ (count (filter :disclosure-held? (:subjects p)))
+                                 (count (filter :disclosure-held? (:tenure-subjects p)))))
+                            (:packages out)))]
+    (assoc out
+           :disclosure-stress :all-held
+           :disclosure-stress-held-subjects held-n
+           :gov-flowable-after-all-held
+           (or (:gov-flowable-committed-usd-micros out) 0)
+           :tenure-gov-flowable-after-all-held
+           (or (:tenure-gov-flowable-committed-usd-micros out) 0)
+           :live false
+           :cash-usd-micros 0
+           :score-surface []
+           :priority-stack PRIORITY-STACK
+           :note "all-disclosure-held stress — flowable frozen; live refuse; land grant false")))
