@@ -1,0 +1,32 @@
+;; rail-housing-commons-design.edn — housing via commons-land (LANDS.md)
+;; Multi-gen priority: stable housing is wellbecoming substrate for 子・孫.
+;; Live land grant remains default-refuse (G10; often Council Lv7+).
+{:rail/id "housing-commons"
+ :rail/kind "housing-commons"
+ :rail/provider-did "commons-land"
+ :rail/provider-kind "commons"
+ :rail/label "commons-land — housing in-kind (LANDS.md)"
+ :rail/adr ["2606052300" "2607177000" "2605261000"]
+ :rail/priority-stack [:wellbecoming :mago-wellbecoming :ko-wellbecoming :present-adherent]
+ :rail/cash-usd-micros 0
+ :rail/published-default false
+ :rail/server-held-key false
+ :rail/score-surface []
+ :rail/phases
+ {:R1-dry {:writes ["provisioningIntent published=false"] :live false}
+  :gated-live-design
+  {:requires ["FUCHI_ALLOW_LIVE_PROVISION=1" "operator-did" "Council Lv6+"
+              "member-signature" "disclosure open"
+              "Lv7+ when new commons-land grant"]
+   :still-does-not ["execute land grant" "move cash" "personal scores"
+                    "private equity / mortgage product"]
+   :live false}}
+ :rail/multi-gen-facts
+ ["housing-floor-supports-ko-and-mago-households"
+  "commons-land-not-private-equity"
+  "not-a-happiness-score"
+  "land-grant-not-invoked"]
+ :rail/hold-coupling
+ {:on-disclosure-held :refuse-dispatch
+  :on-exit-suspended :refuse-dispatch
+  :on-open :allow-r1-and-gated-plan}}

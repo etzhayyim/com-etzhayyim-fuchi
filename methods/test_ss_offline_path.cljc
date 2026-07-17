@@ -9,17 +9,26 @@
              {:subject-did "did:web:etzhayyim.com:member:path-demo"
               :food-imputed-usd-micros-yr 2000000000
               :energy-imputed-usd-micros-yr 1500000000
-              :care-imputed-usd-micros-yr 1000000000})]
+              :care-imputed-usd-micros-yr 1000000000
+              :housing-imputed-usd-micros-yr 12000000000})]
     (is (false? (:live out)))
     (is (= 0 (:cash-usd-micros out)))
     (is (= [] (:score-surface out)))
     (is (true? (get-in out [:public-person :public-person?])))
     (is (= :dry-produce-plan (get-in out [:food-produce-plan :phase])))
     (is (false? (get-in out [:food-produce-plan :produce-executed])))
+    (is (= :dry-produce-plan (get-in out [:energy-produce-plan :phase])))
+    (is (false? (get-in out [:energy-produce-plan :generate-executed])))
+    (is (pos? (get-in out [:energy-produce-plan :kwh-floor-yr])))
     (is (= :dry-ack (get-in out [:energy-receive :phase])))
     (is (false? (get-in out [:energy-receive :generate-invoked])))
     (is (= :R1-dry (get-in out [:care-package :phase])))
     (is (= "care-iyashi" (get-in out [:care-package :rail-kind])))
+    (is (= :dry-ack (get-in out [:care-receive :phase])))
+    (is (false? (get-in out [:care-receive :care-delivery-invoked])))
+    (is (= :R1-dry (get-in out [:housing-package :phase])))
+    (is (= "housing-commons" (get-in out [:housing-package :rail-kind])))
+    (is (= "commons-land" (get-in out [:housing-package :provider-did])))
     (pp/assert-no-public-scores! (:public-person out))))
 
 #?(:clj

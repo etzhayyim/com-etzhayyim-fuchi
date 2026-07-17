@@ -58,7 +58,8 @@
     { "id": "com.etzhayyim.fuchi.disclosureAttestation", "status": "implemented", "emittedBy": ["public_person (ADR-2607177000 — seed :disclosure/batch; disclosure-gate hold on stale)"] },
     { "id": "com.etzhayyim.fuchi.commitmentVow", "status": "implemented", "emittedBy": ["l0_enroll (ADR-2605302357 §1.16.3a offline scaffold — no live mint)"] },
     { "id": "com.etzhayyim.fuchi.mitsuhoRailDispatch", "status": "implemented", "emittedBy": ["rail_mitsuho (food-mitsuho R1 dry + gated-live design; live produce not invoked)"] },
-    { "id": "com.etzhayyim.fuchi.hikariRailDispatch", "status": "implemented", "emittedBy": ["rail_hikari (energy-hikari R1 dry + gated-live design; live produce not invoked)"] }
+    { "id": "com.etzhayyim.fuchi.hikariRailDispatch", "status": "implemented", "emittedBy": ["rail_hikari (energy-hikari R1 dry + gated-live design; live produce not invoked)"] },
+    { "id": "com.etzhayyim.fuchi.housingCommonsRailDispatch", "status": "implemented", "emittedBy": ["rail_housing_commons (housing-commons R1 dry + gated-live design; land grant not invoked)"] }
   ],
 
   "constitutionalGates": {

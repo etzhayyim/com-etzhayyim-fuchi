@@ -30,7 +30,8 @@
    "disclosureAttestation.edn" "com.etzhayyim.fuchi.disclosureAttestation"
    "commitmentVow.edn" "com.etzhayyim.fuchi.commitmentVow"
    "mitsuhoRailDispatch.edn" "com.etzhayyim.fuchi.mitsuhoRailDispatch"
-   "hikariRailDispatch.edn" "com.etzhayyim.fuchi.hikariRailDispatch"))
+   "hikariRailDispatch.edn" "com.etzhayyim.fuchi.hikariRailDispatch"
+   "housingCommonsRailDispatch.edn" "com.etzhayyim.fuchi.housingCommonsRailDispatch"))
 
 #?(:clj
    (defn- present-edn-files []

@@ -77,7 +77,10 @@ bb -cp . -e '(require (quote fuchi.methods.public-surface-report)) (fuchi.method
 | [`methods/mitsuho_receive.cljc`](methods/mitsuho_receive.cljc) | actor-side dry-ack of food intent (produce not invoked) |
 | [`methods/hikari_receive.cljc`](methods/hikari_receive.cljc) | energy dry-ack (generate not invoked) |
 | [`methods/mitsuho_produce_plan.cljc`](methods/mitsuho_produce_plan.cljc) | dry kcal floor plan (produce-executed=false) |
-| [`methods/ss_offline_path.cljc`](methods/ss_offline_path.cljc) | L0→food/energy/care→receive→produce-plan E2E offline |
+| [`methods/hikari_produce_plan.cljc`](methods/hikari_produce_plan.cljc) | dry kWh floor plan (generate-executed=false) |
+| [`methods/care_iyashi_receive.cljc`](methods/care_iyashi_receive.cljc) | care dry-ack (delivery not invoked) |
+| [`methods/rail_housing_commons.cljc`](methods/rail_housing_commons.cljc) | housing-commons (LANDS.md) R1+gated plan |
+| [`methods/ss_offline_path.cljc`](methods/ss_offline_path.cljc) | L0→food/energy/care/housing→receive→produce-plan E2E offline |
 | [`methods/rail_care_iyashi.cljc`](methods/rail_care_iyashi.cljc) | care-iyashi (子・孫 wellbecoming) R1+gated plan |
 | [`methods/pages_publish.cljc`](methods/pages_publish.cljc) | Pages-ready `public/` static package (no deploy) |
 
