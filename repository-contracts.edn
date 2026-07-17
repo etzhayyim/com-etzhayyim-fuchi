@@ -1,0 +1,7 @@
+{:repository/contracts
+ [{:id :abaki-routing-policy
+   :repository "https://github.com/etzhayyim/com-etzhayyim-abaki"
+   :revision "2081d3634328083755ad85ee4f957ac343b08e96"
+   :artifact "out/routing-policy.edn"
+   :override-env "ABAKI_POLICY_PATH"
+   :absence-policy :fail-open-no-block}]}

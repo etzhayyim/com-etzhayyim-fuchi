@@ -25,7 +25,7 @@
 (deftest test-manifest-cells-match-cell-dirs
   #?(:clj
      (let [declared (set (map #(get % "name") (get (manifest) "cells")))
-           dirs (set (->> (.listFiles (io/file actor-dir "cells"))
+           dirs (set (->> (.listFiles (io/file actor-dir "src" "fuchi" "cells"))
                           (filter #(.isDirectory %))
                           (map #(.getName %))
                           (remove #(str/starts-with? % "__"))))]
