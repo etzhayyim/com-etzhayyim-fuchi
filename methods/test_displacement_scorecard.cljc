@@ -23,10 +23,15 @@
        (is (pos? (:scorecard/enrolled-subjects body)))
        (is (pos? (:scorecard/committed-usd-micros-yr body)))
        (is (pos? (:scorecard/booked-entries body)))
+       (is (pos? (:scorecard/tenure-subjects body)))
+       (is (pos? (:scorecard/tenure-admissible-cohorts body)))
+       (is (= "L6" (or (ffirst (:scorecard/tenure-stage-counts body))
+                       (some-> (:scorecard/tenure-stage-counts body) keys first))))
        (is (= pp/PRIORITY-STACK (:scorecard/priority-stack body)))
        (let [md (sc/scorecard-md body)]
          (is (str/includes? md "scorecard"))
          (is (str/includes? md "wellbecoming"))
+         (is (str/includes? md "tenure"))
          (is (str/includes? md "all live legs refused"))
          (is (not (str/includes? md "| rank |")))))))
 
@@ -37,4 +42,5 @@
        (is (.exists (io/file (:edn paths))))
        (is (true? (:all-live-refused paths)))
        (is (false? (:live paths)))
+       (is (pos? (:tenure-subjects paths)))
        (is (str/includes? (slurp (:md paths)) "No personal scores")))))

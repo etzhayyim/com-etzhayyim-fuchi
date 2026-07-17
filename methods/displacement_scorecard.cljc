@@ -1,13 +1,15 @@
 (ns fuchi.methods.displacement-scorecard
   "displacement_scorecard.cljc — offline end-to-end scorecard for robotics/itonami SS path.
 
-  Runs itonami seed → displacement L0→L3 enroll/book/G2 → live-gate refuse matrix.
+  Runs itonami seed → L0→L4 enroll/book/G2 → optional L4→L6 tenure → live-gate refuse matrix.
   Emits facts-only MD/EDN. cash≡0. no scores. live=false throughout.
   Portable .cljc; file I/O at #?(:clj) edge."
   (:require [clojure.string :as str]
             [fuchi.methods.public-person :as pp]
             [fuchi.methods.live-gate :as live-gate]
             [fuchi.methods.displacement-l0-path :as dl0]
+            [fuchi.methods.displacement-tenure :as ten]
+            [fuchi.methods.itonami-bridge :as itonami]
             [fuchi.methods.itonami-surplus-ledger :as led]
             #?(:clj [fuchi.methods.edn :as edn])
             #?(:clj [clojure.java.io :as io])))
@@ -30,24 +32,39 @@
          :score-surface []}))
     live-gate/LEG-POLICY)))
 
+#?(:clj
+   (defn- load-events []
+     (let [actor (or (System/getenv "FUCHI_ACTOR_DIR")
+                     (-> *file* io/file .getParentFile .getParentFile .getCanonicalPath))]
+       (itonami/load-itonami-batch
+        (edn/load-edn (io/file actor "data" "itonami-displacement-events.edn"))))))
+
 (defn build
-  "Full offline scorecard map from optional itonami batch result."
+  "Full offline scorecard. Default: L4 enroll + L6 tenure on admissible cohorts."
   ([]
-   #?(:clj (build (dl0/run-default-seed :max-slots 2 :climb-steps 4))
+   #?(:clj
+      (let [batch (dl0/run-default-seed :max-slots 2 :climb-steps 4)
+            events (try (load-events) (catch Exception _ []))
+            with-ten (if (seq events)
+                       (ten/run-batch-with-tenure batch events :target-stage "L6")
+                       batch)]
+        (build with-ten))
       :cljs {:error "clj-only seed load"}))
   ([batch]
    (let [pkgs (or (:packages batch) [])
          enrolled (filter #(= :offline-enrolled (:phase %)) pkgs)
          refused (filter #(#{:refused :refused-over-earmark} (:phase %)) pkgs)
          subjects (mapcat :subjects enrolled)
+         tenure-subjects (mapcat :tenure-subjects pkgs)
+         tenure-ok (filter #(= :tenure-offline (:tenure-phase %)) pkgs)
          live-legs (live-refuse-matrix)
          ledger #?(:clj
                    (try
                      (let [actor (or (System/getenv "FUCHI_ACTOR_DIR")
                                      (-> *file* io/file .getParentFile .getParentFile .getCanonicalPath))
-                           itonami (edn/load-edn (io/file actor "data" "itonami-displacement-events.edn"))
+                           itonami-seed (edn/load-edn (io/file actor "data" "itonami-displacement-events.edn"))
                            fuchi (edn/load-edn (io/file actor "data" "seed-sustenance-graph.kotoba.edn"))]
-                       (led/ledger-summary (led/build-ledger itonami fuchi)))
+                       (led/ledger-summary (led/build-ledger itonami-seed fuchi)))
                      (catch Exception _ {:events 0 :live false :cash-to-workers-usd-micros 0}))
                    :cljs {:events 0})
          body {:scorecard/id "fuchi.displacement-ss-offline"
@@ -61,12 +78,24 @@
                :scorecard/refused-cohorts (count refused)
                :scorecard/enrolled-subjects (count subjects)
                :scorecard/stage-counts (frequencies (map :stage subjects))
+               :scorecard/tenure-target (or (:tenure-target batch) "L6")
+               :scorecard/tenure-admissible-cohorts
+               (or (:tenure-admissible-cohorts batch) (count tenure-ok))
+               :scorecard/tenure-subjects
+               (or (:tenure-subjects batch) (count tenure-subjects))
+               :scorecard/tenure-stage-counts
+               (frequencies (map :stage tenure-subjects))
                :scorecard/committed-usd-micros-yr
                (reduce + 0 (map #(or (get-in % [:couple :committed-usd-micros-yr]) 0) enrolled))
                :scorecard/headroom-usd-micros-yr
                (reduce + 0 (map #(or (get-in % [:couple :headroom-usd-micros-yr]) 0) enrolled))
+               :scorecard/tenure-committed-usd-micros-yr
+               (reduce + 0 (map #(or (get-in % [:tenure-couple :committed-usd-micros-yr]) 0)
+                                tenure-ok))
                :scorecard/booked-entries
                (reduce + 0 (map #(or (get-in % [:booking :entry-count]) 0) subjects))
+               :scorecard/tenure-booked-entries
+               (reduce + 0 (map #(or (get-in % [:booking :entry-count]) 0) tenure-subjects))
                :scorecard/live-legs live-legs
                :scorecard/all-live-refused (every? #(false? (:admissible %)) live-legs)
                :scorecard/itonami-ledger ledger
@@ -79,11 +108,16 @@
                         :committed (or (get-in p [:couple :committed-usd-micros-yr]) 0)
                         :headroom (or (get-in p [:couple :headroom-usd-micros-yr]) 0)
                         :g2 (boolean (get-in p [:couple :admissible]))
+                        :tenure-phase (when (:tenure-phase p) (name (:tenure-phase p)))
+                        :tenure-subjects (count (:tenure-subjects p))
+                        :tenure-g2 (boolean (get-in p [:tenure-couple :admissible]))
                         :cash-usd-micros 0
                         :live false
                         :score-surface []})
                      pkgs)}]
-     (pp/assert-no-public-scores! (dissoc body :scorecard/itonami-ledger :scorecard/cohorts :scorecard/live-legs))
+     (pp/assert-no-public-scores!
+      (dissoc body :scorecard/itonami-ledger :scorecard/cohorts :scorecard/live-legs
+              :scorecard/tenure-stage-counts :scorecard/stage-counts))
      (doseq [c (:scorecard/cohorts body)] (pp/assert-no-public-scores! c))
      body)))
 
@@ -97,20 +131,27 @@
                 "## Summary\n\n"
                 (str "- admissible cohorts: " (:scorecard/admissible-cohorts body) "\n")
                 (str "- refused cohorts: " (:scorecard/refused-cohorts body) "\n")
-                (str "- enrolled subjects: " (:scorecard/enrolled-subjects body) "\n")
-                (str "- stages: " (pr-str (:scorecard/stage-counts body)) "\n")
-                (str "- committed USD micros: " (:scorecard/committed-usd-micros-yr body) "\n")
-                (str "- headroom USD micros: " (:scorecard/headroom-usd-micros-yr body) "\n")
-                (str "- booked ledger entries: " (:scorecard/booked-entries body) "\n")
+                (str "- enrolled subjects (L4 path): " (:scorecard/enrolled-subjects body) "\n")
+                (str "- stages (L4 path): " (pr-str (:scorecard/stage-counts body)) "\n")
+                (str "- tenure target: " (:scorecard/tenure-target body) "\n")
+                (str "- tenure admissible cohorts: " (:scorecard/tenure-admissible-cohorts body) "\n")
+                (str "- tenure subjects: " (:scorecard/tenure-subjects body) "\n")
+                (str "- tenure stages: " (pr-str (:scorecard/tenure-stage-counts body)) "\n")
+                (str "- committed USD micros (L4): " (:scorecard/committed-usd-micros-yr body) "\n")
+                (str "- headroom USD micros (L4): " (:scorecard/headroom-usd-micros-yr body) "\n")
+                (str "- tenure committed USD micros: " (:scorecard/tenure-committed-usd-micros-yr body) "\n")
+                (str "- booked ledger entries (L4): " (:scorecard/booked-entries body) "\n")
+                (str "- tenure booked entries: " (:scorecard/tenure-booked-entries body) "\n")
                 (str "- all live legs refused: " (:scorecard/all-live-refused body) "\n\n")
                 "## Cohorts\n\n"
-                "| actor | cohort | phase | subjects | committed | headroom | g2 |\n"
-                "|---|---|---|---|---|---|---|\n"])]
+                "| actor | cohort | phase | n | committed | headroom | tenure | tenure-n |\n"
+                "|---|---|---|---|---|---|---|---|\n"])]
     (doseq [c (:scorecard/cohorts body)]
       (conj! lines
              (str "| " (:displacing-actor c) " | " (:cohort-id c) " | "
                   (:phase c) " | " (:subjects c) " | " (:committed c) " | "
-                  (:headroom c) " | " (:g2 c) " |\n")))
+                  (:headroom c) " | " (or (:tenure-phase c) "—") " | "
+                  (:tenure-subjects c) " |\n")))
     (conj! lines "\n## Live legs (default refuse)\n\n")
     (conj! lines "| leg | admissible | reason |\n|---|---|---|\n")
     (doseq [l (:scorecard/live-legs body)]
@@ -143,4 +184,5 @@
          :cash-usd-micros 0
          :score-surface []
          :all-live-refused (:scorecard/all-live-refused body)
+         :tenure-subjects (:scorecard/tenure-subjects body)
          :priority-stack PRIORITY-STACK}))))

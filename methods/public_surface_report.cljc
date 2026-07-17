@@ -358,7 +358,9 @@
         (conj! lines (str "- all-live-refused: " (:scorecard/all-live-refused sc) "\n"))
         (conj! lines (str "- booked-entries: " (:scorecard/booked-entries sc) "\n"))
         (conj! lines (str "- committed: " (:scorecard/committed-usd-micros-yr sc) "\n"))
-        (conj! lines (str "- headroom: " (:scorecard/headroom-usd-micros-yr sc) "\n")))))
+        (conj! lines (str "- headroom: " (:scorecard/headroom-usd-micros-yr sc) "\n"))
+        (conj! lines (str "- tenure-subjects (L6): " (:scorecard/tenure-subjects sc) "\n"))
+        (conj! lines (str "- tenure-stages: " (pr-str (:scorecard/tenure-stage-counts sc)) "\n")))))
     (when-let [l0 (:report/l0-demo body)]
       (conj! lines "\n## L0 demo (offline)\n")
       (conj! lines (str "- did: " (last-seg (:did l0)) " stage=" (:stage l0)
