@@ -99,6 +99,10 @@
                :scorecard/live-legs live-legs
                :scorecard/all-live-refused (every? #(false? (:admissible %)) live-legs)
                :scorecard/gov-route-counts (or (:gov-route-counts batch) {})
+               :scorecard/gov-flowable-committed-usd-micros
+               (or (:gov-flowable-committed-usd-micros batch) 0)
+               :scorecard/gov-post-ratify-committed-usd-micros
+               (or (:gov-post-ratify-committed-usd-micros batch) 0)
                :scorecard/itonami-ledger ledger
                :scorecard/cohorts
                (mapv (fn [p]
@@ -146,7 +150,11 @@
                 (str "- booked ledger entries (L4): " (:scorecard/booked-entries body) "\n")
                 (str "- tenure booked entries: " (:scorecard/tenure-booked-entries body) "\n")
                 (str "- all live legs refused: " (:scorecard/all-live-refused body) "\n")
-                (str "- gov routes: " (pr-str (:scorecard/gov-route-counts body)) "\n\n")
+                (str "- gov routes: " (pr-str (:scorecard/gov-route-counts body)) "\n")
+                (str "- gov flowable committed (housing held): "
+                     (:scorecard/gov-flowable-committed-usd-micros body) "\n")
+                (str "- gov post-ratify committed (housing in book, grant false): "
+                     (:scorecard/gov-post-ratify-committed-usd-micros body) "\n\n")
                 "## Cohorts\n\n"
                 "| actor | cohort | phase | n | committed | headroom | tenure | tenure-n |\n"
                 "|---|---|---|---|---|---|---|---|\n"])]

@@ -19,6 +19,8 @@ Priority: wellbecoming > mago(孫) > ko(子) > present. cash≡0. live=false. No
 - tenure booked entries: 0
 - all live legs refused: true
 - gov routes: {}
+- gov flowable committed (housing held): 0
+- gov post-ratify committed (housing in book, grant false): 0
 
 ## Cohorts
 

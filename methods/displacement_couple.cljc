@@ -11,7 +11,19 @@
 (def PRIORITY-STACK pp/PRIORITY-STACK)
 
 (defn committed-from-subjects
-  "Sum offline booked in-kind totals across enrolled subjects."
+  "Sum offline booked in-kind totals. Prefers flowable-booking (gov partial hold)
+   over full booking so housing held under Council does not consume earmark headroom."
+  [subjects]
+  (reduce + 0
+          (map (fn [s]
+                 (long (or (get-in s [:flowable-booking :in-kind-total-usd-micros])
+                           (get-in s [:booking :in-kind-total-usd-micros])
+                           (get-in s [:stage-sustenance :floor-usd-micros-yr])
+                           0)))
+               subjects)))
+
+(defn committed-full-from-subjects
+  "Full stage booking total (includes housing even if gov-held)."
   [subjects]
   (reduce + 0
           (map (fn [s]
@@ -21,10 +33,13 @@
                subjects)))
 
 (defn evaluate-cohort
-  "G2 gate with earmark + committed floors from subjects. Offline only."
+  "G2 gate with earmark + committed floors from subjects. Offline only.
+   Uses flowable-first committed (partial hold aware)."
   [event earmark subjects]
   (let [committed (committed-from-subjects subjects)
+        committed-full (committed-full-from-subjects subjects)
         gate (couple/coupling-gate event earmark committed)
+        gate-full (couple/coupling-gate event earmark committed-full)
         live-st (live-gate/gate-status
                  (live-gate/make-live-gate {:leg "couple"}) {})
         out {:phase (if (true? (get gate "admissible"))
@@ -37,8 +52,11 @@
              :gross-usd-micros-yr (:gross-usd-micros-yr earmark)
              :funded (boolean (:funded earmark))
              :committed-usd-micros-yr committed
+             :committed-full-usd-micros-yr committed-full
              :headroom-usd-micros-yr (long (get gate "headroom" 0))
+             :headroom-full-usd-micros-yr (long (get gate-full "headroom" 0))
              :admissible (boolean (get gate "admissible"))
+             :admissible-if-full-booked (boolean (get gate-full "admissible"))
              :reason (get gate "reason")
              :subject-count (count subjects)
              :commit-live-admissible (boolean (get live-st "admissible"))
@@ -47,7 +65,7 @@
              :cash-usd-micros 0
              :score-surface []
              :priority-stack PRIORITY-STACK
-             :note "offline G2 headroom check — couple commit_live refused by default"}]
+             :note "offline G2 (flowable-first) — housing held under Council excluded from committed"}]
     (pp/assert-no-public-scores! out)
     out))
 

@@ -227,22 +227,54 @@
     (pp/assert-no-public-scores! (dissoc out :gov-package :rail-flow :r2-by-rail :flowable-booking))
     out))
 
+(defn apply-council-ratify-rebook
+  "For council-lv7 gov subjects: offline ratify plan + rebook with housing included
+   in facts (still land-grant-executed=false, write_live refuse)."
+  [gov-subject subject]
+  (if-not (= "council-lv7" (:route gov-subject))
+    gov-subject
+    (let [plan (council-ratify-plan gov-subject)
+          sp (:stage-sustenance subject)
+          rebook (when sp
+                   (dbook/book-flowable
+                    (:subject-did subject) sp (:rail-flow-after plan)
+                    :alloc-id (str "ratify-" (:cohort-id subject) "-"
+                                   (:subject-did subject))
+                    :note "post-council-ratify offline book — land grant still not executed"))]
+      (assoc gov-subject
+             :council-ratify plan
+             :post-ratify-booking rebook
+             :post-ratify-includes-housing
+             (boolean (some #(= "housing-commons" %) (or (:rails rebook) [])))
+             :land-grant-executed false
+             :live false
+             :cash-usd-micros 0))))
+
 (defn package-cohort
-  "Attach gov packages to all subjects in a displacement cohort package."
-  [pkg]
+  "Attach gov packages + optional council ratify rebook for multi-gen housing path."
+  [pkg & {:keys [apply-ratify?] :or {apply-ratify? true}}]
   (if-not (= :offline-enrolled (:phase pkg))
     (assoc pkg :gov nil)
-    (let [govs (mapv package-subject (:subjects pkg))
+    (let [subjects (:subjects pkg)
+          govs0 (mapv package-subject subjects)
+          govs (if apply-ratify?
+                 (mapv (fn [g s] (apply-council-ratify-rebook g s))
+                       govs0 subjects)
+                 govs0)
           routes (frequencies (map :route govs))
           held (count (filter :entitlements-held? govs))
           flow (count (filter :may-flow? govs))
           substrate (count (filter :may-flow-substrate? govs))
+          flowable-total (reduce + 0 (map #(or (get-in % [:flowable-booking :in-kind-total-usd-micros]) 0) govs))
+          post-ratify-total (reduce + 0 (map #(or (get-in % [:post-ratify-booking :in-kind-total-usd-micros]) 0) govs))
           out (assoc pkg
                      :gov-subjects govs
                      :gov-route-counts routes
                      :gov-entitlements-held held
                      :gov-entitlements-may-flow flow
                      :gov-substrate-may-flow substrate
+                     :gov-flowable-committed-usd-micros flowable-total
+                     :gov-post-ratify-committed-usd-micros post-ratify-total
                      :gov-live false
                      :live false
                      :cash-usd-micros 0
@@ -252,12 +284,16 @@
 
 (defn package-batch
   "Map package-cohort over a displacement batch."
-  [batch]
-  (let [pkgs (mapv package-cohort (:packages batch))
-        all-routes (apply merge-with + (map #(or (:gov-route-counts %) {}) pkgs))]
+  [batch & opts]
+  (let [pkgs (mapv #(apply package-cohort % opts) (:packages batch))
+        all-routes (apply merge-with + (map #(or (:gov-route-counts %) {}) pkgs))
+        flowable (reduce + 0 (map #(or (:gov-flowable-committed-usd-micros %) 0) pkgs))
+        post (reduce + 0 (map #(or (:gov-post-ratify-committed-usd-micros %) 0) pkgs))]
     (assoc batch
            :packages pkgs
            :gov-route-counts all-routes
+           :gov-flowable-committed-usd-micros flowable
+           :gov-post-ratify-committed-usd-micros post
            :live false
            :cash-usd-micros 0
            :score-surface []

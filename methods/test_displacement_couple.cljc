@@ -51,3 +51,17 @@
         out (dc/evaluate-cohort ev ear [])]
     (is (= :g2-refused (:phase out)))
     (is (false? (:admissible out)))))
+
+(deftest test-flowable-preferred-over-full-booking
+  (let [ev (couple/make-displacement-event
+            {:displacing-actor "x" :cohort-id "c4"
+             :displaced-count 1 :surplus-usd-micros-yr 20000000000 :funded true})
+        ear (couple/earmark-from-surplus ev)
+        ;; full book would exceed earmark; flowable under earmark
+        subjects [{:booking {:in-kind-total-usd-micros 50000000000}
+                   :flowable-booking {:in-kind-total-usd-micros 5000000000}}]
+        out (dc/evaluate-cohort ev ear subjects)]
+    (is (true? (:admissible out)))
+    (is (= 5000000000 (:committed-usd-micros-yr out)))
+    (is (= 50000000000 (:committed-full-usd-micros-yr out)))
+    (is (false? (:admissible-if-full-booked out)))))
