@@ -161,6 +161,28 @@
             (boolean (get-in sc [:scorecard/ss-priority-path
                                  :care-mitsuho-hikari-full-chain-refused]
                              true))
+            :audit/ss-housing-gated-receive-admissible
+            (boolean (get-in sc [:scorecard/ss-priority-path
+                                 :housing-gated-receive-admissible]))
+            :audit/ss-housing-gated-produce-admissible
+            (boolean (get-in sc [:scorecard/ss-priority-path
+                                 :housing-gated-produce-admissible]))
+            :audit/ss-housing-full-chain-refused
+            (boolean (get-in sc [:scorecard/ss-priority-path
+                                 :housing-full-chain-refused]
+                             true))
+            :audit/ss-care-housing-mitsuho-hikari-receive-all-refused
+            (boolean (get-in sc [:scorecard/ss-priority-path
+                                 :care-housing-mitsuho-hikari-receive-all-refused]
+                             true))
+            :audit/ss-care-housing-mitsuho-hikari-produce-all-refused
+            (boolean (get-in sc [:scorecard/ss-priority-path
+                                 :care-housing-mitsuho-hikari-produce-all-refused]
+                             true))
+            :audit/ss-care-housing-mitsuho-hikari-full-chain-refused
+            (boolean (get-in sc [:scorecard/ss-priority-path
+                                 :care-housing-mitsuho-hikari-full-chain-refused]
+                             true))
             :audit/all-held-stress-gov-flowable
             (or (get-in sc [:scorecard/all-held-stress :gov-flowable]) 0)
             :audit/all-held-stress-held-subjects
@@ -300,6 +322,18 @@
                (boolean (:audit/ss-care-mitsuho-hikari-produce-all-refused ev true))
                :ss-care-mitsuho-hikari-full-chain-refused
                (boolean (:audit/ss-care-mitsuho-hikari-full-chain-refused ev true))
+               :ss-housing-gated-receive-admissible
+               (boolean (:audit/ss-housing-gated-receive-admissible ev))
+               :ss-housing-gated-produce-admissible
+               (boolean (:audit/ss-housing-gated-produce-admissible ev))
+               :ss-housing-full-chain-refused
+               (boolean (:audit/ss-housing-full-chain-refused ev true))
+               :ss-care-housing-mitsuho-hikari-receive-all-refused
+               (boolean (:audit/ss-care-housing-mitsuho-hikari-receive-all-refused ev true))
+               :ss-care-housing-mitsuho-hikari-produce-all-refused
+               (boolean (:audit/ss-care-housing-mitsuho-hikari-produce-all-refused ev true))
+               :ss-care-housing-mitsuho-hikari-full-chain-refused
+               (boolean (:audit/ss-care-housing-mitsuho-hikari-full-chain-refused ev true))
                :ss-disclosure-state (or (:audit/ss-disclosure-state ev) "n/a")
                :all-live-refused (boolean (:audit/all-live-refused ev))
                :l4-disclosure-open (or (:audit/l4-disclosure-open ev) 0)
@@ -430,6 +464,18 @@
                  (boolean (:audit/ss-care-mitsuho-hikari-produce-all-refused last-ev true))
                  :last-run-ss-care-mitsuho-hikari-full-chain-refused
                  (boolean (:audit/ss-care-mitsuho-hikari-full-chain-refused last-ev true))
+                 :last-run-ss-housing-gated-receive-admissible
+                 (boolean (:audit/ss-housing-gated-receive-admissible last-ev))
+                 :last-run-ss-housing-gated-produce-admissible
+                 (boolean (:audit/ss-housing-gated-produce-admissible last-ev))
+                 :last-run-ss-housing-full-chain-refused
+                 (boolean (:audit/ss-housing-full-chain-refused last-ev true))
+                 :last-run-ss-care-housing-mitsuho-hikari-receive-all-refused
+                 (boolean (:audit/ss-care-housing-mitsuho-hikari-receive-all-refused last-ev true))
+                 :last-run-ss-care-housing-mitsuho-hikari-produce-all-refused
+                 (boolean (:audit/ss-care-housing-mitsuho-hikari-produce-all-refused last-ev true))
+                 :last-run-ss-care-housing-mitsuho-hikari-full-chain-refused
+                 (boolean (:audit/ss-care-housing-mitsuho-hikari-full-chain-refused last-ev true))
                  :cash-usd-micros 0
                  :cash-to-workers-usd-micros 0
                  :live false

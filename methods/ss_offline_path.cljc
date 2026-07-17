@@ -238,6 +238,11 @@
                        (housprod/plan-from-r1 housing-pkg))
         housing-ack (when (and housing-pkg (not= :refused (:phase housing-pkg)))
                       (housrecv/receive-from-r1-package housing-pkg))
+        ;; housing-commons gated-receive + gated-produce (孫/子 multi-gen housing; default refuse)
+        housing-recv-gated (when (and housing-pkg (not= :refused (:phase housing-pkg)))
+                             (housrecv/gated-receive-status housing-pkg))
+        housing-prod-gated (when (and housing-pkg (not= :refused (:phase housing-pkg)))
+                             (housprod/gated-produce-status housing-pkg))
         tooling-plan (when (and tooling-pkg (not= :refused (:phase tooling-pkg)))
                        (tprod/plan-from-r1 tooling-pkg))
         tooling-ack (when (and tooling-pkg (not= :refused (:phase tooling-pkg)))
@@ -456,6 +461,62 @@
                  :housing-r1-phase (when housing-pkg (name (:phase housing-pkg)))
                  :housing-gated-admissible (boolean (:admissible housing-gated))
                  :housing-land-grant-executed false
+                 :housing-gated-receive-admissible
+                 (boolean (:admissible housing-recv-gated))
+                 :housing-gated-receive-phase
+                 (when housing-recv-gated (name (:phase housing-recv-gated)))
+                 :housing-land-grant-invoked-on-receive false
+                 :housing-gated-produce-admissible
+                 (boolean (:admissible housing-prod-gated))
+                 :housing-gated-produce-phase
+                 (when housing-prod-gated (name (:phase housing-prod-gated)))
+                 :housing-land-grant-executed-on-gated false
+                 :housing-full-chain-refused
+                 ;; housing plan gated + receive + produce all refuse (default env)
+                 (and (some? housing-gated)
+                      (some? housing-recv-gated)
+                      (some? housing-prod-gated)
+                      (not (true? (:admissible housing-gated)))
+                      (not (true? (:admissible housing-recv-gated)))
+                      (not (true? (:admissible housing-prod-gated))))
+                 :care-housing-mitsuho-hikari-receive-all-refused
+                 (and (some? food-recv-gated)
+                      (some? energy-recv-gated)
+                      (some? care-recv-gated)
+                      (some? housing-recv-gated)
+                      (not (true? (:admissible food-recv-gated)))
+                      (not (true? (:admissible energy-recv-gated)))
+                      (not (true? (:admissible care-recv-gated)))
+                      (not (true? (:admissible housing-recv-gated))))
+                 :care-housing-mitsuho-hikari-produce-all-refused
+                 (and (some? food-prod-gated)
+                      (some? energy-prod-gated)
+                      (some? care-prod-gated)
+                      (some? housing-prod-gated)
+                      (not (true? (:admissible food-prod-gated)))
+                      (not (true? (:admissible energy-prod-gated)))
+                      (not (true? (:admissible care-prod-gated)))
+                      (not (true? (:admissible housing-prod-gated))))
+                 :care-housing-mitsuho-hikari-full-chain-refused
+                 ;; care + housing + food + energy: plan gated + receive + produce all refuse
+                 (and (some? care-gated) (some? housing-gated)
+                      (some? food-gated) (some? energy-gated)
+                      (some? care-recv-gated) (some? housing-recv-gated)
+                      (some? food-recv-gated) (some? energy-recv-gated)
+                      (some? care-prod-gated) (some? housing-prod-gated)
+                      (some? food-prod-gated) (some? energy-prod-gated)
+                      (not (true? (:admissible care-gated)))
+                      (not (true? (:admissible housing-gated)))
+                      (not (true? (:admissible food-gated)))
+                      (not (true? (:admissible energy-gated)))
+                      (not (true? (:admissible care-recv-gated)))
+                      (not (true? (:admissible housing-recv-gated)))
+                      (not (true? (:admissible food-recv-gated)))
+                      (not (true? (:admissible energy-recv-gated)))
+                      (not (true? (:admissible care-prod-gated)))
+                      (not (true? (:admissible housing-prod-gated)))
+                      (not (true? (:admissible food-prod-gated)))
+                      (not (true? (:admissible energy-prod-gated))))
                  :tooling-r1-phase (when tooling-pkg (name (:phase tooling-pkg)))
                  :tooling-gated-admissible (boolean (:admissible tooling-gated))
                  :compute-r1-phase (when compute-pkg (name (:phase compute-pkg)))
@@ -524,6 +585,8 @@
              :care-r2-execute-status care-r2
              :housing-package housing-pkg
              :housing-gated-live-status housing-gated
+             :housing-gated-receive-status housing-recv-gated
+             :housing-gated-produce-status housing-prod-gated
              :housing-produce-plan housing-plan
              :housing-receive housing-ack
              :housing-r2-execute-status housing-r2

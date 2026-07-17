@@ -149,6 +149,34 @@
                 (boolean (get-in scorecard
                                  [:scorecard/ss-priority-path
                                   :care-mitsuho-hikari-full-chain-refused]
+                                 true))
+                :ss-housing-gated-receive-admissible
+                (boolean (get-in scorecard
+                                 [:scorecard/ss-priority-path
+                                  :housing-gated-receive-admissible]))
+                :ss-housing-gated-produce-admissible
+                (boolean (get-in scorecard
+                                 [:scorecard/ss-priority-path
+                                  :housing-gated-produce-admissible]))
+                :ss-housing-full-chain-refused
+                (boolean (get-in scorecard
+                                 [:scorecard/ss-priority-path
+                                  :housing-full-chain-refused]
+                                 true))
+                :ss-care-housing-mitsuho-hikari-receive-all-refused
+                (boolean (get-in scorecard
+                                 [:scorecard/ss-priority-path
+                                  :care-housing-mitsuho-hikari-receive-all-refused]
+                                 true))
+                :ss-care-housing-mitsuho-hikari-produce-all-refused
+                (boolean (get-in scorecard
+                                 [:scorecard/ss-priority-path
+                                  :care-housing-mitsuho-hikari-produce-all-refused]
+                                 true))
+                :ss-care-housing-mitsuho-hikari-full-chain-refused
+                (boolean (get-in scorecard
+                                 [:scorecard/ss-priority-path
+                                  :care-housing-mitsuho-hikari-full-chain-refused]
                                  true))}]
        (pp/assert-no-public-scores!
         (select-keys out [:live :cash-usd-micros :score-surface :priority-stack
@@ -174,7 +202,13 @@
                           :ss-mitsuho-hikari-full-chain-refused
                           :ss-care-gated-produce-admissible
                           :ss-care-mitsuho-hikari-produce-all-refused
-                          :ss-care-mitsuho-hikari-full-chain-refused]))
+                          :ss-care-mitsuho-hikari-full-chain-refused
+                          :ss-housing-gated-receive-admissible
+                          :ss-housing-gated-produce-admissible
+                          :ss-housing-full-chain-refused
+                          :ss-care-housing-mitsuho-hikari-receive-all-refused
+                          :ss-care-housing-mitsuho-hikari-produce-all-refused
+                          :ss-care-housing-mitsuho-hikari-full-chain-refused]))
        out)))
 
 #?(:clj

@@ -68,7 +68,13 @@
        (is (true? (:ss-mitsuho-hikari-full-chain-refused out)))
        (is (false? (:ss-care-gated-produce-admissible out)))
        (is (true? (:ss-care-mitsuho-hikari-produce-all-refused out)))
-       (is (true? (:ss-care-mitsuho-hikari-full-chain-refused out))))))
+       (is (true? (:ss-care-mitsuho-hikari-full-chain-refused out)))
+       (is (false? (:ss-housing-gated-receive-admissible out)))
+       (is (false? (:ss-housing-gated-produce-admissible out)))
+       (is (true? (:ss-housing-full-chain-refused out)))
+       (is (true? (:ss-care-housing-mitsuho-hikari-receive-all-refused out)))
+       (is (true? (:ss-care-housing-mitsuho-hikari-produce-all-refused out)))
+       (is (true? (:ss-care-housing-mitsuho-hikari-full-chain-refused out))))))
 
 #?(:clj
    (deftest test-write-all

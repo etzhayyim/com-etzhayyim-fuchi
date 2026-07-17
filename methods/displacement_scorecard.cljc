@@ -126,6 +126,18 @@
                :care-mitsuho-hikari-full-chain-refused
                (boolean (:care-mitsuho-hikari-full-chain-refused s))
                :care-gated-admissible (boolean (:care-gated-admissible s))
+               :housing-gated-receive-admissible
+               (boolean (:housing-gated-receive-admissible s))
+               :housing-gated-produce-admissible
+               (boolean (:housing-gated-produce-admissible s))
+               :housing-full-chain-refused
+               (boolean (:housing-full-chain-refused s))
+               :care-housing-mitsuho-hikari-receive-all-refused
+               (boolean (:care-housing-mitsuho-hikari-receive-all-refused s))
+               :care-housing-mitsuho-hikari-produce-all-refused
+               (boolean (:care-housing-mitsuho-hikari-produce-all-refused s))
+               :care-housing-mitsuho-hikari-full-chain-refused
+               (boolean (:care-housing-mitsuho-hikari-full-chain-refused s))
                :housing-land-grant-executed (boolean (:housing-land-grant-executed s))
                :liquidity-loan-executed (boolean (:liquidity-loan-executed s))
                :liquidity-cash-usd-micros 0
@@ -597,6 +609,12 @@
                          (boolean (:care-gated-produce-admissible sp)) "/"
                          (boolean (:care-mitsuho-hikari-produce-all-refused sp)) "/"
                          (boolean (:care-mitsuho-hikari-full-chain-refused sp)) "\n"))
+        (conj! lines (str "- housing gated-receive/produce (孫/子) admissible/full-chain: "
+                         (boolean (:housing-gated-receive-admissible sp)) "/"
+                         (boolean (:housing-gated-produce-admissible sp)) "/"
+                         (boolean (:housing-full-chain-refused sp)) "\n"))
+        (conj! lines (str "- care+housing+food+energy full-chain-refused: "
+                         (boolean (:care-housing-mitsuho-hikari-full-chain-refused sp)) "\n"))
         (conj! lines (str "- housing land-grant / liquidity loan / cash: "
                          (boolean (:housing-land-grant-executed sp)) "/"
                          (boolean (:liquidity-loan-executed sp)) "/"

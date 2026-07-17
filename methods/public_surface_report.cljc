@@ -332,6 +332,20 @@
               :care-gated-admissible (boolean (:care-gated-admissible s))
               :housing-r1-phase (:housing-r1-phase s)
               :housing-gated-admissible (boolean (:housing-gated-admissible s))
+              :housing-gated-receive-admissible
+              (boolean (:housing-gated-receive-admissible s))
+              :housing-gated-receive-phase (:housing-gated-receive-phase s)
+              :housing-gated-produce-admissible
+              (boolean (:housing-gated-produce-admissible s))
+              :housing-gated-produce-phase (:housing-gated-produce-phase s)
+              :housing-full-chain-refused
+              (boolean (:housing-full-chain-refused s))
+              :care-housing-mitsuho-hikari-receive-all-refused
+              (boolean (:care-housing-mitsuho-hikari-receive-all-refused s))
+              :care-housing-mitsuho-hikari-produce-all-refused
+              (boolean (:care-housing-mitsuho-hikari-produce-all-refused s))
+              :care-housing-mitsuho-hikari-full-chain-refused
+              (boolean (:care-housing-mitsuho-hikari-full-chain-refused s))
               :housing-land-grant-executed false
               :tooling-r1-phase (:tooling-r1-phase s)
               :tooling-gated-admissible (boolean (:tooling-gated-admissible s))
@@ -873,6 +887,13 @@
                          " full-chain-refused="
                          (boolean (:last-run-ss-care-mitsuho-hikari-full-chain-refused au true))
                          "\n"))
+        (conj! lines (str "- last-run SS housing gated-receive/produce admissible/full-chain: "
+                         (boolean (:last-run-ss-housing-gated-receive-admissible au)) "/"
+                         (boolean (:last-run-ss-housing-gated-produce-admissible au)) "/"
+                         (boolean (:last-run-ss-housing-full-chain-refused au true))
+                         " care+housing+food+energy full-chain-refused="
+                         (boolean (:last-run-ss-care-housing-mitsuho-hikari-full-chain-refused au true))
+                         "\n"))
         (conj! lines (str "- cumulative liquidity member-principal / cash-usd-micros: "
                          (or (:total-liquidity-member-principal au) 0) "/"
                          (or (:total-liquidity-cash-usd-micros au) 0) "\n"))
@@ -963,6 +984,15 @@
                          (boolean (:care-mitsuho-hikari-produce-all-refused sp))
                          " care+food+energy full-chain-refused="
                          (boolean (:care-mitsuho-hikari-full-chain-refused sp)) "\n"))
+        (conj! lines (str "- (3) housing-commons gated-receive/produce (孫/子) admissible/phase: "
+                         (boolean (:housing-gated-receive-admissible sp)) "/"
+                         (or (:housing-gated-receive-phase sp) "—") " · "
+                         (boolean (:housing-gated-produce-admissible sp)) "/"
+                         (or (:housing-gated-produce-phase sp) "—")
+                         " housing full-chain-refused="
+                         (boolean (:housing-full-chain-refused sp))
+                         " care+housing+food+energy full-chain-refused="
+                         (boolean (:care-housing-mitsuho-hikari-full-chain-refused sp)) "\n"))
         (conj! lines (str "- (3) care/housing/tooling/compute/liquidity gated-admissible: "
                          (boolean (:care-gated-admissible sp)) "/"
                          (boolean (:housing-gated-admissible sp)) "/"
@@ -1237,6 +1267,13 @@
           (boolean (:last-run-ss-care-gated-produce-admissible au))
           " produce-full-chain-refused="
           (boolean (:last-run-ss-care-mitsuho-hikari-full-chain-refused au true))
+          " housing-recv/produce="
+          (boolean (:last-run-ss-housing-gated-receive-admissible au)) "/"
+          (boolean (:last-run-ss-housing-gated-produce-admissible au))
+          " housing-full-chain-refused="
+          (boolean (:last-run-ss-housing-full-chain-refused au true))
+          " care+housing+food+energy-full-chain="
+          (boolean (:last-run-ss-care-housing-mitsuho-hikari-full-chain-refused au true))
           " liquidity member-principal/cash="
           (or (:total-liquidity-member-principal au) 0) "/"
           (or (:total-liquidity-cash-usd-micros au) 0)
@@ -1289,6 +1326,13 @@
           (boolean (:mitsuho-hikari-full-chain-refused sp))
           " care+food+energy-full-chain="
           (boolean (:care-mitsuho-hikari-full-chain-refused sp))
+          " housing-recv/produce="
+          (boolean (:housing-gated-receive-admissible sp)) "/"
+          (boolean (:housing-gated-produce-admissible sp))
+          " housing-full-chain="
+          (boolean (:housing-full-chain-refused sp))
+          " care+housing+food+energy-full-chain="
+          (boolean (:care-housing-mitsuho-hikari-full-chain-refused sp))
           " care/housing/tooling/compute/liquidity gated="
           (boolean (:care-gated-admissible sp)) "/"
           (boolean (:housing-gated-admissible sp)) "/"
