@@ -57,3 +57,17 @@
         adv (lad/advance-offline p hm)]
     (is (= :refused (:phase adv)))
     (is (nil? (lad/next-stage "L6")))))
+
+(deftest test-climb-to-stage-l6
+  (let [p (person "L0")
+        hm (dh/initial p)
+        out (lad/climb-to-stage p hm "L6" :member-signature "sig")]
+    (is (= "L6" (get-in out [:person :stage])))
+    (is (= 6 (count (:history out))))
+    (is (= "L6" (:target-stage out)))
+    (is (false? (:live out)))))
+
+(deftest test-steps-to-stage
+  (is (= 4 (lad/steps-to-stage "L0" "L4")))
+  (is (= 2 (lad/steps-to-stage "L4" "L6")))
+  (is (= 0 (lad/steps-to-stage "L6" "L4"))))

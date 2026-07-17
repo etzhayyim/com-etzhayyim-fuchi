@@ -64,3 +64,13 @@
     (is (some #{"compute"} rails))
     (is (get-in pkg [:packages "care" :plan]))
     (is (get-in pkg [:packages "housing" :plan]))))
+
+(deftest test-l6-multi-gen-first
+  (let [p (person "L6")
+        hm (dh/initial p)
+        pkg (st/build-for-stage p hm)
+        rails (:rails pkg)]
+    (is (= "L6" (:stage pkg)))
+    (is (= "care" (first rails)))
+    (is (= "housing" (second rails)))
+    (is (= 6 (count rails)))))

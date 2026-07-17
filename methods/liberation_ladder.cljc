@@ -48,7 +48,8 @@
          :rails-hint ["housing" "care" "food" "energy" "compute" "tooling"]
          :multi-gen "commons-land-not-private-equity"}
    "L6" {:label "covenantal-tenure"
-         :rails-hint ["food" "energy" "care" "housing" "tooling" "compute"]
+         ;; multi-gen first even at full tenure
+         :rails-hint ["care" "housing" "food" "energy" "tooling" "compute"]
          :multi-gen "full-in-kind-substrate-no-cash"}})
 
 (defn normalize-stage [s]
@@ -64,6 +65,11 @@
   (let [i (stage-index s)]
     (when (and (>= i 0) (< i (dec (count STAGES))))
       (nth STAGES (inc i)))))
+
+(defn steps-to-stage
+  "Non-negative steps from `from` to `to` (0 if already at/past target)."
+  [from to]
+  (max 0 (- (stage-index to) (stage-index from))))
 
 (defn- hold-open? [hold-machine]
   (or (nil? hold-machine)
@@ -173,6 +179,24 @@
            :score-surface []
            :priority-stack PRIORITY-STACK}
           (recur (project-person p adv) hm (dec n) (conj history adv)))))))
+
+(defn climb-to-stage
+  "Climb offline until target stage (or refuse/stop). Same gates as climb-offline."
+  [person hold-machine target-stage & {:keys [member-signature]}]
+  (let [from (normalize-stage (or (:stage person) "L0"))
+        to (normalize-stage target-stage)
+        n (steps-to-stage from to)]
+    (if (zero? n)
+      {:person person
+       :history []
+       :phase :already-at-target
+       :target-stage to
+       :live false
+       :cash-usd-micros 0
+       :score-surface []
+       :priority-stack PRIORITY-STACK}
+      (let [out (climb-offline person hold-machine :steps n :member-signature member-signature)]
+        (assoc out :target-stage to)))))
 
 (defn ladder-public-fact
   "Public surface fragment for stage (no scores)."
