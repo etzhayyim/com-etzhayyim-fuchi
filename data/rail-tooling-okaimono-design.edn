@@ -1,0 +1,29 @@
+;; rail-tooling-okaimono-design.edn — tooling via okaimono 御買物
+;; Vocation recovery after displacement; not cash, not scores.
+{:rail/id "tooling-okaimono"
+ :rail/kind "tooling-okaimono"
+ :rail/provider-did "did:web:etzhayyim.com:actor:okaimono"
+ :rail/provider-kind "actor"
+ :rail/label "okaimono 御買物 — tooling in-kind"
+ :rail/adr ["2606052300" "2607177000"]
+ :rail/priority-stack [:wellbecoming :mago-wellbecoming :ko-wellbecoming :present-adherent]
+ :rail/cash-usd-micros 0
+ :rail/published-default false
+ :rail/server-held-key false
+ :rail/score-surface []
+ :rail/phases
+ {:R1-dry {:writes ["provisioningIntent published=false"] :live false}
+  :gated-live-design
+  {:requires ["FUCHI_ALLOW_LIVE_PROVISION=1" "operator-did" "Council Lv6+"
+              "member-signature" "disclosure open"]
+   :still-does-not ["fulfill purchase/dispatch live" "move cash" "personal scores"]
+   :live false}}
+ :rail/multi-gen-facts
+ ["tool-access-supports-household-vocation-recovery"
+  "not-a-happiness-score"
+  "tooling-is-wellbecoming-substrate"
+  "fulfillment-not-invoked"]
+ :rail/hold-coupling
+ {:on-disclosure-held :refuse-dispatch
+  :on-exit-suspended :refuse-dispatch
+  :on-open :allow-r1-and-gated-plan}}

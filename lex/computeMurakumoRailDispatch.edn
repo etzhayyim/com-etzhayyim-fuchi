@@ -1,0 +1,29 @@
+{:lexicon 1
+ :id "com.etzhayyim.fuchi.computeMurakumoRailDispatch"
+ :defs
+ {:main
+  {:type "record"
+   :key "tid"
+   :description "Compute-murakumo single-rail dispatch package (R1 dry + gated-live DESIGN). cash≡0, published=false, no scores. Does not invoke mesh quota live (G10)."
+   :record
+   {:type "object"
+    :required ["allocId" "subjectDid" "railKind" "providerDid" "imputedUsdMicrosYr"
+               "phase" "published" "cashUsdMicros" "serverHeldKey" "live"]
+    :properties
+    {:allocId {:type "string"}
+     :subjectDid {:type "string"}
+     :railKind {:type "string" :const "compute-murakumo"}
+     :providerDid {:type "string" :const "murakumo"}
+     :imputedUsdMicrosYr {:type "integer" :minimum 0}
+     :phase {:type "string" :enum ["R1-dry" "gated-live-plan" "refused"]}
+     :refusalReason {:type "string"}
+     :disclosureState {:type "string" :enum ["open" "held" "exit-suspended" "n/a"]}
+     :publicPerson {:type "boolean"}
+     :priorityStack {:type "array" :items {:type "string"}}
+     :multiGenFacts {:type "array" :items {:type "string"}}
+     :authorizedToPublish {:type "boolean"}
+     :published {:type "boolean" :const false}
+     :cashUsdMicros {:type "integer" :const 0}
+     :serverHeldKey {:type "boolean" :const false}
+     :live {:type "boolean" :const false}
+     :scoreSurface {:type "array" :maxItems 0}}}}}}

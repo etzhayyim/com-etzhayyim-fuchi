@@ -10,7 +10,9 @@
               :food-imputed-usd-micros-yr 2000000000
               :energy-imputed-usd-micros-yr 1500000000
               :care-imputed-usd-micros-yr 1000000000
-              :housing-imputed-usd-micros-yr 12000000000})]
+              :housing-imputed-usd-micros-yr 12000000000
+              :tooling-imputed-usd-micros-yr 500000000
+              :compute-imputed-usd-micros-yr 800000000})]
     (is (false? (:live out)))
     (is (= 0 (:cash-usd-micros out)))
     (is (= [] (:score-surface out)))
@@ -24,11 +26,19 @@
     (is (false? (get-in out [:energy-receive :generate-invoked])))
     (is (= :R1-dry (get-in out [:care-package :phase])))
     (is (= "care-iyashi" (get-in out [:care-package :rail-kind])))
+    (is (= :dry-produce-plan (get-in out [:care-produce-plan :phase])))
+    (is (false? (get-in out [:care-produce-plan :care-delivery-executed])))
+    (is (pos? (get-in out [:care-produce-plan :care-hours-floor-yr])))
     (is (= :dry-ack (get-in out [:care-receive :phase])))
     (is (false? (get-in out [:care-receive :care-delivery-invoked])))
     (is (= :R1-dry (get-in out [:housing-package :phase])))
     (is (= "housing-commons" (get-in out [:housing-package :rail-kind])))
     (is (= "commons-land" (get-in out [:housing-package :provider-did])))
+    (is (= :R1-dry (get-in out [:tooling-package :phase])))
+    (is (= "tooling-okaimono" (get-in out [:tooling-package :rail-kind])))
+    (is (= :R1-dry (get-in out [:compute-package :phase])))
+    (is (= "compute-murakumo" (get-in out [:compute-package :rail-kind])))
+    (is (= "murakumo" (get-in out [:compute-package :provider-did])))
     (pp/assert-no-public-scores! (:public-person out))))
 
 #?(:clj

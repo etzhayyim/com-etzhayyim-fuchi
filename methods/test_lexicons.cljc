@@ -31,7 +31,9 @@
    "commitmentVow.edn" "com.etzhayyim.fuchi.commitmentVow"
    "mitsuhoRailDispatch.edn" "com.etzhayyim.fuchi.mitsuhoRailDispatch"
    "hikariRailDispatch.edn" "com.etzhayyim.fuchi.hikariRailDispatch"
-   "housingCommonsRailDispatch.edn" "com.etzhayyim.fuchi.housingCommonsRailDispatch"))
+   "housingCommonsRailDispatch.edn" "com.etzhayyim.fuchi.housingCommonsRailDispatch"
+   "toolingOkaimonoRailDispatch.edn" "com.etzhayyim.fuchi.toolingOkaimonoRailDispatch"
+   "computeMurakumoRailDispatch.edn" "com.etzhayyim.fuchi.computeMurakumoRailDispatch"))
 
 #?(:clj
    (defn- present-edn-files []

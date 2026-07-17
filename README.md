@@ -79,8 +79,11 @@ bb -cp . -e '(require (quote fuchi.methods.public-surface-report)) (fuchi.method
 | [`methods/mitsuho_produce_plan.cljc`](methods/mitsuho_produce_plan.cljc) | dry kcal floor plan (produce-executed=false) |
 | [`methods/hikari_produce_plan.cljc`](methods/hikari_produce_plan.cljc) | dry kWh floor plan (generate-executed=false) |
 | [`methods/care_iyashi_receive.cljc`](methods/care_iyashi_receive.cljc) | care dry-ack (delivery not invoked) |
+| [`methods/care_iyashi_produce_plan.cljc`](methods/care_iyashi_produce_plan.cljc) | dry care-hours floor (delivery-executed=false) |
 | [`methods/rail_housing_commons.cljc`](methods/rail_housing_commons.cljc) | housing-commons (LANDS.md) R1+gated plan |
-| [`methods/ss_offline_path.cljc`](methods/ss_offline_path.cljc) | L0→food/energy/care/housing→receive→produce-plan E2E offline |
+| [`methods/rail_tooling_okaimono.cljc`](methods/rail_tooling_okaimono.cljc) | tooling-okaimono R1+gated plan (vocation recovery) |
+| [`methods/rail_compute_murakumo.cljc`](methods/rail_compute_murakumo.cljc) | compute-murakumo R1+gated plan (mesh access) |
+| [`methods/ss_offline_path.cljc`](methods/ss_offline_path.cljc) | L0→food/energy/care/housing/tooling/compute E2E offline |
 | [`methods/rail_care_iyashi.cljc`](methods/rail_care_iyashi.cljc) | care-iyashi (子・孫 wellbecoming) R1+gated plan |
 | [`methods/pages_publish.cljc`](methods/pages_publish.cljc) | Pages-ready `public/` static package (no deploy) |
 
