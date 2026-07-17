@@ -54,8 +54,10 @@
     { "id": "com.etzhayyim.fuchi.provisioningIntent", "status": "implemented", "emittedBy": ["routing_dispatch (R1a — methods/provision.py)"] },
     { "id": "com.etzhayyim.fuchi.voteBallot", "status": "implemented", "emittedBy": ["governance_gate (R1b — methods/vote.py, 1 SBT=1 vote + 48h timelock)"] },
     { "id": "com.etzhayyim.fuchi.sustenanceBooking", "status": "implemented", "emittedBy": ["governance_gate (R1c — methods/book.py, toritate ledgerEntry + kanae flow)"] },
-    { "id": "com.etzhayyim.fuchi.cohortEarmark", "status": "implemented", "emittedBy": ["allocation_compute (R1d — methods/couple.py, Displacement-Dividend coupling + G2 gate)"] }
+    { "id": "com.etzhayyim.fuchi.cohortEarmark", "status": "implemented", "emittedBy": ["allocation_compute (R1d — methods/couple.py, Displacement-Dividend coupling + G2 gate)"] },
+    { "id": "com.etzhayyim.fuchi.disclosureAttestation", "status": "implemented", "emittedBy": ["public_person (ADR-2607177000 — seed :disclosure/batch; disclosure-gate hold on stale)"] }
   ],
+
   "constitutionalGates": {
     "description": "9 immutable gates per ADR-2606052300. G1 (no investment vehicle), G2 (cash≡0), G5 (payoff帰属=etzhayyim), and G9 (no-server-key) are the structural anchors; each lives in three places (schema :db/allowed + lexicon :const/:enum + Python ValueError).",
     "gates": {

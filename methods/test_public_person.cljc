@@ -116,3 +116,18 @@
        (let [surfaces (get edn ":def/surfaces")
              score-surf (or (get surfaces ":score") [])]
          (is (empty? score-surf) "SCORE surface must be empty in SSoT")))))
+
+#?(:clj
+   (deftest test-seed-disclosure-batch-drives-hold-for-noah
+     (let [actor (or (System/getenv "FUCHI_ACTOR_DIR")
+                     (-> *file* io/file .getParentFile .getParentFile .getCanonicalPath))
+           seed (edn/load-edn (io/file actor "data" "seed-sustenance-graph.kotoba.edn"))
+           surfs (pp/persons-from-seed seed)
+           by-did (into {} (map (fn [s] [(:did s) s]) surfs))
+           noah (get by-did "did:web:etzhayyim.com:member:noah")
+           abel (get by-did "did:web:etzhayyim.com:member:abel")]
+       (is (true? (:public-person? noah)))
+       (is (= :hold (get-in noah [:disclosure-gate :action])))
+       (is (= :pass (get-in abel [:disclosure-gate :action])))
+       (is (nil? (:priority-rank abel)))
+       (is (seq (get seed ":disclosure/batch"))))))

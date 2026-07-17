@@ -66,30 +66,30 @@
                                   (live-gate/gate-status (live-gate/make-live-gate {:leg leg}) (array-map)))
                                 (keys live-gate/LEG-POLICY))]
           (let [public-persons
-                (mapv (fn [row]
-                        (let [did (get row "did")
-                              rec (first (filter #(= (get % ":maintainer/did") did) records))
-                              env (envelopes-for seed did)
-                              person (public-person/persons-from-seed-row rec env
-                                       ;; representative seed: full disclosure for vowed recipients
-                                       (when (contains? #{"vowed" "outreach"}
-                                                        (kw* (get rec ":maintainer/covenant" ":vowed")))
-                                         {:wage-labor-band "seed-representative"
-                                          :state-benefits? false
-                                          :wellbecoming-attest-fact :submitted
-                                          :related-party-edges []
-                                          :rider-s2-self-report :none}))
+                (mapv (fn [surf]
+                        (let [did (:did surf)
                               a (get allocs did)
-                              surf (public-person/public-surface person
-                                     :allocation a
-                                     :stage "L2"
-                                     :disclosure-status (get row "outcome"))]
-                          (public-person/assert-no-public-scores! surf)
-                          surf))
-                      rows)]
+                              floor (or (:floor-usd-micros-yr a) (:imputed-fact surf) 0)
+                              ;; re-project with allocation floor as imputed fact
+                              person (let [rec (first (filter #(= (get % ":maintainer/did") did) records))
+                                           env (envelopes-for seed did)
+                                           drec (public-person/disclosure-for-did seed did)]
+                                       (public-person/persons-from-seed-row rec env drec))
+                              gate (public-person/disclosure-gate person)
+                              out (public-person/public-surface
+                                   (assoc person :floor-usd-micros-yr floor)
+                                   :allocation a
+                                   :stage "L2"
+                                   :disclosure-status (:action gate)
+                                   :hold-reason (when (= :hold (:action gate)) (:reason gate)))]
+                          (public-person/assert-no-public-scores! out)
+                          (assoc out :disclosure-gate gate)))
+                      (public-person/persons-from-seed seed))
+                held (filterv #(= :hold (get-in % [:disclosure-gate :action])) public-persons)]
             {:rows rows :derived derived :intents intents :ledger ledger
              :flows flows :coupling coupling :live-status live-status
              :public-persons public-persons
+             :disclosure-holds held
              :priority-stack public-person/PRIORITY-STACK}))
         (let [r (first rs)
               as-of (+ as-of 10)

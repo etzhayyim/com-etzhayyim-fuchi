@@ -7,7 +7,7 @@
 ;; are in USD micros / yr (1 USD = 1_000_000 micros); cash is structurally 0 everywhere.
 
 {:graph/id  "com.etzhayyim.fuchi.seed"
- :graph/adr "2606052300"
+ :graph/adr ["2606052300" "2607177000"]
  :graph/sourcing :representative
 
  ;; ── maintainers (信者 under covenant) ───────────────────────────────────────
@@ -108,6 +108,57 @@
  :cohort/displacement
  [{:event/displacing-actor "sanae"   :event/cohort-id "cohort-sanae-2026"   :event/displaced-count 12 :event/surplus-usd-micros-yr 60000000000 :event/funded true}
   {:event/displacing-actor "hataori" :event/cohort-id "cohort-hataori-2026" :event/displaced-count 30 :event/surplus-usd-micros-yr 0           :event/funded false}]
+
+ ;; ── ADR-2607177000 public-person disclosure packages (facts only; no scores) ──
+ ;; noah: incomplete/stale → disclosure-gate hold while still public-person? if rails active.
+ :disclosure/batch
+ [{:disclosure/maintainer "did:web:etzhayyim.com:member:abel"
+   :disclosure/as-of "2026-Q2"
+   :disclosure/wage-labor-band "0-10h"
+   :disclosure/state-benefits false
+   :disclosure/wellbecoming-attest-fact :submitted
+   :disclosure/related-party-edges ["sanae" "kamado"]
+   :disclosure/rider-s2-self-report :none
+   :disclosure/multi-gen-care-facts []
+   :disclosure/server-held-key false}
+
+  {:disclosure/maintainer "did:web:etzhayyim.com:member:seth"
+   :disclosure/as-of "2026-Q2"
+   :disclosure/wage-labor-band "10-20h"
+   :disclosure/state-benefits true
+   :disclosure/wellbecoming-attest-fact :submitted
+   :disclosure/related-party-edges ["tazuna"]
+   :disclosure/rider-s2-self-report :none
+   :disclosure/multi-gen-care-facts ["caregiver-hours-band:10-20"]
+   :disclosure/server-held-key false}
+
+  {:disclosure/maintainer "did:web:etzhayyim.com:member:eve"
+   :disclosure/as-of "2026-Q2"
+   :disclosure/wage-labor-band "0-10h"
+   :disclosure/state-benefits false
+   :disclosure/wellbecoming-attest-fact :pass
+   :disclosure/related-party-edges ["mitooshi" "ake"]
+   :disclosure/rider-s2-self-report :none
+   :disclosure/multi-gen-care-facts ["on-site-housing-request:commons-land"]
+   :disclosure/server-held-key false}
+
+  {:disclosure/maintainer "did:web:etzhayyim.com:member:noah"
+   :disclosure/as-of "2025-Q4"
+   :disclosure/wage-labor-band "stale"
+   :disclosure/state-benefits false
+   :disclosure/wellbecoming-attest-fact :stale
+   :disclosure/related-party-edges []
+   :disclosure/rider-s2-self-report :none
+   :disclosure/server-held-key false}
+
+  {:disclosure/maintainer "did:web:etzhayyim.com:member:cain"
+   :disclosure/as-of "2026-Q2"
+   :disclosure/wage-labor-band "0-10h"
+   :disclosure/state-benefits false
+   :disclosure/wellbecoming-attest-fact :submitted
+   :disclosure/related-party-edges ["okaimono"]
+   :disclosure/rider-s2-self-report :disclosed
+   :disclosure/server-held-key false}]
 
  ;; stage-capacity ceiling for the in-kind sustenance floor (USD micros / yr)
  :graph/stage-ceiling-usd-micros-yr 30000000000}
