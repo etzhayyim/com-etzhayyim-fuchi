@@ -43,6 +43,9 @@ fuchi-specific rules.
   `fuchi.methods.test-charter-invariants` suite parses the
   ontology + lexicons + code and will fail if an invariant drifts out of any of the three places —
   including the R1-live locks (every leg refused by default; `couple` is Lv7).
+- The generic social membrane comes from the SHA-pinned
+  `com.etzhayyim/social-publication` dependency. Keep only actor identity and display text in
+  the local adapter; do not fork its invariant logic.
 
 ## Honest framing to preserve in all docs
 

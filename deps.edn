@@ -1,4 +1,7 @@
 {:paths ["src"]
+ :deps {com.etzhayyim/social-publication
+        {:git/url "https://github.com/etzhayyim/com-etzhayyim-social-publication.git"
+         :git/sha "e8127d0661284b1c12ce1b216c84b5ed2db619ab"}}
  :aliases
  {:test {:extra-paths ["test"]
          :extra-deps {io.github.cognitect-labs/test-runner
