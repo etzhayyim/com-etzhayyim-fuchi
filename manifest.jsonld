@@ -61,7 +61,8 @@
     { "id": "com.etzhayyim.fuchi.hikariRailDispatch", "status": "implemented", "emittedBy": ["rail_hikari (energy-hikari R1 dry + gated-live design; live produce not invoked)"] },
     { "id": "com.etzhayyim.fuchi.housingCommonsRailDispatch", "status": "implemented", "emittedBy": ["rail_housing_commons (housing-commons R1 dry + gated-live design; land grant not invoked)"] },
     { "id": "com.etzhayyim.fuchi.toolingOkaimonoRailDispatch", "status": "implemented", "emittedBy": ["rail_tooling_okaimono (tooling R1 dry + gated-live design; fulfillment not invoked)"] },
-    { "id": "com.etzhayyim.fuchi.computeMurakumoRailDispatch", "status": "implemented", "emittedBy": ["rail_compute_murakumo (compute R1 dry + gated-live design; mesh quota not invoked)"] }
+    { "id": "com.etzhayyim.fuchi.computeMurakumoRailDispatch", "status": "implemented", "emittedBy": ["rail_compute_murakumo (compute R1 dry + gated-live design; mesh quota not invoked)"] },
+    { "id": "com.etzhayyim.fuchi.liquidityWarifuRailDispatch", "status": "implemented", "emittedBy": ["rail_liquidity_warifu (member-principal residual; loan not invoked; cash≡0)"] }
   ],
 
   "constitutionalGates": {

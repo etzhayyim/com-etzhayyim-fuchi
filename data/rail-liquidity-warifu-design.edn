@@ -1,0 +1,31 @@
+;; rail-liquidity-warifu-design.edn — member-principal residual via warifu 0% qard-ḥasan
+;; 扶持 never pays cash; member is principal. Live loan remains default-refuse.
+{:rail/id "liquidity-warifu"
+ :rail/kind "liquidity-warifu"
+ :rail/provider-did "did:web:etzhayyim.com:actor:warifu"
+ :rail/provider-kind "actor"
+ :rail/label "warifu 割符 — member-principal 0% qard-ḥasan residual"
+ :rail/adr ["2606052300" "2607177000"]
+ :rail/priority-stack [:wellbecoming :mago-wellbecoming :ko-wellbecoming :present-adherent]
+ :rail/cash-usd-micros 0
+ :rail/member-principal true
+ :rail/published-default false
+ :rail/server-held-key false
+ :rail/score-surface []
+ :rail/phases
+ {:R1-dry {:writes ["provisioningIntent published=false memberPrincipal=true"] :live false}
+  :gated-live-design
+  {:requires ["FUCHI_ALLOW_LIVE_PROVISION=1" "operator-did" "Council Lv6+"
+              "member-signature" "disclosure open"]
+   :still-does-not ["originate loan live" "fuchi as creditor" "move cash from fuchi"
+                    "personal scores"]
+   :live false}}
+ :rail/multi-gen-facts
+ ["member-principal-residual-not-fuchi-cash"
+  "qard-hasan-zero-percent"
+  "not-a-happiness-score"
+  "loan-not-invoked"]
+ :rail/hold-coupling
+ {:on-disclosure-held :refuse-dispatch
+  :on-exit-suspended :refuse-dispatch
+  :on-open :allow-r1-and-gated-plan}}

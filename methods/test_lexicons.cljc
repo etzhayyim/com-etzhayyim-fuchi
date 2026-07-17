@@ -33,7 +33,8 @@
    "hikariRailDispatch.edn" "com.etzhayyim.fuchi.hikariRailDispatch"
    "housingCommonsRailDispatch.edn" "com.etzhayyim.fuchi.housingCommonsRailDispatch"
    "toolingOkaimonoRailDispatch.edn" "com.etzhayyim.fuchi.toolingOkaimonoRailDispatch"
-   "computeMurakumoRailDispatch.edn" "com.etzhayyim.fuchi.computeMurakumoRailDispatch"))
+   "computeMurakumoRailDispatch.edn" "com.etzhayyim.fuchi.computeMurakumoRailDispatch"
+   "liquidityWarifuRailDispatch.edn" "com.etzhayyim.fuchi.liquidityWarifuRailDispatch"))
 
 #?(:clj
    (defn- present-edn-files []

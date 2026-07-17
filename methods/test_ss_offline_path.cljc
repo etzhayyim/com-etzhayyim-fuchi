@@ -12,7 +12,8 @@
               :care-imputed-usd-micros-yr 1000000000
               :housing-imputed-usd-micros-yr 12000000000
               :tooling-imputed-usd-micros-yr 500000000
-              :compute-imputed-usd-micros-yr 800000000})]
+              :compute-imputed-usd-micros-yr 800000000
+              :liquidity-imputed-usd-micros-yr 1500000000})]
     (is (false? (:live out)))
     (is (= 0 (:cash-usd-micros out)))
     (is (= [] (:score-surface out)))
@@ -36,9 +37,17 @@
     (is (= "commons-land" (get-in out [:housing-package :provider-did])))
     (is (= :R1-dry (get-in out [:tooling-package :phase])))
     (is (= "tooling-okaimono" (get-in out [:tooling-package :rail-kind])))
+    (is (= :dry-ack (get-in out [:tooling-receive :phase])))
+    (is (false? (get-in out [:tooling-receive :fulfillment-invoked])))
     (is (= :R1-dry (get-in out [:compute-package :phase])))
     (is (= "compute-murakumo" (get-in out [:compute-package :rail-kind])))
     (is (= "murakumo" (get-in out [:compute-package :provider-did])))
+    (is (= :dry-ack (get-in out [:compute-receive :phase])))
+    (is (false? (get-in out [:compute-receive :quota-invoked])))
+    (is (= :R1-dry (get-in out [:liquidity-package :phase])))
+    (is (= "liquidity-warifu" (get-in out [:liquidity-package :rail-kind])))
+    (is (true? (get-in out [:liquidity-package :member-principal])))
+    (is (= 0 (get-in out [:liquidity-package :cash-usd-micros])))
     (pp/assert-no-public-scores! (:public-person out))))
 
 #?(:clj

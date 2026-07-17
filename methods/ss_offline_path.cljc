@@ -1,10 +1,11 @@
 (ns fuchi.methods.ss-offline-path
   "ss_offline_path.cljc — end-to-end OFFLINE path for covenantal SS fragment.
 
-  L0 enroll → disclosure open → food/energy/care/housing/tooling/compute R1 →
+  L0 enroll → disclosure open → all in-kind rails + liquidity residual R1 →
   dry-receive → dry produce/generate/care plans + optional itonami displacement facts.
 
-  live=false throughout. cash≡0. no scores. Portable .cljc."
+  live=false throughout. cash≡0. liquidity is member-principal only. no scores.
+  Portable .cljc."
   (:require [fuchi.methods.l0-enroll :as l0]
             [fuchi.methods.rail-mitsuho :as food]
             [fuchi.methods.rail-hikari :as energy]
@@ -12,11 +13,14 @@
             [fuchi.methods.rail-housing-commons :as housing]
             [fuchi.methods.rail-tooling-okaimono :as tooling]
             [fuchi.methods.rail-compute-murakumo :as compute]
+            [fuchi.methods.rail-liquidity-warifu :as liquidity]
             [fuchi.methods.mitsuho-produce-plan :as mprod]
             [fuchi.methods.hikari-receive :as hrecv]
             [fuchi.methods.hikari-produce-plan :as hprod]
             [fuchi.methods.care-iyashi-receive :as crecv]
             [fuchi.methods.care-iyashi-produce-plan :as cprod]
+            [fuchi.methods.tooling-okaimono-receive :as trecv]
+            [fuchi.methods.compute-murakumo-receive :as mrecv]
             [fuchi.methods.public-person :as pp]
             [fuchi.methods.disclosure-hold :as dh]
             [fuchi.methods.itonami-bridge :as itonami]
@@ -26,14 +30,15 @@
 (def PRIORITY-STACK pp/PRIORITY-STACK)
 
 (defn run-food-path
-  "Offline path for one subject across in-kind rails (optional micros per rail)."
+  "Offline path for one subject across in-kind rails + optional liquidity residual."
   [{:keys [subject-did vow-text member-signature food-imputed-usd-micros-yr
            energy-imputed-usd-micros-yr care-imputed-usd-micros-yr
            housing-imputed-usd-micros-yr tooling-imputed-usd-micros-yr
-           compute-imputed-usd-micros-yr]
+           compute-imputed-usd-micros-yr liquidity-imputed-usd-micros-yr]
     :or {food-imputed-usd-micros-yr 2000000000 energy-imputed-usd-micros-yr 0
          care-imputed-usd-micros-yr 0 housing-imputed-usd-micros-yr 0
-         tooling-imputed-usd-micros-yr 0 compute-imputed-usd-micros-yr 0}}]
+         tooling-imputed-usd-micros-yr 0 compute-imputed-usd-micros-yr 0
+         liquidity-imputed-usd-micros-yr 0}}]
   (let [enrolled (l0/enroll {:subject-did subject-did
                              :vow-text (or vow-text "L0 offline path vow")
                              :member-signature (or member-signature (str "sig-" subject-did))
@@ -46,10 +51,12 @@
                          (pos? care-imputed-usd-micros-yr) (conj {:kind "care" :active? true})
                          (pos? housing-imputed-usd-micros-yr) (conj {:kind "housing" :active? true})
                          (pos? tooling-imputed-usd-micros-yr) (conj {:kind "tooling" :active? true})
-                         (pos? compute-imputed-usd-micros-yr) (conj {:kind "compute" :active? true}))
+                         (pos? compute-imputed-usd-micros-yr) (conj {:kind "compute" :active? true})
+                         (pos? liquidity-imputed-usd-micros-yr) (conj {:kind "liquidity" :active? true}))
                 :floor-usd-micros-yr (+ food-imputed-usd-micros-yr energy-imputed-usd-micros-yr
                                         care-imputed-usd-micros-yr housing-imputed-usd-micros-yr
-                                        tooling-imputed-usd-micros-yr compute-imputed-usd-micros-yr)
+                                        tooling-imputed-usd-micros-yr compute-imputed-usd-micros-yr
+                                        liquidity-imputed-usd-micros-yr)
                 :disclosure {:wage-labor-band "0-10h" :state-benefits? false
                              :wellbecoming-attest-fact :submitted
                              :related-party-edges [] :rider-s2-self-report :none}
@@ -98,6 +105,13 @@
                         :imputed-usd-micros-yr compute-imputed-usd-micros-yr
                         :person person
                         :hold-machine hold}))
+        liquidity-pkg (when (pos? liquidity-imputed-usd-micros-yr)
+                        (liquidity/r1-dry-package
+                         {:alloc-id (str "liquidity-" subject-did)
+                          :subject-did subject-did
+                          :imputed-usd-micros-yr liquidity-imputed-usd-micros-yr
+                          :person person
+                          :hold-machine hold}))
         food-plan (when (and food-pkg (not= :refused (:phase food-pkg)))
                     (mprod/plan-from-r1 food-pkg))
         energy-plan (when (and energy-pkg (not= :refused (:phase energy-pkg)))
@@ -106,6 +120,10 @@
                     (cprod/plan-from-r1 care-pkg))
         care-ack (when (and care-pkg (not= :refused (:phase care-pkg)))
                    (crecv/receive-from-r1-package care-pkg))
+        tooling-ack (when (and tooling-pkg (not= :refused (:phase tooling-pkg)))
+                      (trecv/receive-from-r1-package tooling-pkg))
+        compute-ack (when (and compute-pkg (not= :refused (:phase compute-pkg)))
+                      (mrecv/receive-from-r1-package compute-pkg))
         out {:path "ss-offline-inkind-rails"
              :priority-stack PRIORITY-STACK
              :live false
@@ -125,7 +143,10 @@
              :care-receive care-ack
              :housing-package housing-pkg
              :tooling-package tooling-pkg
-             :compute-package compute-pkg}]
+             :tooling-receive tooling-ack
+             :compute-package compute-pkg
+             :compute-receive compute-ack
+             :liquidity-package liquidity-pkg}]
     (pp/assert-no-public-scores! (:public-person out))
     out))
 
