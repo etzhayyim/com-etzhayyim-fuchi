@@ -38,7 +38,9 @@ exec bb -cp "$ACTOR_DIR" -e '
   (quote fuchi.methods.test-rail-mitsuho)
   (quote fuchi.methods.test-rail-hikari)
   (quote fuchi.methods.test-public-surface-report)
-  (quote fuchi.methods.test-displacement-surface))
+  (quote fuchi.methods.test-displacement-surface)
+  (quote fuchi.methods.test-itonami-bridge)
+  (quote fuchi.methods.test-mitsuho-receive))
 (let [r (clojure.test/run-tests
           (quote fuchi.cells.test-state-machine)
           (quote fuchi.methods.test-provision)
@@ -58,6 +60,8 @@ exec bb -cp "$ACTOR_DIR" -e '
           (quote fuchi.methods.test-rail-mitsuho)
           (quote fuchi.methods.test-rail-hikari)
           (quote fuchi.methods.test-public-surface-report)
-          (quote fuchi.methods.test-displacement-surface))]
+          (quote fuchi.methods.test-displacement-surface)
+          (quote fuchi.methods.test-itonami-bridge)
+          (quote fuchi.methods.test-mitsuho-receive))]
   (System/exit (if (zero? (+ (:fail r) (:error r))) 0 1)))
 '

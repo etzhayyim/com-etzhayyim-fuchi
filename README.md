@@ -68,6 +68,14 @@ bb -cp . -e '(require (quote fuchi.methods.public-surface-report)) (fuchi.method
 [`methods/displacement_surface.cljc`](methods/displacement_surface.cljc) projects
 `:cohort/displacement` → public earmark facts (G2 funded cohort). No worker ranking scores.
 
+### itonami bridge + mitsuho dry receive
+
+| Module | Role |
+|---|---|
+| [`methods/itonami_bridge.cljc`](methods/itonami_bridge.cljc) | itonami displacement EDN → couple events / public facts |
+| [`data/itonami-displacement-events.edn`](data/itonami-displacement-events.edn) | representative surplus events |
+| [`methods/mitsuho_receive.cljc`](methods/mitsuho_receive.cljc) | actor-side dry-ack of food intent (produce not invoked) |
+
 ## Why it exists
 
 Real-world maintainers must be able to live; robotics/remote-control work cannot maintain itself.
