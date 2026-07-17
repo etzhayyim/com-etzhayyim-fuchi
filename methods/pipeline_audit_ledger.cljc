@@ -70,6 +70,12 @@
             :audit/liquidity-loan-executed (or (:scorecard/liquidity-loan-executed sc) 0)
             :audit/liquidity-member-principal (or (:scorecard/liquidity-member-principal sc) 0)
             :audit/liquidity-cash-usd-micros (or (:scorecard/liquidity-cash-usd-micros sc) 0)
+            :audit/r2-status-count (or (:scorecard/r2-status-count sc) 0)
+            :audit/r2-refused (or (:scorecard/r2-refused sc) 0)
+            :audit/r2-executed (or (:scorecard/r2-executed sc) 0)
+            :audit/all-r2-not-executed
+            (boolean (or (:scorecard/all-r2-not-executed sc)
+                         (zero? (or (:scorecard/r2-executed sc) 0))))
             :audit/all-held-stress-gov-flowable
             (or (get-in sc [:scorecard/all-held-stress :gov-flowable]) 0)
             :audit/all-held-stress-held-subjects
@@ -147,6 +153,12 @@
                (or (:audit/liquidity-member-principal ev) 0)
                :liquidity-cash-usd-micros
                (or (:audit/liquidity-cash-usd-micros ev) 0)
+               :r2-status-count (or (:audit/r2-status-count ev) 0)
+               :r2-refused (or (:audit/r2-refused ev) 0)
+               :r2-executed (or (:audit/r2-executed ev) 0)
+               :all-r2-not-executed
+               (boolean (or (:audit/all-r2-not-executed ev)
+                            (zero? (or (:audit/r2-executed ev) 0))))
                :all-live-refused (boolean (:audit/all-live-refused ev))
                :l4-disclosure-open (or (:audit/l4-disclosure-open ev) 0)
                :l4-disclosure-held (or (:audit/l4-disclosure-held ev) 0)
@@ -213,6 +225,11 @@
                  (or (:audit/tenure-gov-post-ratify-committed-usd-micros last-ev) 0)
                  :last-run-housing-land-grant-executed
                  (or (:audit/housing-land-grant-executed last-ev) 0)
+                 :last-run-r2-refused (or (:audit/r2-refused last-ev) 0)
+                 :last-run-r2-executed (or (:audit/r2-executed last-ev) 0)
+                 :last-run-all-r2-not-executed
+                 (boolean (or (:audit/all-r2-not-executed last-ev)
+                              (zero? (or (:audit/r2-executed last-ev) 0))))
                  :cash-usd-micros 0
                  :cash-to-workers-usd-micros 0
                  :live false

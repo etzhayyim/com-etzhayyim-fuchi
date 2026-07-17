@@ -37,6 +37,9 @@ Priority: wellbecoming > mago(孫) > ko(子) > present. cash≡0. live=false. No
 - compute-murakumo R1-dry / gated-refused / quota-executed: 8/8/0
 - liquidity-warifu R1-dry / gated-refused / loan-executed: 8/8/0
 - liquidity member-principal / cash-usd-micros: 8/0
+- R2 execute membrane statuses / refused / executed: 52/52/0
+- all-r2-not-executed: true
+- r2-by-rail: {"care" 8, "housing" 8, "food" 8, "energy" 8, "tooling" 8, "compute" 8}
 
 ## All-disclosure-held stress (priority #2, offline)
 

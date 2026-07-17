@@ -56,13 +56,20 @@
                 :housing-land-grant-executed
                 (or (:scorecard/housing-land-grant-executed scorecard) 0)
                 :housing-council-held
-                (or (:scorecard/housing-council-held scorecard) 0)}]
+                (or (:scorecard/housing-council-held scorecard) 0)
+                :r2-status-count (or (:scorecard/r2-status-count scorecard) 0)
+                :r2-refused (or (:scorecard/r2-refused scorecard) 0)
+                :r2-executed (or (:scorecard/r2-executed scorecard) 0)
+                :all-r2-not-executed
+                (boolean (or (:scorecard/all-r2-not-executed scorecard)
+                             (zero? (or (:scorecard/r2-executed scorecard) 0))))}]
        (pp/assert-no-public-scores!
         (select-keys out [:live :cash-usd-micros :score-surface :priority-stack
                           :admissible-cohorts :tenure-subjects :all-live-refused
                           :gov-flowable-committed-usd-micros
                           :gov-post-ratify-committed-usd-micros
-                          :housing-land-grant-executed]))
+                          :housing-land-grant-executed
+                          :r2-executed :r2-refused :all-r2-not-executed]))
        out)))
 
 #?(:clj

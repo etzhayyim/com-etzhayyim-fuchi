@@ -40,7 +40,11 @@
                           :scorecard/housing-r1-dry 2
                           :scorecard/housing-gated-refused 2
                           :scorecard/housing-land-grant-executed 0
-                          :scorecard/housing-council-held 2}}
+                          :scorecard/housing-council-held 2
+                          :scorecard/r2-status-count 12
+                          :scorecard/r2-refused 12
+                          :scorecard/r2-executed 0
+                          :scorecard/all-r2-not-executed true}}
         ev (audit/event-from-pipeline fake :run-id "test-run-1")]
     (is (= "test-run-1" (:audit/id ev)))
     (is (true? (:audit/all-live-refused ev)))
@@ -54,6 +58,10 @@
     (is (= 2 (:audit/housing-gated-refused ev)))
     (is (= 0 (:audit/housing-land-grant-executed ev)))
     (is (= 0 (:audit/mitsuho-produce-executed ev)))
+    (is (= 12 (:audit/r2-status-count ev)))
+    (is (= 12 (:audit/r2-refused ev)))
+    (is (= 0 (:audit/r2-executed ev)))
+    (is (true? (:audit/all-r2-not-executed ev)))
     (is (= 0 (:audit/cash-usd-micros ev)))
     (is (= 0 (:audit/cash-to-workers-usd-micros ev)))
     (is (false? (:audit/live ev)))
@@ -86,8 +94,12 @@
                (:last-run-gov-flowable-committed-usd-micros sum)))
        (is (pos? (:last-run-tenure-gov-post-ratify-committed-usd-micros sum)))
        (is (zero? (:last-run-housing-land-grant-executed sum)))
+       (is (pos? (:last-run-r2-refused sum)))
+       (is (zero? (:last-run-r2-executed sum)))
+       (is (true? (:last-run-all-r2-not-executed sum)))
        (is (map? (:last-run sum)))
        (is (zero? (get-in sum [:last-run :housing-land-grant-executed])))
+       (is (zero? (get-in sum [:last-run :r2-executed])))
        (is (false? (get-in sum [:last-run :live])))
        (is (zero? (:total-liquidity-cash-usd-micros sum)))
        (is (= 0 (:cash-usd-micros sum)))

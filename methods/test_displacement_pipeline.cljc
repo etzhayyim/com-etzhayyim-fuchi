@@ -39,7 +39,11 @@
        (is (>= (:gov-post-ratify-committed-usd-micros out)
                (:gov-flowable-committed-usd-micros out)))
        (is (zero? (:housing-land-grant-executed out)))
-       (is (pos? (:housing-council-held out))))))
+       (is (pos? (:housing-council-held out)))
+       (is (pos? (:r2-status-count out)))
+       (is (pos? (:r2-refused out)))
+       (is (zero? (:r2-executed out)))
+       (is (true? (:all-r2-not-executed out))))))
 
 #?(:clj
    (deftest test-write-all

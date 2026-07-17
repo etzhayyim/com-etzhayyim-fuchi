@@ -612,6 +612,12 @@
                          (or (:scorecard/tenure-gov-post-ratify-committed-usd-micros sc) 0) "\n"))
         (conj! lines (str "- land-grant-executed (post-ratify plan still false): "
                          (or (:scorecard/housing-land-grant-executed sc) 0) "\n"))
+        (conj! lines (str "- R2 execute statuses/refused/executed: "
+                         (or (:scorecard/r2-status-count sc) 0) "/"
+                         (or (:scorecard/r2-refused sc) 0) "/"
+                         (or (:scorecard/r2-executed sc) 0)
+                         " all-r2-not-executed="
+                         (boolean (:scorecard/all-r2-not-executed sc true)) "\n"))
         (conj! lines (str "- L4 disclosure open/held: "
                          (or (:scorecard/l4-disclosure-open sc) 0) "/"
                          (or (:scorecard/l4-disclosure-held sc) 0) "\n"))
@@ -686,6 +692,11 @@
         (conj! lines (str "- last-run land-grant-executed: "
                          (or (:last-run-housing-land-grant-executed au) 0)
                          " (post-ratify plan keeps land-grant=false)\n"))
+        (conj! lines (str "- last-run R2 refused/executed: "
+                         (or (:last-run-r2-refused au) 0) "/"
+                         (or (:last-run-r2-executed au) 0)
+                         " all-r2-not-executed="
+                         (boolean (:last-run-all-r2-not-executed au true)) "\n"))
         (conj! lines (str "- cumulative liquidity member-principal / cash-usd-micros: "
                          (or (:total-liquidity-member-principal au) 0) "/"
                          (or (:total-liquidity-cash-usd-micros au) 0) "\n"))
@@ -816,7 +827,10 @@
           " gov-post-ratify=" (or (:scorecard/gov-post-ratify-committed-usd-micros sc) 0)
           " tenure-gov-post-ratify=" (or (:scorecard/tenure-gov-post-ratify-committed-usd-micros sc) 0)
           " land-grant-executed=" (or (:scorecard/housing-land-grant-executed sc) 0)
-          ". Housing held for Council; multi-gen substrate may dry-flow; post-ratify plan keeps land-grant=false.</p>"
+          " r2-refused/executed=" (or (:scorecard/r2-refused sc) 0) "/"
+          (or (:scorecard/r2-executed sc) 0)
+          " all-r2-not-executed=" (boolean (:scorecard/all-r2-not-executed sc true))
+          ". Housing held for Council; multi-gen substrate may dry-flow; post-ratify plan keeps land-grant=false; R2 execute default refuse.</p>"
           "<table><thead>"
           (rows "th" ["rail" "R1-dry" "gated-refused" "executed"])
           "</thead><tbody>"
@@ -900,6 +914,11 @@
           " land-grant-executed="
           (or (:last-run-housing-land-grant-executed au) 0)
           " (post-ratify keeps land-grant=false)."
+          " last-run R2 refused/executed="
+          (or (:last-run-r2-refused au) 0) "/"
+          (or (:last-run-r2-executed au) 0)
+          " all-r2-not-executed="
+          (boolean (:last-run-all-r2-not-executed au true))
           " liquidity member-principal/cash="
           (or (:total-liquidity-member-principal au) 0) "/"
           (or (:total-liquidity-cash-usd-micros au) 0)

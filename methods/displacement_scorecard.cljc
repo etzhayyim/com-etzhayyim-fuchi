@@ -33,6 +33,46 @@
          :score-surface []}))
     live-gate/LEG-POLICY)))
 
+(defn- r2-statuses-from-packages
+  "Collect R2 execute-membrane status maps from gov subjects (+ subject fallback)."
+  [pkgs]
+  (vec
+   (mapcat
+    (fn [p]
+      (concat
+       (mapcat (fn [g] (vals (or (:r2-by-rail g) {})))
+               (concat (or (:gov-subjects p) [])
+                       (or (:tenure-gov-subjects p) [])))
+       (keep :r2-execute-status
+             (concat (or (:subjects p) [])
+                     (or (:tenure-subjects p) [])))))
+    pkgs)))
+
+(defn r2-execute-summary
+  "Facts-only R2 membrane aggregate: default refuse, executed always 0 offline."
+  [pkgs]
+  (let [sts (r2-statuses-from-packages pkgs)
+        executed (count (filter #(true? (:executed %)) sts))
+        refused (count (filter #(not (true? (:executed %))) sts))
+        by-rail (frequencies
+                 (mapcat (fn [p]
+                           (mapcat #(keys (or (:r2-by-rail %) {}))
+                                   (concat (or (:gov-subjects p) [])
+                                           (or (:tenure-gov-subjects p) []))))
+                         pkgs))
+        out {:r2-status-count (count sts)
+             :r2-refused refused
+             :r2-executed executed
+             :r2-by-rail by-rail
+             :all-r2-not-executed (zero? executed)
+             :live false
+             :cash-usd-micros 0
+             :score-surface []
+             :priority-stack PRIORITY-STACK
+             :note "R2 execute membrane — default refuse; scaffold never side-effects"}]
+    (pp/assert-no-public-scores! (dissoc out :r2-by-rail))
+    out))
+
 #?(:clj
    (defn- load-events []
      (let [actor (or (System/getenv "FUCHI_ACTOR_DIR")
@@ -269,6 +309,13 @@
                         :live false
                         :score-surface []})
                      pkgs)}
+         r2sum (r2-execute-summary pkgs)
+         body (assoc body
+                     :scorecard/r2-status-count (:r2-status-count r2sum)
+                     :scorecard/r2-refused (:r2-refused r2sum)
+                     :scorecard/r2-executed (:r2-executed r2sum)
+                     :scorecard/r2-by-rail (:r2-by-rail r2sum)
+                     :scorecard/all-r2-not-executed (:all-r2-not-executed r2sum))
          ;; Priority #2: offline all-disclosure-held stress projection (does not mutate open batch)
          stress (try
                   (when-not (= :all-held (:disclosure-stress batch))
@@ -284,6 +331,7 @@
                        :open-gov-flowable
                        (long (or (:gov-flowable-committed-usd-micros batch) 0))
                        :land-grant-executed 0
+                       :r2-executed 0
                        :live false
                        :cash-usd-micros 0
                        :score-surface []
@@ -296,6 +344,7 @@
       (dissoc body :scorecard/itonami-ledger :scorecard/cohorts :scorecard/live-legs
               :scorecard/tenure-stage-counts :scorecard/stage-counts
               :scorecard/gov-route-counts :scorecard/tenure-gov-route-counts
+              :scorecard/r2-by-rail
               :scorecard/all-held-stress))
      (when stress (pp/assert-no-public-scores! stress))
      (doseq [c (:scorecard/cohorts body)] (pp/assert-no-public-scores! c))
@@ -377,7 +426,14 @@
                      (or (:scorecard/liquidity-loan-executed body) 0) "\n")
                 (str "- liquidity member-principal / cash-usd-micros: "
                      (or (:scorecard/liquidity-member-principal body) 0) "/"
-                     (or (:scorecard/liquidity-cash-usd-micros body) 0) "\n")])]
+                     (or (:scorecard/liquidity-cash-usd-micros body) 0) "\n")
+                (str "- R2 execute membrane statuses / refused / executed: "
+                     (or (:scorecard/r2-status-count body) 0) "/"
+                     (or (:scorecard/r2-refused body) 0) "/"
+                     (or (:scorecard/r2-executed body) 0) "\n")
+                (str "- all-r2-not-executed: "
+                     (boolean (:scorecard/all-r2-not-executed body true)) "\n")
+                (str "- r2-by-rail: " (pr-str (or (:scorecard/r2-by-rail body) {})) "\n")])]
     (when-let [st (:scorecard/all-held-stress body)]
       (conj! lines "\n## All-disclosure-held stress (priority #2, offline)\n\n")
       (conj! lines (str "- stress: " (:stress st) "\n"))
