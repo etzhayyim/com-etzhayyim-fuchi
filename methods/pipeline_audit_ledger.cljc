@@ -220,6 +220,24 @@
                (or (:audit/ss-ladder-rails-hint-first ev) "n/a")
                :ss-held-stress-ladder-refused
                (boolean (:audit/ss-held-stress-ladder-refused ev))
+               :ss-stage-rails-first
+               (or (:audit/ss-stage-rails-first ev) "n/a")
+               :ss-stage-rails-second
+               (or (:audit/ss-stage-rails-second ev) "n/a")
+               :ss-stage-gated-count
+               (or (:audit/ss-stage-gated-count ev) 0)
+               :ss-stage-all-gated-refused
+               (boolean (:audit/ss-stage-all-gated-refused ev true))
+               :ss-stage-r2-all-refused
+               (boolean (:audit/ss-stage-r2-all-refused ev true))
+               :ss-stage-care-gated-admissible
+               (boolean (:audit/ss-stage-care-gated-admissible ev))
+               :ss-stage-mitsuho-gated-admissible
+               (boolean (:audit/ss-stage-mitsuho-gated-admissible ev))
+               :ss-stage-hikari-gated-admissible
+               (boolean (:audit/ss-stage-hikari-gated-admissible ev))
+               :ss-stage-land-grant-executed
+               (boolean (:audit/ss-stage-land-grant-executed ev))
                :ss-disclosure-state (or (:audit/ss-disclosure-state ev) "n/a")
                :all-live-refused (boolean (:audit/all-live-refused ev))
                :l4-disclosure-open (or (:audit/l4-disclosure-open ev) 0)
@@ -308,6 +326,24 @@
                  (or (:audit/ss-ladder-rails-hint-first last-ev) "n/a")
                  :last-run-ss-held-stress-ladder-refused
                  (boolean (:audit/ss-held-stress-ladder-refused last-ev))
+                 :last-run-ss-stage-rails-first
+                 (or (:audit/ss-stage-rails-first last-ev) "n/a")
+                 :last-run-ss-stage-rails-second
+                 (or (:audit/ss-stage-rails-second last-ev) "n/a")
+                 :last-run-ss-stage-gated-count
+                 (or (:audit/ss-stage-gated-count last-ev) 0)
+                 :last-run-ss-stage-all-gated-refused
+                 (boolean (:audit/ss-stage-all-gated-refused last-ev true))
+                 :last-run-ss-stage-r2-all-refused
+                 (boolean (:audit/ss-stage-r2-all-refused last-ev true))
+                 :last-run-ss-stage-care-gated-admissible
+                 (boolean (:audit/ss-stage-care-gated-admissible last-ev))
+                 :last-run-ss-stage-mitsuho-gated-admissible
+                 (boolean (:audit/ss-stage-mitsuho-gated-admissible last-ev))
+                 :last-run-ss-stage-hikari-gated-admissible
+                 (boolean (:audit/ss-stage-hikari-gated-admissible last-ev))
+                 :last-run-ss-stage-land-grant-executed
+                 (boolean (:audit/ss-stage-land-grant-executed last-ev))
                  :cash-usd-micros 0
                  :cash-to-workers-usd-micros 0
                  :live false

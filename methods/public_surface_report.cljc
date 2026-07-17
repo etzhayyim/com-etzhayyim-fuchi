@@ -811,6 +811,20 @@
         (conj! lines (str "- last-run SS all-r2-not-executed / l0-published: "
                          (boolean (:last-run-ss-all-r2-not-executed au true)) "/"
                          (boolean (:last-run-ss-l0-published au)) "\n"))
+        (conj! lines (str "- last-run SS ladder-to / stage-rails first/second: "
+                         (or (:last-run-ss-ladder-to au) "n/a") "/"
+                         (or (:last-run-ss-stage-rails-first au) "n/a") "/"
+                         (or (:last-run-ss-stage-rails-second au) "n/a") "\n"))
+        (conj! lines (str "- last-run SS stage gated count/all-refused/r2-all-refused: "
+                         (or (:last-run-ss-stage-gated-count au) 0) "/"
+                         (boolean (:last-run-ss-stage-all-gated-refused au true)) "/"
+                         (boolean (:last-run-ss-stage-r2-all-refused au true)) "\n"))
+        (conj! lines (str "- last-run SS stage care/mitsuho/hikari gated-admissible: "
+                         (boolean (:last-run-ss-stage-care-gated-admissible au)) "/"
+                         (boolean (:last-run-ss-stage-mitsuho-gated-admissible au)) "/"
+                         (boolean (:last-run-ss-stage-hikari-gated-admissible au)) "\n"))
+        (conj! lines (str "- last-run SS stage land-grant-executed: "
+                         (boolean (:last-run-ss-stage-land-grant-executed au)) "\n"))
         (conj! lines (str "- cumulative liquidity member-principal / cash-usd-micros: "
                          (or (:total-liquidity-member-principal au) 0) "/"
                          (or (:total-liquidity-cash-usd-micros au) 0) "\n"))
@@ -1121,6 +1135,20 @@
           (boolean (:last-run-ss-all-rails-gated-refused au true))
           " ss-all-r2-not-executed="
           (boolean (:last-run-ss-all-r2-not-executed au true))
+          " ladder-to=" (or (:last-run-ss-ladder-to au) "n/a")
+          " stage-rails="
+          (or (:last-run-ss-stage-rails-first au) "n/a") "/"
+          (or (:last-run-ss-stage-rails-second au) "n/a")
+          " stage-gated="
+          (or (:last-run-ss-stage-gated-count au) 0)
+          " stage-all-gated-refused="
+          (boolean (:last-run-ss-stage-all-gated-refused au true))
+          " stage-care/mitsuho/hikari-gated="
+          (boolean (:last-run-ss-stage-care-gated-admissible au)) "/"
+          (boolean (:last-run-ss-stage-mitsuho-gated-admissible au)) "/"
+          (boolean (:last-run-ss-stage-hikari-gated-admissible au))
+          " stage-land-grant="
+          (boolean (:last-run-ss-stage-land-grant-executed au))
           " liquidity member-principal/cash="
           (or (:total-liquidity-member-principal au) 0) "/"
           (or (:total-liquidity-cash-usd-micros au) 0)

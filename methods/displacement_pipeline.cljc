@@ -71,7 +71,31 @@
                 :ss-all-r2-not-executed
                 (boolean (get-in scorecard
                                  [:scorecard/ss-priority-path :all-r2-not-executed]
-                                 true))}]
+                                 true))
+                :ss-ladder-to
+                (or (get-in scorecard [:scorecard/ss-priority-path :ladder-to]) "n/a")
+                :ss-stage-rails-first
+                (or (get-in scorecard [:scorecard/ss-priority-path :stage-rails-first]) "n/a")
+                :ss-stage-all-gated-refused
+                (boolean (get-in scorecard
+                                 [:scorecard/ss-priority-path :stage-all-gated-refused]
+                                 true))
+                :ss-stage-r2-all-refused
+                (boolean (get-in scorecard
+                                 [:scorecard/ss-priority-path :stage-r2-all-refused]
+                                 true))
+                :ss-stage-care-gated-admissible
+                (boolean (get-in scorecard
+                                 [:scorecard/ss-priority-path :stage-care-gated-admissible]))
+                :ss-stage-mitsuho-gated-admissible
+                (boolean (get-in scorecard
+                                 [:scorecard/ss-priority-path :stage-mitsuho-gated-admissible]))
+                :ss-stage-hikari-gated-admissible
+                (boolean (get-in scorecard
+                                 [:scorecard/ss-priority-path :stage-hikari-gated-admissible]))
+                :ss-stage-land-grant-executed
+                (boolean (get-in scorecard
+                                 [:scorecard/ss-priority-path :stage-land-grant-executed]))}]
        (pp/assert-no-public-scores!
         (select-keys out [:live :cash-usd-micros :score-surface :priority-stack
                           :admissible-cohorts :tenure-subjects :all-live-refused
@@ -79,7 +103,12 @@
                           :gov-post-ratify-committed-usd-micros
                           :housing-land-grant-executed
                           :r2-executed :r2-refused :all-r2-not-executed
-                          :ss-all-rails-gated-refused :ss-all-r2-not-executed]))
+                          :ss-all-rails-gated-refused :ss-all-r2-not-executed
+                          :ss-stage-all-gated-refused :ss-stage-r2-all-refused
+                          :ss-stage-land-grant-executed
+                          :ss-stage-care-gated-admissible
+                          :ss-stage-mitsuho-gated-admissible
+                          :ss-stage-hikari-gated-admissible]))
        out)))
 
 #?(:clj

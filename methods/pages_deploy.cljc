@@ -193,6 +193,26 @@
                   (boolean (:last-run-ss-all-r2-not-executed au true))
                   :last-run-ss-l0-published
                   (boolean (:last-run-ss-l0-published au))
+                  :last-run-ss-ladder-to
+                  (or (:last-run-ss-ladder-to au) "n/a")
+                  :last-run-ss-stage-rails-first
+                  (or (:last-run-ss-stage-rails-first au) "n/a")
+                  :last-run-ss-stage-rails-second
+                  (or (:last-run-ss-stage-rails-second au) "n/a")
+                  :last-run-ss-stage-gated-count
+                  (or (:last-run-ss-stage-gated-count au) 0)
+                  :last-run-ss-stage-all-gated-refused
+                  (boolean (:last-run-ss-stage-all-gated-refused au true))
+                  :last-run-ss-stage-r2-all-refused
+                  (boolean (:last-run-ss-stage-r2-all-refused au true))
+                  :last-run-ss-stage-care-gated-admissible
+                  (boolean (:last-run-ss-stage-care-gated-admissible au))
+                  :last-run-ss-stage-mitsuho-gated-admissible
+                  (boolean (:last-run-ss-stage-mitsuho-gated-admissible au))
+                  :last-run-ss-stage-hikari-gated-admissible
+                  (boolean (:last-run-ss-stage-hikari-gated-admissible au))
+                  :last-run-ss-stage-land-grant-executed
+                  (boolean (:last-run-ss-stage-land-grant-executed au))
                   :live false
                   :cash-usd-micros 0
                   :score-surface []

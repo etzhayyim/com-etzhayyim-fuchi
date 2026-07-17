@@ -96,6 +96,16 @@
        (is (false? (boolean (get-in st [:audit-snapshot :any-land-grant-executed?]))))
        (is (zero? (or (get-in st [:audit-snapshot :last-run-housing-land-grant-executed]) 0)))
        (is (false? (get-in st [:audit-snapshot :live])))
+       (let [snap (:audit-snapshot st)]
+         (when (pos? (or (:runs snap) 0))
+           (is (contains? snap :last-run-ss-stage-all-gated-refused))
+           (is (contains? snap :last-run-ss-stage-care-gated-admissible))
+           (is (false? (boolean (:last-run-ss-stage-land-grant-executed snap))))
+           (when (pos? (or (:last-run-ss-stage-gated-count snap) 0))
+             (is (true? (boolean (:last-run-ss-stage-all-gated-refused snap))))
+             (is (false? (boolean (:last-run-ss-stage-care-gated-admissible snap))))
+             (is (false? (boolean (:last-run-ss-stage-mitsuho-gated-admissible snap))))
+             (is (false? (boolean (:last-run-ss-stage-hikari-gated-admissible snap)))))))
        (let [html (slurp (:index pkg))
              readme (slurp (io/file "public/README.md"))
              rb (read-string (slurp rb-path))]

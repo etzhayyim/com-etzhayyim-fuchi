@@ -48,7 +48,15 @@
        (is (true? (:ss-all-rails-gated-refused out)))
        (is (true? (:ss-all-r2-not-executed out)))
        (is (false? (get-in out [:ss-priority-path :l0-published])))
-       (is (= 7 (get-in out [:ss-priority-path :rails-gated-count]))))))
+       (is (= 7 (get-in out [:ss-priority-path :rails-gated-count])))
+       (is (= "L4" (:ss-ladder-to out)))
+       (is (= "care" (:ss-stage-rails-first out)))
+       (is (true? (:ss-stage-all-gated-refused out)))
+       (is (true? (:ss-stage-r2-all-refused out)))
+       (is (false? (:ss-stage-care-gated-admissible out)))
+       (is (false? (:ss-stage-mitsuho-gated-admissible out)))
+       (is (false? (:ss-stage-hikari-gated-admissible out)))
+       (is (false? (:ss-stage-land-grant-executed out))))))
 
 #?(:clj
    (deftest test-write-all
