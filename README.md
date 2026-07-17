@@ -40,6 +40,16 @@ Seed packages: `:disclosure/batch` in [`data/seed-sustenance-graph.kotoba.edn`](
 
 Live mint/pin/mail remain refuse-by-default (G10).
 
+### food-mitsuho single rail (R1 → gated-live design)
+
+| Module | Role |
+|---|---|
+| [`methods/rail_mitsuho.cljc`](methods/rail_mitsuho.cljc) | R1 dry intent + gated-live **plan** (no mitsuho produce call) |
+| [`data/rail-mitsuho-design.edn`](data/rail-mitsuho-design.edn) | design SSoT |
+| [`lex/mitsuhoRailDispatch.edn`](lex/mitsuhoRailDispatch.edn) | dispatch package lexicon |
+
+Disclosure held → refuse. Live gate default refuse. cash≡0 / score empty.
+
 ## Why it exists
 
 Real-world maintainers must be able to live; robotics/remote-control work cannot maintain itself.
