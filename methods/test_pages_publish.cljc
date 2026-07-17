@@ -13,7 +13,11 @@
        (is (false? (:live paths)))
        (is (= 0 (:cash-usd-micros paths)))
        (is (= [] (:score-surface paths)))
+       (is (true? (:all-live-refused paths)))
+       (is (.exists (io/file (:scorecard paths))))
        (let [html (slurp (:index paths))]
          (is (str/includes? html "public surface"))
          (is (str/includes? html "wellbecoming"))
+         (is (str/includes? html "L0→L4"))
+         (is (str/includes? html "SS scorecard"))
          (is (not (re-find #"(?i)\| *rank *\|" html)))))))

@@ -33,7 +33,7 @@
 (defn build
   "Full offline scorecard map from optional itonami batch result."
   ([]
-   #?(:clj (build (dl0/run-default-seed :max-slots 2 :climb-steps 3))
+   #?(:clj (build (dl0/run-default-seed :max-slots 2 :climb-steps 4))
       :cljs {:error "clj-only seed load"}))
   ([batch]
    (let [pkgs (or (:packages batch) [])

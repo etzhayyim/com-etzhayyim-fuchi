@@ -25,6 +25,7 @@
             [fuchi.methods.displacement-surface :as disp]
             [fuchi.methods.itonami-bridge :as itonami]
             [fuchi.methods.displacement-l0-path :as dl0]
+            [fuchi.methods.displacement-scorecard :as dsc]
             #?(:clj [fuchi.methods.edn :as edn])
             #?(:clj [clojure.java.io :as io])))
 
@@ -230,8 +231,9 @@
 
 (defn report-edn
   "Full facts-only report structure."
-  [seed & {:keys [include-l0-demo include-itonami include-displacement-l0]
-           :or {include-displacement-l0 true}}]
+  [seed & {:keys [include-l0-demo include-itonami include-displacement-l0
+                  include-scorecard]
+           :or {include-displacement-l0 true include-scorecard true}}]
   (let [facts (seed-public-facts seed)
         rails (inkind-rail-packages seed)
         drows (disp/public-displacement-facts seed)
@@ -242,13 +244,18 @@
                              (itonami/load-itonami-seed-file) seed)
                             (catch Exception _ []))
                           :cljs []))
-        dl0-sum (when include-displacement-l0
-                  #?(:clj
-                     (try
-                       (displacement-l0-public-summary
-                        (dl0/run-default-seed :max-slots 2))
-                       (catch Exception _ nil))
-                     :cljs nil))
+        dl0-batch #?(:clj
+                     (when include-displacement-l0
+                       (try (dl0/run-default-seed :max-slots 2 :climb-steps 4)
+                            (catch Exception _ nil)))
+                     :cljs nil)
+        dl0-sum (when dl0-batch (displacement-l0-public-summary dl0-batch))
+        scard (when include-scorecard
+                #?(:clj
+                   (try
+                     (if dl0-batch (dsc/build dl0-batch) (dsc/build))
+                     (catch Exception _ nil))
+                   :cljs nil))
         body {:report/id "fuchi.public-surface"
               :report/adr ["2607177000" "2606032130"]
               :report/priority-stack PRIORITY-STACK
@@ -261,6 +268,7 @@
               :report/displacement-summary (disp/summary drows)
               :report/itonami-displacement (or itonami-rows [])
               :report/displacement-l0 (or dl0-sum {})
+              :report/displacement-scorecard (or scard {})
               :report/l0-demo (when include-l0-demo
                                 (l0-demo-fact "did:web:etzhayyim.com:member:lot"))}]
     (doseq [f facts] (pp/assert-no-public-scores! f))
@@ -332,7 +340,7 @@
                         " total-displaced=" (:total-displaced s) "\n")))
     (when-let [dl0 (:report/displacement-l0 body)]
       (when (seq (:packages dl0))
-        (conj! lines "\n## Displacement → L0→L3 enroll (offline; G2 gated)\n")
+        (conj! lines "\n## Displacement → L0→L4 enroll (offline; G2 gated)\n")
         (conj! lines (str "admissible-cohorts=" (:admissible-cohorts dl0)
                           " refused-cohorts=" (:refused-cohorts dl0)
                           " enrolled-subjects=" (:enrolled-subjects dl0)
@@ -343,7 +351,14 @@
                  (str "| " (:displacing-actor p) " | " (:cohort-id p) " | "
                       (:phase p) " | " (:subject-count p) " | "
                       (:committed-usd-micros-yr p) " | "
-                      (:headroom-usd-micros-yr p) " |\n")))))
+                      (:headroom-usd-micros-yr p) " |\n"))))
+    (when-let [sc (:report/displacement-scorecard body)]
+      (when (seq sc)
+        (conj! lines "\n## Displacement SS scorecard (offline)\n")
+        (conj! lines (str "- all-live-refused: " (:scorecard/all-live-refused sc) "\n"))
+        (conj! lines (str "- booked-entries: " (:scorecard/booked-entries sc) "\n"))
+        (conj! lines (str "- committed: " (:scorecard/committed-usd-micros-yr sc) "\n"))
+        (conj! lines (str "- headroom: " (:scorecard/headroom-usd-micros-yr sc) "\n")))))
     (when-let [l0 (:report/l0-demo body)]
       (conj! lines "\n## L0 demo (offline)\n")
       (conj! lines (str "- did: " (last-seg (:did l0)) " stage=" (:stage l0)
@@ -416,19 +431,31 @@
         "</tbody></table>"))
      (when (seq (get-in body [:report/displacement-l0 :packages]))
        (str
-        "<h2>Displacement → L0→L3 enroll (offline)</h2>"
-        "<p class=\"note\">Funded cohorts open L0 climb to L3 multi-gen+vocation floors; unfunded refuse. "
+        "<h2>Displacement → L0→L4 enroll (offline)</h2>"
+        "<p class=\"note\">Funded cohorts open L0 climb to L4 multi-gen (care/housing first); unfunded refuse. "
         "enrolled-subjects=" (get-in body [:report/displacement-l0 :enrolled-subjects])
         " refused-cohorts=" (get-in body [:report/displacement-l0 :refused-cohorts])
         " stages=" (pr-str (get-in body [:report/displacement-l0 :stage-counts])) ".</p>"
         "<table><thead>"
-        (rows "th" ["actor" "cohort" "phase" "subjects" "stages"])
+        (rows "th" ["actor" "cohort" "phase" "subjects" "committed" "headroom"])
         "</thead><tbody>"
         (apply str
                (for [p (get-in body [:report/displacement-l0 :packages])]
                  (rows "td" [(:displacing-actor p) (:cohort-id p)
-                             (:phase p) (:subject-count p) (pr-str (:stages p))])))
+                             (:phase p) (:subject-count p)
+                             (:committed-usd-micros-yr p)
+                             (:headroom-usd-micros-yr p)])))
         "</tbody></table>"))
+     (when (get-in body [:report/displacement-scorecard :scorecard/id])
+       (str
+        "<h2>SS scorecard (offline)</h2>"
+        "<p class=\"note\">all-live-refused="
+        (get-in body [:report/displacement-scorecard :scorecard/all-live-refused])
+        " booked-entries="
+        (get-in body [:report/displacement-scorecard :scorecard/booked-entries])
+        " committed="
+        (get-in body [:report/displacement-scorecard :scorecard/committed-usd-micros-yr])
+        ".</p>"))
      "<p class=\"note\">G2: no live displacement without a funded cohort. "
      "Recipient scores are unrepresentable. Live rails default refuse.</p>"
      "</body></html>")))

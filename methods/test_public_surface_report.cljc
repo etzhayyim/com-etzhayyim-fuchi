@@ -61,7 +61,9 @@
        (is (pos? (get-in body [:report/displacement-l0 :admissible-cohorts] 0)))
        (is (pos? (get-in body [:report/displacement-l0 :refused-cohorts] 0)))
        (is (= 0 (get-in body [:report/displacement-l0 :cash-usd-micros])))
-       (is (= [] (get-in body [:report/displacement-l0 :score-surface]))))))
+       (is (= [] (get-in body [:report/displacement-l0 :score-surface])))
+       (is (true? (get-in body [:report/displacement-scorecard :scorecard/all-live-refused])))
+       (is (pos? (get-in body [:report/displacement-scorecard :scorecard/enrolled-subjects] 0))))))
 
 #?(:clj
    (deftest test-write-report

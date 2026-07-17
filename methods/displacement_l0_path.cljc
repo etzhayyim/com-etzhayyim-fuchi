@@ -2,11 +2,10 @@
   "displacement_l0_path.cljc — offline path: itonami/robotics displacement → L0 enroll.
 
   When a funded Public-Fund earmark exists (G2), project representative displaced
-  subjects into L0 enrollment, climb offline toward L3 (multi-gen substrate +
-  vocation recovery: food/energy/care/housing/tooling/compute;
-  wellbecoming > 孫 > 子), attach stage-aware dry floors, disclosure continuity
-  tick, offline toritate/kanae booking (write_live refused). R2 execute stays
-  refused. Unfunded surplus → refused (no free-riding).
+  subjects into L0 enrollment, climb offline toward L4 (explicit 孫/子 multi-gen
+  care: care/housing first + food/energy/tooling/compute), attach stage-aware dry
+  floors, disclosure continuity tick, offline toritate/kanae booking (write_live
+  refused). R2 execute stays refused. Unfunded surplus → refused (no free-riding).
 
   Never cash. Never scores. Never live mint/dispatch. Portable .cljc."
   (:require [fuchi.methods.l0-enroll :as l0]
@@ -59,7 +58,7 @@
      :score-surface []}))
 
 (defn enroll-displaced-subject
-  "Offline L0 enroll → climb to target stage (default L3) → stage dry floors + disclosure tick.
+  "Offline L0 enroll → climb to target stage (default L4 multi-gen) → stage floors + disclosure.
    R2 execute remains default refuse."
   [{:keys [subject-did cohort-id displacing-actor food-imputed-usd-micros-yr
            care-imputed-usd-micros-yr energy-imputed-usd-micros-yr
@@ -72,9 +71,9 @@
          housing-imputed-usd-micros-yr DEFAULT-HOUSING-MICROS-YR
          tooling-imputed-usd-micros-yr DEFAULT-TOOLING-MICROS-YR
          compute-imputed-usd-micros-yr DEFAULT-COMPUTE-MICROS-YR
-         climb-steps 3
-         target-stage "L3"}}]
-  ;; climb-steps 3 → L3 vocation; pass 4 for L4 multi-gen-care emphasis
+         climb-steps 4
+         target-stage "L4"}}]
+  ;; climb-steps 4 → L4 multi-gen-care (wellbecoming > 孫 > 子); 3 = L3 vocation
   (let [sig (or member-signature (str "sig-displaced-" subject-did))
         enrolled (l0/enroll {:subject-did subject-did
                              :vow-text (or vow-text
@@ -163,10 +162,10 @@
     out))
 
 (defn run-for-event
-  "One funded displacement event → slot plan + offline L0→L3 + book + G2 re-gate.
+  "One funded displacement event → slot plan + offline L0→L4 + book + G2 re-gate.
    If booked floors exceed earmark, phase becomes :refused-over-earmark (subjects retained
    as dry plan for diagnosis, not admissible)."
-  [event & {:keys [max-slots climb-steps] :or {max-slots 5 climb-steps 3}}]
+  [event & {:keys [max-slots climb-steps] :or {max-slots 5 climb-steps 4}}]
   (let [ear (couple/earmark-from-surplus event)
         gate0 (couple/coupling-gate event ear 0)]
     (if-not (true? (get gate0 "admissible"))
@@ -211,12 +210,12 @@
          :score-surface []
          :priority-stack PRIORITY-STACK
          :note (if ok?
-                 "offline L0→L3 floors booked within earmark — no live mint/execute/commit"
+                 "offline L0→L4 multi-gen floors booked within earmark — no live mint/execute/commit"
                  "booked floors exceed earmark — G2 refuse over-commit")}))))
 
 (defn run-from-itonami-seed
   "All itonami seed events → displacement packages (admissible + refused)."
-  [itonami-seed & {:keys [max-slots climb-steps] :or {max-slots 5 climb-steps 3}}]
+  [itonami-seed & {:keys [max-slots climb-steps] :or {max-slots 5 climb-steps 4}}]
   (let [events (if (sequential? itonami-seed)
                  (mapv itonami/itonami->couple-event itonami-seed)
                  (itonami/load-itonami-batch itonami-seed))
@@ -241,8 +240,8 @@
 
 #?(:clj
    (defn run-default-seed
-     "Load data/itonami-displacement-events.edn and run displacement→L3 offline path."
-     [& {:keys [max-slots climb-steps] :or {max-slots 3 climb-steps 3}}]
+     "Load data/itonami-displacement-events.edn and run displacement→L4 offline path."
+     [& {:keys [max-slots climb-steps] :or {max-slots 3 climb-steps 4}}]
      (let [actor (or (System/getenv "FUCHI_ACTOR_DIR")
                      (-> *file* io/file .getParentFile .getParentFile .getCanonicalPath))
            seed (edn/load-edn (io/file actor "data" "itonami-displacement-events.edn"))]
