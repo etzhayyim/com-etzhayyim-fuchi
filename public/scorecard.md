@@ -19,7 +19,7 @@ Priority: wellbecoming > mago(孫) > ko(子) > present. cash≡0. live=false. No
 - booked ledger entries (L4): 24
 - tenure booked entries: 24
 - all live legs refused: true
-- gov routes (L4): {"council-lv7" 8}
+- gov routes (L4): {"council-lv7" 4}
 - gov flowable committed L4 (housing held): 18800000000
 - gov post-ratify committed L4 (grant false): 42800000000
 - couple post-ratify committed L4: 42800000000

@@ -117,6 +117,47 @@
     (is (map? (:tenure-couple-post-ratify gp)))
     (is (some? (get-in gp [:tenure-subjects 0 :flowable-booking])))
     (is (pos? (get-in out [:tenure-gov-route-counts "council-lv7"] 0)))
+    ;; L4 routes must not double-count tenure subjects
+    (is (= 1 (get-in gp [:gov-route-counts "council-lv7"])))
+    (is (= 1 (get-in gp [:tenure-gov-route-counts "council-lv7"])))
+    (is (= 1 (get-in out [:gov-route-counts "council-lv7"])))
+    (is (= 1 (get-in out [:tenure-gov-route-counts "council-lv7"])))
+    (is (false? (:live out)))
+    (is (= 0 (:cash-usd-micros out)))))
+
+(deftest test-mixed-disclosure-held-reduces-flowable
+  "One open + one disclosure-held subject: flowable uses only open; G2 still admissible."
+  (let [ev (couple/make-displacement-event
+            {:displacing-actor "itonami-robotics"
+             :cohort-id "c-mixed"
+             :displaced-count 10
+             :surplus-usd-micros-yr 120000000000
+             :funded true})
+        pkg0 (d/run-for-event ev :max-slots 2 :climb-steps 4)
+        s0 (first (:subjects pkg0))
+        s1 (second (:subjects pkg0))
+        stale {:wage-labor-band :stale :state-benefits? false
+               :wellbecoming-attest-fact :stale :related-party-edges []
+               :rider-s2-self-report :none}
+        held (assoc s1
+                    :disclosure-held? true
+                    :entitlements-may-flow? false
+                    :disclosure-state :held
+                    :disclosure-hold (assoc (:disclosure-hold s1)
+                                           :state :held
+                                           :entitlements-held? true))
+        pkg (assoc pkg0 :subjects [s0 held])
+        out (g/package-batch {:packages [pkg] :path "mixed"})
+        gp (first (:packages out))
+        open-flow (get-in (g/package-subject s0) [:flowable-booking :in-kind-total-usd-micros])
+        held-flow (get-in (g/package-subject held) [:flowable-booking :in-kind-total-usd-micros])]
+    (is (pos? open-flow))
+    (is (zero? held-flow))
+    (is (= open-flow (:gov-flowable-committed-usd-micros gp)))
+    (is (true? (get-in gp [:couple :admissible])))
+    (is (= open-flow (get-in gp [:couple :committed-usd-micros-yr])))
+    (is (< (:gov-flowable-committed-usd-micros gp)
+           (:gov-post-ratify-committed-usd-micros gp)))
     (is (false? (:live out)))
     (is (= 0 (:cash-usd-micros out)))))
 

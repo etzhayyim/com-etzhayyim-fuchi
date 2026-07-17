@@ -33,6 +33,18 @@
             :audit/gov-route-counts (or (:gov-route-counts pipeline-result)
                                         (:scorecard/gov-route-counts sc)
                                         {})
+            :audit/gov-flowable-committed-usd-micros
+            (or (:scorecard/gov-flowable-committed-usd-micros sc) 0)
+            :audit/gov-post-ratify-committed-usd-micros
+            (or (:scorecard/gov-post-ratify-committed-usd-micros sc) 0)
+            :audit/tenure-gov-flowable-committed-usd-micros
+            (or (:scorecard/tenure-gov-flowable-committed-usd-micros sc) 0)
+            :audit/tenure-gov-post-ratify-committed-usd-micros
+            (or (:scorecard/tenure-gov-post-ratify-committed-usd-micros sc) 0)
+            :audit/l4-disclosure-open (or (:scorecard/l4-disclosure-open sc) 0)
+            :audit/l4-disclosure-held (or (:scorecard/l4-disclosure-held sc) 0)
+            :audit/tenure-disclosure-open (or (:scorecard/tenure-disclosure-open sc) 0)
+            :audit/tenure-disclosure-held (or (:scorecard/tenure-disclosure-held sc) 0)
             :audit/cash-usd-micros 0
             :audit/cash-to-workers-usd-micros 0
             :audit/live false
@@ -93,6 +105,14 @@
       (let [out {:runs (count events)
                  :total-enrolled (reduce + 0 (map :audit/enrolled-subjects events))
                  :total-tenure (reduce + 0 (map :audit/tenure-subjects events))
+                 :total-l4-disclosure-open
+                 (reduce + 0 (map #(or (:audit/l4-disclosure-open %) 0) events))
+                 :total-l4-disclosure-held
+                 (reduce + 0 (map #(or (:audit/l4-disclosure-held %) 0) events))
+                 :total-tenure-disclosure-open
+                 (reduce + 0 (map #(or (:audit/tenure-disclosure-open %) 0) events))
+                 :total-tenure-disclosure-held
+                 (reduce + 0 (map #(or (:audit/tenure-disclosure-held %) 0) events))
                  :all-runs-live-refused (every? :audit/all-live-refused events)
                  :cash-usd-micros 0
                  :cash-to-workers-usd-micros 0

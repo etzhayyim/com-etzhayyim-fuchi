@@ -134,6 +134,9 @@
              :l0 enrolled
              :disclosure-hold hold
              :disclosure-continuity cont
+             :disclosure-state (:state hold)
+             :disclosure-held? (boolean (:entitlements-held? hold))
+             :entitlements-may-flow? (disc/entitlements-may-flow? hold)
              :ladder climb
              :ladder-fact (ladder/ladder-public-fact person)
              :stage stage

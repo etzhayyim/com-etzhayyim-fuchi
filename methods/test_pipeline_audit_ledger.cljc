@@ -19,10 +19,23 @@
                           :scorecard/headroom-usd-micros-yr 50
                           :scorecard/booked-entries 12
                           :scorecard/tenure-booked-entries 12
-                          :scorecard/all-live-refused true}}
+                          :scorecard/all-live-refused true
+                          :scorecard/gov-flowable-committed-usd-micros 40
+                          :scorecard/gov-post-ratify-committed-usd-micros 100
+                          :scorecard/tenure-gov-flowable-committed-usd-micros 40
+                          :scorecard/tenure-gov-post-ratify-committed-usd-micros 100
+                          :scorecard/l4-disclosure-open 2
+                          :scorecard/l4-disclosure-held 0
+                          :scorecard/tenure-disclosure-open 2
+                          :scorecard/tenure-disclosure-held 0}}
         ev (audit/event-from-pipeline fake :run-id "test-run-1")]
     (is (= "test-run-1" (:audit/id ev)))
     (is (true? (:audit/all-live-refused ev)))
+    (is (= 40 (:audit/gov-flowable-committed-usd-micros ev)))
+    (is (= 100 (:audit/gov-post-ratify-committed-usd-micros ev)))
+    (is (= 2 (:audit/l4-disclosure-open ev)))
+    (is (= 0 (:audit/l4-disclosure-held ev)))
+    (is (= 2 (:audit/tenure-disclosure-open ev)))
     (is (= 0 (:audit/cash-usd-micros ev)))
     (is (= 0 (:audit/cash-to-workers-usd-micros ev)))
     (is (false? (:audit/live ev)))
@@ -34,10 +47,13 @@
      (let [result (pipe/run! :max-slots 1)
            a (audit/append-from-pipeline! result :run-id (str "t-" (System/currentTimeMillis)))
            events (audit/read-all)
-           sum (audit/summary)]
+           sum (audit/summary)
+           last-ev (last events)]
        (is (.exists (io/file (:path a))))
        (is (seq events))
        (is (pos? (:runs sum)))
        (is (true? (:all-runs-live-refused sum)))
+       (is (pos? (:total-l4-disclosure-open sum)))
+       (is (pos? (get last-ev :audit/gov-flowable-committed-usd-micros 0)))
        (is (= 0 (:cash-usd-micros sum)))
        (is (false? (:live sum))))))

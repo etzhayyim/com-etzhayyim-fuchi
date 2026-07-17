@@ -382,16 +382,14 @@
           ten-subs (or (:tenure-subjects pkg) [])
           ten (when (seq ten-subs)
                 (package-subject-list pkg ten-subs apply-ratify? ear (:tenure-couple pkg)))
-          routes (merge-with +
-                             (:gov-route-counts l4)
-                             (or (:gov-route-counts ten) {}))
+          ;; L4 routes stay L4-only; tenure routes live under :tenure-gov-route-counts
           out (cond-> (assoc pkg
                              :subjects (:subjects l4)
                              :couple-pre-gov (:couple pkg)
                              :couple (:couple l4)
                              :couple-post-ratify (:couple-post-ratify l4)
                              :gov-subjects (:gov-subjects l4)
-                             :gov-route-counts routes
+                             :gov-route-counts (:gov-route-counts l4)
                              :gov-entitlements-held (:gov-entitlements-held l4)
                              :gov-entitlements-may-flow (:gov-entitlements-may-flow l4)
                              :gov-substrate-may-flow (:gov-substrate-may-flow l4)
