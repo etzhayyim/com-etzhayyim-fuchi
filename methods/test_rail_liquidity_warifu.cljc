@@ -39,11 +39,19 @@
 (deftest test-gated-plan
   (is (false? (get (w/default-refuse-status) "admissible")))
   (let [pkg (w/r1-dry-package {:alloc-id "a" :imputed-usd-micros-yr 1 :person (person fresh)})
+        st (w/gated-live-status pkg)
         gate (live-gate/make-live-gate
               {:leg "provision" :operator-did "did:op:x" :council-level 6
                :member-signature "member-cap-ok"})
         plan (w/gated-live-plan pkg gate :env {"FUCHI_ALLOW_LIVE_PROVISION" "1"})]
+    (is (= :refused (:phase st)))
+    (is (false? (:admissible st)))
+    (is (false? (:loan-executed st)))
+    (is (true? (:member-principal st)))
+    (is (false? (:live st)))
+    (is (= 0 (:cash-usd-micros st)))
     (is (= :gated-live-plan (:phase plan)))
     (is (true? (:member-principal plan)))
     (is (false? (:live plan)))
-    (is (= 0 (:cash-usd-micros plan)))))
+    (is (= 0 (:cash-usd-micros plan)))
+    (pp/assert-no-public-scores! st)))

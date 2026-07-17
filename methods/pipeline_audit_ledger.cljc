@@ -65,6 +65,11 @@
             :audit/compute-r1-dry (or (:scorecard/compute-r1-dry sc) 0)
             :audit/compute-gated-refused (or (:scorecard/compute-gated-refused sc) 0)
             :audit/compute-quota-executed (or (:scorecard/compute-quota-executed sc) 0)
+            :audit/liquidity-r1-dry (or (:scorecard/liquidity-r1-dry sc) 0)
+            :audit/liquidity-gated-refused (or (:scorecard/liquidity-gated-refused sc) 0)
+            :audit/liquidity-loan-executed (or (:scorecard/liquidity-loan-executed sc) 0)
+            :audit/liquidity-member-principal (or (:scorecard/liquidity-member-principal sc) 0)
+            :audit/liquidity-cash-usd-micros (or (:scorecard/liquidity-cash-usd-micros sc) 0)
             :audit/all-held-stress-gov-flowable
             (or (get-in sc [:scorecard/all-held-stress :gov-flowable]) 0)
             :audit/all-held-stress-held-subjects

@@ -222,6 +222,23 @@
                :scorecard/compute-quota-executed
                (count (filter #(true? (get-in % [:compute-produce-plan :quota-executed]))
                               (concat subjects tenure-subjects)))
+               :scorecard/liquidity-r1-dry
+               (count (filter #(= :R1-dry (get-in % [:liquidity-package :phase]))
+                              (concat subjects tenure-subjects)))
+               :scorecard/liquidity-gated-refused
+               (count (filter #(and (:liquidity-gated-live-status %)
+                                    (false? (get-in % [:liquidity-gated-live-status :admissible])))
+                              (concat subjects tenure-subjects)))
+               :scorecard/liquidity-loan-executed
+               (count (filter #(true? (or (get-in % [:liquidity-gated-live-status :loan-executed])
+                                          (get-in % [:liquidity-package :loan-executed])))
+                              (concat subjects tenure-subjects)))
+               :scorecard/liquidity-member-principal
+               (count (filter #(true? (get-in % [:liquidity-package :member-principal]))
+                              (concat subjects tenure-subjects)))
+               :scorecard/liquidity-cash-usd-micros
+               (reduce + 0 (map #(or (get-in % [:liquidity-package :cash-usd-micros]) 0)
+                                (concat subjects tenure-subjects)))
                :scorecard/itonami-ledger ledger
                :scorecard/cohorts
                (mapv (fn [p]
@@ -353,7 +370,14 @@
                 (str "- compute-murakumo R1-dry / gated-refused / quota-executed: "
                      (or (:scorecard/compute-r1-dry body) 0) "/"
                      (or (:scorecard/compute-gated-refused body) 0) "/"
-                     (or (:scorecard/compute-quota-executed body) 0) "\n")])]
+                     (or (:scorecard/compute-quota-executed body) 0) "\n")
+                (str "- liquidity-warifu R1-dry / gated-refused / loan-executed: "
+                     (or (:scorecard/liquidity-r1-dry body) 0) "/"
+                     (or (:scorecard/liquidity-gated-refused body) 0) "/"
+                     (or (:scorecard/liquidity-loan-executed body) 0) "\n")
+                (str "- liquidity member-principal / cash-usd-micros: "
+                     (or (:scorecard/liquidity-member-principal body) 0) "/"
+                     (or (:scorecard/liquidity-cash-usd-micros body) 0) "\n")])]
     (when-let [st (:scorecard/all-held-stress body)]
       (conj! lines "\n## All-disclosure-held stress (priority #2, offline)\n\n")
       (conj! lines (str "- stress: " (:stress st) "\n"))

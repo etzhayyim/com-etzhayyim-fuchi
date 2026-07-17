@@ -35,6 +35,8 @@ Priority: wellbecoming > mago(孫) > ko(子) > present. cash≡0. live=false. No
 - housing council-held (awaiting Lv7): 8
 - tooling-okaimono R1-dry / gated-refused / fulfillment-executed: 8/8/0
 - compute-murakumo R1-dry / gated-refused / quota-executed: 8/8/0
+- liquidity-warifu R1-dry / gated-refused / loan-executed: 8/8/0
+- liquidity member-principal / cash-usd-micros: 8/0
 
 ## All-disclosure-held stress (priority #2, offline)
 

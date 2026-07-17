@@ -22,6 +22,7 @@
             [fuchi.methods.rail-housing-commons :as housing]
             [fuchi.methods.rail-tooling-okaimono :as tooling]
             [fuchi.methods.rail-compute-murakumo :as compute]
+            [fuchi.methods.rail-liquidity-warifu :as liquidity]
             [fuchi.methods.r2-execute :as r2]))
 
 (def PRIORITY-STACK pp/PRIORITY-STACK)
@@ -351,6 +352,11 @@
   (or (:compute-package subject)
       (get-in subject [:stage-sustenance :packages "compute" :package])))
 
+(defn- liquidity-pkg-of
+  [subject]
+  (or (:liquidity-package subject)
+      (get-in subject [:stage-sustenance :packages "liquidity" :package])))
+
 (defn- housing-held-by-gov?
   "True when gov partial hold freezes housing (council-lv7 flowable omits housing)."
   [subject]
@@ -360,10 +366,37 @@
            (not (some #{"housing-commons" "housing"}
                       (or (get-in subject [:flowable-booking :rails]) []))))))
 
+(defn- residual-liquidity-for-subject
+  "When housing is Council-held, external residual is member-principal warifu (N4).
+   Not fuchi cash. Zero residual when housing already flows. Offline plan only."
+  [subject hold council-held? hous]
+  (or (liquidity-pkg-of subject)
+      (when (and council-held? hous (not (true? (:disclosure-held? subject))))
+        (let [imp (long (or (:imputed-usd-micros-yr hous)
+                            (get-in subject [:stage-sustenance :packages "housing"
+                                             :package :imputed-usd-micros-yr])
+                            0))]
+          (when (pos? imp)
+            (liquidity/r1-dry-package
+             {:alloc-id (str "liq-residual-" (:subject-did subject))
+              :subject-did (:subject-did subject)
+              :imputed-usd-micros-yr imp
+              :hold-machine hold
+              :person {:did (:subject-did subject)
+                       :covenant "vowed"
+                       :rails [{:kind "liquidity" :active? true}]
+                       :floor-usd-micros-yr imp
+                       :disclosure (or (get-in subject [:public-person :disclosure])
+                                       {:wage-labor-band "0-10h" :state-benefits? false
+                                        :wellbecoming-attest-fact :submitted
+                                        :related-party-edges [] :rider-s2-self-report :none})
+                       :exit-suspended? false
+                       :cash-usd-micros 0}}))))))
+
 (defn attach-substrate-gated-status
-  "All in-kind rails R1→gated-live DESIGN: care/food/energy/housing + tooling/compute.
-   Housing land-grant-executed=false; Council hold freezes housing. Default refuse.
-   cash≡0. no scores."
+  "All in-kind rails R1→gated-live DESIGN + liquidity residual (member-principal).
+   Housing land-grant-executed=false; Council hold freezes housing and opens residual warifu dry plan.
+   Default refuse. cash≡0. no scores."
   [subject]
   (let [hold (:disclosure-hold subject)
         food (food-pkg-of subject)
@@ -373,6 +406,7 @@
         tool (tooling-pkg-of subject)
         comp (compute-pkg-of subject)
         council-held? (housing-held-by-gov? subject)
+        liq (residual-liquidity-for-subject subject hold council-held? hous)
         food-st (when food (mitsuho/gated-live-status food :hold-machine hold))
         energy-st (when energy (hikari/gated-live-status energy :hold-machine hold))
         care-st (when care-p (care/gated-live-status care-p :hold-machine hold))
@@ -382,6 +416,7 @@
                                             :council-housing-held? council-held?))
         tool-st (when tool (tooling/gated-live-status tool :hold-machine hold))
         comp-st (when comp (compute/gated-live-status comp :hold-machine hold))
+        liq-st (when liq (liquidity/gated-live-status liq :hold-machine hold))
         out (cond-> subject
               food-st (assoc :food-gated-live-status food-st
                              :food-package (or (:food-package subject) food))
@@ -395,9 +430,18 @@
               tool-st (assoc :tooling-gated-live-status tool-st
                              :tooling-package (or (:tooling-package subject) tool))
               comp-st (assoc :compute-gated-live-status comp-st
-                             :compute-package (or (:compute-package subject) comp)))]
-    (doseq [st [food-st energy-st care-st hous-st tool-st comp-st]]
+                             :compute-package (or (:compute-package subject) comp))
+              liq (assoc :liquidity-package liq
+                         :liquidity-residual-for-housing-hold true
+                         :liquidity-gated-live-status liq-st
+                         :cash-usd-micros 0))]
+    (doseq [st [food-st energy-st care-st hous-st tool-st comp-st liq-st]]
       (when st (pp/assert-no-public-scores! st)))
+    (when liq
+      (when-not (true? (:member-principal liq))
+        (throw (ex-info "liquidity residual must be member-principal" liq)))
+      (when-not (= 0 (:cash-usd-micros liq))
+        (throw (ex-info "cash≡0 on liquidity residual" liq))))
     out))
 
 (defn- package-subject-row
