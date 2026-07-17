@@ -4,6 +4,29 @@ Mission-aligned **maintainer sustenance allocator** — the charter-clean **inve
 investment fund** (ADR-2606052300). Read the repo-root `CLAUDE.md` first; this file only adds
 fuchi-specific rules.
 
+## Priority (Tier-0 — ADR-2607177000)
+
+```
+wellbecoming > mago(孫) wellbecoming > ko(子) wellbecoming > present adherent
+```
+
+Covenantal sustenance exists for multi-gen wellbecoming, not recipient ranking or static happiness
+scores. Personal **score / rank / percentile** are unrepresentable on the public surface.
+Internal tenure weight / priority-rank may exist for **rationing only** (`:internal/*`).
+
+## Public person (as-of — ADR-2607177000)
+
+Recipients of rivalrous covenantal SS are **public persons** while receiving:
+
+```
+public-person?(p,t) ≔ covenant?(p,t) ∧ receives-ss?(p,t) ∧ ¬exit-suspended?(p,t)
+```
+
+- **PUBLIC**: DID, covenant, stage, rails, imputed **facts**, disclosure-status, hold-reason
+- **SCORE**: empty (no leaderboard)
+- Disclosure fail → **hold** entitlements; history retained on exit
+- SSoT: `data/public-person-dynamic.edn` + `methods/public_person.cljc`
+
 ## What this actor is (and is NOT)
 
 - **IS**: a covenant-gated, tenure-weighted, **in-kind** sustenance allocator for the real-world

@@ -1,0 +1,45 @@
+;; public-person-dynamic.edn — machine-readable SSoT (ADR-2607177000)
+;; Derived as-of; not a static title. Facts public; personal scores unrepresentable.
+;; Priority: wellbecoming > mago(孫) > ko(子) > present adherent.
+;; NOTE: fuchi.methods.edn is a minimal reader (no set-literal #{}). Use vectors.
+{:def/id :etzhayyim.public-person/dynamic
+ :def/version "2026-07-17.1"
+ :def/adr "2607177000"
+ :def/kind :derived-as-of
+ :def/objective "maximize multi-gen wellbecoming; covenantal SS is substrate not the objective"
+
+ :def/priority-stack
+ [:wellbecoming
+  :mago-wellbecoming
+  :ko-wellbecoming
+  :present-adherent
+  :operational]
+
+ :def/surfaces
+ {:public [:did :sbt :covenant :stage
+           :rails :imputed-fact :cohort-earmark
+           :disclosure-status :hold-reason-code
+           :multi-gen-care-facts]
+  :score []
+  :internal [:tenure-weight :priority-rank :hold-signals :audit-sample-notes]}
+
+ :def/score-forbidden-keys
+ [:priority-rank :rank :score :percentile :wellbecoming-score
+  :happiness-score :leaderboard-position :share-rank
+  :liberation-kpi-personal]
+
+ :def/disclosure-must
+ [:wage-labor-band :state-benefits?
+  :wellbecoming-attest-fact
+  :related-party-edges :rider-s2-self-report]
+
+ :def/invariants
+ [:P0-wellbecoming-over-wellbeing
+  :P1-P2-descendants-over-present
+  :no-score-as-eligibility-input
+  :no-hostage-conversion
+  :cash≡0
+  :facts-public-scores-unrepresentable
+  :history-retained-on-exit]
+
+ :def/freshness-default-quarters 1}

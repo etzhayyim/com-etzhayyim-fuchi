@@ -90,8 +90,12 @@
 (defn- parse-json [text] (first (json-value text 0)))
 
 ;; ── fixture locators (*file*-relative; repo root + actor root) ────────────────
-#?(:clj (def ^:private actor-dir (-> *file* io/file .getParentFile .getParentFile)))
-#?(:clj (def ^:private root-dir (-> actor-dir .getParentFile .getParentFile)))
+#?(:clj (def ^:private actor-dir
+          (io/file (or (System/getenv "FUCHI_ACTOR_DIR")
+                       (-> *file* io/file .getParentFile .getParentFile .getCanonicalPath)))))
+#?(:clj (def ^:private root-dir
+          (io/file (or (System/getenv "FUCHI_REPO_ROOT")
+                       (-> actor-dir .getParentFile .getParentFile .getCanonicalPath)))))
 #?(:clj (def ^:private schema-file
           (io/file root-dir "00-contracts" "schemas" "maintainer-sustenance-ontology.kotoba.edn")))
 #?(:clj (def ^:private manifest-file (io/file actor-dir "manifest.jsonld")))
@@ -120,7 +124,10 @@
 (deftest test-manifest-adr-matches-ontology
   #?(:clj
      (let [onto (edn/load-edn schema-file)]
-       (is (= (get onto ":ontology/adr") "2606052300"))
+       (let [adr (get onto ":ontology/adr")]
+         (is (or (= adr "2606052300")
+                 (and (sequential? adr) (some #{"2606052300" "2607177000"} (map str adr))))
+             (str "unexpected :ontology/adr " adr)))
        (is (str/ends-with? (get-in (manifest) ["adr" "master"]) "2606052300")))))
 
 (deftest test-manifest-schema-pointer-exists

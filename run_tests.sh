@@ -1,5 +1,51 @@
 #!/usr/bin/env bash
-# fuchi 扶持 — bb/clj test suite (ADR-2606160842 py→clj port wave; Python pruned).
+# fuchi 扶持 — bb/clj test suite (ADR-2606160842 py→clj; ADR-2607177000 public-person).
 set -euo pipefail
-cd "$(dirname "$0")/../.."
-exec bb -e '(require (quote clojure.test) (quote fuchi.cells.test-state-machine) (quote fuchi.methods.test-provision) (quote fuchi.methods.test-book) (quote fuchi.methods.test-allocate) (quote fuchi.methods.test-analyze) (quote fuchi.methods.test-charter-invariants) (quote fuchi.methods.test-route) (quote fuchi.methods.test-lexicons) (quote fuchi.methods.test-couple) (quote fuchi.methods.test-consistency) (quote fuchi.methods.test-vote) (quote fuchi.methods.test-live-gate) )(let [r (clojure.test/run-tests (quote fuchi.cells.test-state-machine) (quote fuchi.methods.test-provision) (quote fuchi.methods.test-book) (quote fuchi.methods.test-allocate) (quote fuchi.methods.test-analyze) (quote fuchi.methods.test-charter-invariants) (quote fuchi.methods.test-route) (quote fuchi.methods.test-lexicons) (quote fuchi.methods.test-couple) (quote fuchi.methods.test-consistency) (quote fuchi.methods.test-vote) (quote fuchi.methods.test-live-gate) )](System/exit (if (zero? (+ (:fail r) (:error r))) 0 1)))'
+ACTOR_DIR="$(cd "$(dirname "$0")" && pwd)"
+cd "$ACTOR_DIR"
+
+# ns is fuchi.methods.* — provide fuchi/methods via self-symlink (idempotent).
+if [[ ! -e fuchi ]]; then
+  ln -sfn . fuchi
+fi
+
+# etzhayyim/root holds 00-contracts/schemas (maintainer-sustenance-ontology).
+if [[ -d "$ACTOR_DIR/../root/00-contracts/schemas" ]]; then
+  export FUCHI_REPO_ROOT="$(cd "$ACTOR_DIR/../root" && pwd)"
+elif [[ -d "$ACTOR_DIR/../../etzhayyim/root/00-contracts/schemas" ]]; then
+  export FUCHI_REPO_ROOT="$(cd "$ACTOR_DIR/../../etzhayyim/root" && pwd)"
+fi
+export FUCHI_ACTOR_DIR="$ACTOR_DIR"
+
+exec bb -cp "$ACTOR_DIR" -e '
+(require
+  (quote clojure.test)
+  (quote fuchi.cells.test-state-machine)
+  (quote fuchi.methods.test-provision)
+  (quote fuchi.methods.test-book)
+  (quote fuchi.methods.test-allocate)
+  (quote fuchi.methods.test-analyze)
+  (quote fuchi.methods.test-charter-invariants)
+  (quote fuchi.methods.test-route)
+  (quote fuchi.methods.test-lexicons)
+  (quote fuchi.methods.test-couple)
+  (quote fuchi.methods.test-consistency)
+  (quote fuchi.methods.test-vote)
+  (quote fuchi.methods.test-live-gate)
+  (quote fuchi.methods.test-public-person))
+(let [r (clojure.test/run-tests
+          (quote fuchi.cells.test-state-machine)
+          (quote fuchi.methods.test-provision)
+          (quote fuchi.methods.test-book)
+          (quote fuchi.methods.test-allocate)
+          (quote fuchi.methods.test-analyze)
+          (quote fuchi.methods.test-charter-invariants)
+          (quote fuchi.methods.test-route)
+          (quote fuchi.methods.test-lexicons)
+          (quote fuchi.methods.test-couple)
+          (quote fuchi.methods.test-consistency)
+          (quote fuchi.methods.test-vote)
+          (quote fuchi.methods.test-live-gate)
+          (quote fuchi.methods.test-public-person))]
+  (System/exit (if (zero? (+ (:fail r) (:error r))) 0 1)))
+'
