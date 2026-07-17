@@ -29,26 +29,31 @@
    "compute" "murakumo"})
 
 (defn stage-packages->rails
-  "Convert stage-sustenance :packages map → bookable rail vectors."
-  [stage-pkg]
-  (vec
-   (keep
-    (fn [[kind v]]
-      (when-let [rail (get KIND->RAIL kind)]
-        (let [imp (long (or (:imputed-usd-micros-yr v) 0))]
-          (when (pos? imp)
-            {:kind rail
-             :provider-actor (get KIND->PROVIDER kind kind)
-             :imputed-usd-micros-yr imp
-             :member-principal false}))))
-    (or (:packages stage-pkg) {}))))
+  "Convert stage-sustenance :packages map → bookable rail vectors.
+   Optional only-kinds (set of short kinds: food/care/housing/…)."
+  ([stage-pkg]
+   (stage-packages->rails stage-pkg nil))
+  ([stage-pkg only-kinds]
+   (vec
+    (keep
+     (fn [[kind v]]
+       (when (or (nil? only-kinds) (contains? only-kinds kind))
+         (when-let [rail (get KIND->RAIL kind)]
+           (let [imp (long (or (:imputed-usd-micros-yr v) 0))]
+             (when (pos? imp)
+               {:kind rail
+                :provider-actor (get KIND->PROVIDER kind kind)
+                :imputed-usd-micros-yr imp
+                :member-principal false})))))
+     (or (:packages stage-pkg) {})))))
 
 (defn book-subject
   "Offline book + flow graph for one displaced subject stage package.
-   write-live status is refused by default."
-  [subject-did stage-pkg & {:keys [alloc-id]}]
+   write-live status is refused by default.
+   Optional only-kinds filters to flowable rails (e.g. substrate under council)."
+  [subject-did stage-pkg & {:keys [alloc-id only-kinds note]}]
   (let [aid (or alloc-id (str "disp-book-" subject-did))
-        rails (stage-packages->rails stage-pkg)
+        rails (stage-packages->rails stage-pkg only-kinds)
         entries (book/book-toritate rails aid subject-did)
         edges (book/flow-graph rails aid subject-did)
         cats (frequencies (map :category entries))
@@ -59,6 +64,7 @@
              :subject-did subject-did
              :stage (:stage stage-pkg)
              :rails (mapv :kind rails)
+             :only-kinds (when only-kinds (vec only-kinds))
              :ledger-entries entries
              :flow-edges edges
              :category-counts cats
@@ -71,12 +77,21 @@
              :cash-usd-micros 0
              :score-surface []
              :priority-stack PRIORITY-STACK
-             :note "offline toritate projection only — write_live refused by default"}]
+             :note (or note
+                       "offline toritate projection only — write_live refused by default")}]
     (doseq [e entries]
       (when-not (= 0 (:cash-usd-micros e))
         (throw (ex-info "cash≡0" e))))
     (pp/assert-no-public-scores! out)
     out))
+
+(defn book-flowable
+  "Book only rails allowed by rail-flow map (true = include)."
+  [subject-did stage-pkg rail-flow & opts]
+  (let [only (set (map first (filter (fn [[_ ok]] (true? ok)) (or rail-flow {}))))]
+    (apply book-subject subject-did stage-pkg
+           (concat opts [:only-kinds only
+                         :note "flowable-only offline book (held rails omitted)"]))))
 
 (defn book-enrolled-subject
   "Convenience: book from displacement enroll subject map."

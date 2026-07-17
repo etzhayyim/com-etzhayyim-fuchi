@@ -11,7 +11,9 @@
             [fuchi.methods.route :as route]
             [fuchi.methods.vote :as vote]
             [fuchi.methods.live-gate :as live-gate]
-            [fuchi.methods.public-person :as pp]))
+            [fuchi.methods.public-person :as pp]
+            [fuchi.methods.displacement-book :as dbook]
+            [fuchi.methods.r2-execute :as r2]))
 
 (def PRIORITY-STACK pp/PRIORITY-STACK)
 
@@ -147,8 +149,53 @@
       :cash-usd-micros 0
       :score-surface []})))
 
+(defn council-ratify-plan
+  "Offline Council ratification PLAN for housing under council-lv7.
+   Lifts housing in rail-flow facts only — does NOT grant land or go live."
+  [gov-subject]
+  (when-not (= "council-lv7" (:route gov-subject))
+    (throw (ex-info "council-ratify-plan requires council-lv7 route" {:route (:route gov-subject)})))
+  (let [rails (or (:flow-rails gov-subject) [])
+        held (or (:held-rails gov-subject) [])
+        new-flow (merge (or (:rail-flow gov-subject) {})
+                        (into {} (map (fn [r] [r true]) held)))
+        out {:phase :council-ratify-plan
+             :subject-did (:subject-did gov-subject)
+             :route "council-lv7"
+             :authorized-to-release-housing true
+             :housing-released-offline true
+             :rail-flow-after new-flow
+             :land-grant-executed false
+             :live false
+             :cash-usd-micros 0
+             :score-surface []
+             :priority-stack PRIORITY-STACK
+             :note "Council ratify PLAN only — land grant not executed; live refuse"}]
+    (pp/assert-no-public-scores! out)
+    out))
+
+(defn r2-status-for-rails
+  "R2 refuse map per short rail kind (held → refused without gate)."
+  [subject rail-flow]
+  (let [pkgs (or (get-in subject [:stage-sustenance :packages]) {})]
+    (into {}
+          (map (fn [[kind v]]
+                 (let [plan (:plan v)
+                       ok? (true? (get rail-flow kind))]
+                   [kind (if (and plan ok?)
+                           (r2/refuse-without-gate
+                            (or (:execute-leg v) "produce") plan)
+                           {:phase :refused
+                            :execute-leg kind
+                            :reason (if plan "rail-held-by-gov" "no-plan")
+                            :executed false
+                            :live false
+                            :cash-usd-micros 0
+                            :score-surface []})]))
+               pkgs))))
+
 (defn package-subject
-  "Route subject and attach dry vote/council package + partial entitlement hold facts."
+  "Route subject + partial hold + flowable-only rebook + per-rail r2 refuse facts."
   [subject]
   (let [r (route-subject subject)
         rails (or (get-in subject [:stage-sustenance :rails]) [])
@@ -164,12 +211,20 @@
                :live false :cash-usd-micros 0 :score-surface []
                :priority-stack PRIORITY-STACK})
         hold (entitlement-hold-for-route (:route r) rails)
+        flowable-book
+        (when-let [sp (:stage-sustenance subject)]
+          (dbook/book-flowable
+           (:subject-did subject) sp (:rail-flow hold)
+           :alloc-id (str "flow-" (:cohort-id subject) "-" (:subject-did subject))))
+        r2-map (r2-status-for-rails subject (:rail-flow hold))
         out (merge r hold {:gov-package pkg
+                           :flowable-booking flowable-book
+                           :r2-by-rail r2-map
                            :live false
                            :cash-usd-micros 0
                            :score-surface []
                            :priority-stack PRIORITY-STACK})]
-    (pp/assert-no-public-scores! (dissoc out :gov-package :rail-flow))
+    (pp/assert-no-public-scores! (dissoc out :gov-package :rail-flow :r2-by-rail :flowable-booking))
     out))
 
 (defn package-cohort

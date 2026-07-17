@@ -31,9 +31,19 @@
     (is (some #{"housing"} (:held-rails r)))
     (is (some #{"care"} (:flow-rails r)))
     (is (str/includes? (str (:entitlement-hold-reason r)) "housing-held"))
+    (is (map? (:flowable-booking r)))
+    (is (not-any? #(= "housing-commons" %) (get-in r [:flowable-booking :rails])))
+    (is (some #(= "care-iyashi" %) (get-in r [:flowable-booking :rails])))
+    (is (= :refused (get-in r [:r2-by-rail "housing" :phase])))
+    (let [rat (g/council-ratify-plan r)]
+      (is (= :council-ratify-plan (:phase rat)))
+      (is (true? (:housing-released-offline rat)))
+      (is (false? (:land-grant-executed rat)))
+      (is (true? (get-in rat [:rail-flow-after "housing"])))
+      (is (false? (:live rat))))
     (is (false? (:live r)))
     (is (= 0 (:cash-usd-micros r)))
-    (pp/assert-no-public-scores! (dissoc r :gov-package :rail-flow))))
+    (pp/assert-no-public-scores! (dissoc r :gov-package :rail-flow :r2-by-rail :flowable-booking))))
 
 (deftest test-sbt-vote-package-not-finalized
   (let [route {:subject-did "did:x" :route "sbt-vote" :committed-usd-micros-yr 30000000000}
