@@ -54,6 +54,7 @@ Priority: wellbecoming > mago(孫) > ko(子) > present. cash≡0. live=false. No
 - mitsuho/hikari gated-receive admissible/both-refused: false/false/true
 - care-iyashi gated-receive (孫/子) admissible/all-three-refused: false/true
 - mitsuho/hikari gated-produce admissible/both/full-chain-refused: false/false/true/true
+- care gated-produce (孫/子) admissible/produce-all/full-chain: false/true/true
 - housing land-grant / liquidity loan / cash: false/false/0
 - ss R2 statuses / executed / all-not-executed: 7/0/true
 - live: false cash: 0

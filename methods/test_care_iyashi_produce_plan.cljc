@@ -37,3 +37,27 @@
     (is (false? (:care-delivery-executed plan)))
     (is (false? (:live plan)))
     (is (false? (:published plan)))))
+
+(deftest test-gated-produce-status-default-refuse
+  (let [pkg (c/r1-dry-package {:alloc-id "a" :imputed-usd-micros-yr 1000000 :person (person)})
+        st (cp/gated-produce-status pkg)]
+    (is (= :refused (:phase st)))
+    (is (false? (:admissible st)))
+    (is (false? (:care-delivery-executed st)))
+    (is (false? (:live st)))
+    (is (= 0 (:cash-usd-micros st)))
+    (pp/assert-no-public-scores! st)))
+
+(deftest test-gated-produce-status-with-capability
+  (let [pkg (c/r1-dry-package {:alloc-id "a" :imputed-usd-micros-yr 1000000 :person (person)})
+        gate (live-gate/make-live-gate
+              {:leg "provision" :operator-did "did:op:x" :council-level 6
+               :member-signature "member-cap-ok"})
+        st (cp/gated-produce-status pkg :gate gate
+                                    :env {"FUCHI_ALLOW_LIVE_PROVISION" "1"})]
+    (is (= :gated-produce-plan (:phase st)))
+    (is (true? (:admissible st)))
+    (is (false? (:care-delivery-executed st)))
+    (is (false? (:live st)))
+    (is (pos? (:care-hours-floor-yr st)))
+    (pp/assert-no-public-scores! st)))

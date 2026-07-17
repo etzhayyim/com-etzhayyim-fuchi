@@ -77,3 +77,73 @@
 
 (defn default-refuse-status []
   (live-gate/gate-status (live-gate/make-live-gate {:leg "provision"}) {}))
+
+(defn gated-produce-status
+  "Non-raising R1→gated-produce DESIGN for care-iyashi (孫/子 multi-gen).
+   Default gate/env refuses. Never executes care delivery; cash≡0; live=false."
+  [r1-pkg & {:keys [gate env]}]
+  (cond
+    (nil? r1-pkg)
+    nil
+
+    (= :refused (:phase r1-pkg))
+    (let [out {:rail-kind "care-iyashi"
+               :phase :refused
+               :r1-phase :refused
+               :admissible false
+               :authorized-to-publish false
+               :care-delivery-executed false
+               :produce-executed false
+               :refusal-reason (or (:refusal-reason r1-pkg) "r1 refused")
+               :live false
+               :cash-usd-micros 0
+               :score-surface []
+               :priority-stack PRIORITY-STACK
+               :multi-gen-facts MULTI-GEN-FACTS
+               :note "R1 refused — gated-produce not attempted"}]
+      (pp/assert-no-public-scores! out)
+      out)
+
+    :else
+    (let [g (or gate (live-gate/make-live-gate {:leg "provision"}))
+          e (or env {})]
+      (try
+        (let [plan (gated-produce-plan r1-pkg g :env e)
+              out {:rail-kind "care-iyashi"
+                   :phase :gated-produce-plan
+                   :r1-phase (:phase r1-pkg)
+                   :admissible true
+                   :authorized-to-publish (boolean (:authorized-to-publish plan))
+                   :care-delivery-executed false
+                   :produce-executed false
+                   :care-hours-floor-yr (:care-hours-floor-yr plan)
+                   :published false
+                   :live false
+                   :cash-usd-micros 0
+                   :score-surface []
+                   :priority-stack PRIORITY-STACK
+                   :multi-gen-facts MULTI-GEN-FACTS
+                   :note "gated-produce plan authorized — iyashi care delivery not executed"}]
+          (pp/assert-no-public-scores! out)
+          out)
+        (catch #?(:clj Exception :cljs :default) ex
+          (let [st (live-gate/gate-status g e)
+                out {:rail-kind "care-iyashi"
+                     :phase :refused
+                     :r1-phase (:phase r1-pkg)
+                     :admissible false
+                     :authorized-to-publish false
+                     :care-delivery-executed false
+                     :produce-executed false
+                     :refusal-reason (or (ex-message ex)
+                                         (get st "reason")
+                                         "live gate default refuse")
+                     :gate-admissible (boolean (get st "admissible"))
+                     :live false
+                     :cash-usd-micros 0
+                     :score-surface []
+                     :priority-stack PRIORITY-STACK
+                     :multi-gen-facts MULTI-GEN-FACTS
+                     :note "R1 dry ok; gated-produce refused by default membrane"}]
+            (pp/assert-no-public-scores! out)
+            out))))))

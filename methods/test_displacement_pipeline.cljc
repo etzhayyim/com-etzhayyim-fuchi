@@ -65,7 +65,10 @@
        (is (false? (:ss-mitsuho-gated-produce-admissible out)))
        (is (false? (:ss-hikari-gated-produce-admissible out)))
        (is (true? (:ss-mitsuho-hikari-produce-both-refused out)))
-       (is (true? (:ss-mitsuho-hikari-full-chain-refused out))))))
+       (is (true? (:ss-mitsuho-hikari-full-chain-refused out)))
+       (is (false? (:ss-care-gated-produce-admissible out)))
+       (is (true? (:ss-care-mitsuho-hikari-produce-all-refused out)))
+       (is (true? (:ss-care-mitsuho-hikari-full-chain-refused out))))))
 
 #?(:clj
    (deftest test-write-all

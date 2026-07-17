@@ -223,6 +223,20 @@
                   (boolean (:last-run-ss-mitsuho-hikari-receive-both-refused au true))
                   :last-run-ss-care-mitsuho-hikari-receive-all-refused
                   (boolean (:last-run-ss-care-mitsuho-hikari-receive-all-refused au true))
+                  :last-run-ss-mitsuho-gated-produce-admissible
+                  (boolean (:last-run-ss-mitsuho-gated-produce-admissible au))
+                  :last-run-ss-hikari-gated-produce-admissible
+                  (boolean (:last-run-ss-hikari-gated-produce-admissible au))
+                  :last-run-ss-care-gated-produce-admissible
+                  (boolean (:last-run-ss-care-gated-produce-admissible au))
+                  :last-run-ss-mitsuho-hikari-produce-both-refused
+                  (boolean (:last-run-ss-mitsuho-hikari-produce-both-refused au true))
+                  :last-run-ss-mitsuho-hikari-full-chain-refused
+                  (boolean (:last-run-ss-mitsuho-hikari-full-chain-refused au true))
+                  :last-run-ss-care-mitsuho-hikari-produce-all-refused
+                  (boolean (:last-run-ss-care-mitsuho-hikari-produce-all-refused au true))
+                  :last-run-ss-care-mitsuho-hikari-full-chain-refused
+                  (boolean (:last-run-ss-care-mitsuho-hikari-full-chain-refused au true))
                   :live false
                   :cash-usd-micros 0
                   :score-surface []

@@ -229,9 +229,11 @@
                     (cprod/plan-from-r1 care-pkg))
         care-ack (when (and care-pkg (not= :refused (:phase care-pkg)))
                    (crecv/receive-from-r1-package care-pkg))
-        ;; care-iyashi gated-receive (孫/子 multi-gen; default refuse)
+        ;; care-iyashi gated-receive + gated-produce (孫/子 multi-gen; default refuse)
         care-recv-gated (when (and care-pkg (not= :refused (:phase care-pkg)))
                           (crecv/gated-receive-status care-pkg))
+        care-prod-gated (when (and care-pkg (not= :refused (:phase care-pkg)))
+                          (cprod/gated-produce-status care-pkg))
         housing-plan (when (and housing-pkg (not= :refused (:phase housing-pkg)))
                        (housprod/plan-from-r1 housing-pkg))
         housing-ack (when (and housing-pkg (not= :refused (:phase housing-pkg)))
@@ -418,6 +420,11 @@
                  :care-gated-receive-phase
                  (when care-recv-gated (name (:phase care-recv-gated)))
                  :care-delivery-invoked-on-receive false
+                 :care-gated-produce-admissible
+                 (boolean (:admissible care-prod-gated))
+                 :care-gated-produce-phase
+                 (when care-prod-gated (name (:phase care-prod-gated)))
+                 :care-delivery-executed-on-gated false
                  :care-mitsuho-hikari-receive-all-refused
                  (and (some? food-recv-gated)
                       (some? energy-recv-gated)
@@ -425,6 +432,27 @@
                       (not (true? (:admissible food-recv-gated)))
                       (not (true? (:admissible energy-recv-gated)))
                       (not (true? (:admissible care-recv-gated))))
+                 :care-mitsuho-hikari-produce-all-refused
+                 (and (some? food-prod-gated)
+                      (some? energy-prod-gated)
+                      (some? care-prod-gated)
+                      (not (true? (:admissible food-prod-gated)))
+                      (not (true? (:admissible energy-prod-gated)))
+                      (not (true? (:admissible care-prod-gated))))
+                 :care-mitsuho-hikari-full-chain-refused
+                 ;; care + food + energy: plan gated + receive + produce all refuse
+                 (and (some? care-gated) (some? food-gated) (some? energy-gated)
+                      (some? care-recv-gated) (some? food-recv-gated) (some? energy-recv-gated)
+                      (some? care-prod-gated) (some? food-prod-gated) (some? energy-prod-gated)
+                      (not (true? (:admissible care-gated)))
+                      (not (true? (:admissible food-gated)))
+                      (not (true? (:admissible energy-gated)))
+                      (not (true? (:admissible care-recv-gated)))
+                      (not (true? (:admissible food-recv-gated)))
+                      (not (true? (:admissible energy-recv-gated)))
+                      (not (true? (:admissible care-prod-gated)))
+                      (not (true? (:admissible food-prod-gated)))
+                      (not (true? (:admissible energy-prod-gated))))
                  :housing-r1-phase (when housing-pkg (name (:phase housing-pkg)))
                  :housing-gated-admissible (boolean (:admissible housing-gated))
                  :housing-land-grant-executed false
@@ -490,6 +518,7 @@
              :care-package care-pkg
              :care-gated-live-status care-gated
              :care-gated-receive-status care-recv-gated
+             :care-gated-produce-status care-prod-gated
              :care-produce-plan care-plan
              :care-receive care-ack
              :care-r2-execute-status care-r2
@@ -523,6 +552,7 @@
     (when food-prod-gated (pp/assert-no-public-scores! food-prod-gated))
     (when energy-prod-gated (pp/assert-no-public-scores! energy-prod-gated))
     (when care-recv-gated (pp/assert-no-public-scores! care-recv-gated))
+    (when care-prod-gated (pp/assert-no-public-scores! care-prod-gated))
     out))
 
 #?(:clj

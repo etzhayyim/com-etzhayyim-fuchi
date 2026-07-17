@@ -135,6 +135,20 @@
                 (boolean (get-in scorecard
                                  [:scorecard/ss-priority-path
                                   :mitsuho-hikari-full-chain-refused]
+                                 true))
+                :ss-care-gated-produce-admissible
+                (boolean (get-in scorecard
+                                 [:scorecard/ss-priority-path
+                                  :care-gated-produce-admissible]))
+                :ss-care-mitsuho-hikari-produce-all-refused
+                (boolean (get-in scorecard
+                                 [:scorecard/ss-priority-path
+                                  :care-mitsuho-hikari-produce-all-refused]
+                                 true))
+                :ss-care-mitsuho-hikari-full-chain-refused
+                (boolean (get-in scorecard
+                                 [:scorecard/ss-priority-path
+                                  :care-mitsuho-hikari-full-chain-refused]
                                  true))}]
        (pp/assert-no-public-scores!
         (select-keys out [:live :cash-usd-micros :score-surface :priority-stack
@@ -157,7 +171,10 @@
                           :ss-mitsuho-gated-produce-admissible
                           :ss-hikari-gated-produce-admissible
                           :ss-mitsuho-hikari-produce-both-refused
-                          :ss-mitsuho-hikari-full-chain-refused]))
+                          :ss-mitsuho-hikari-full-chain-refused
+                          :ss-care-gated-produce-admissible
+                          :ss-care-mitsuho-hikari-produce-all-refused
+                          :ss-care-mitsuho-hikari-full-chain-refused]))
        out)))
 
 #?(:clj
