@@ -84,6 +84,11 @@
                :stage-housing-months-floor-yr (or (:stage-housing-months-floor-yr s) 0)
                :stage-land-grant-executed (boolean (:stage-land-grant-executed s))
                :stage-r2-all-refused (boolean (:stage-r2-all-refused s))
+               :stage-gated-count (or (:stage-gated-count s) 0)
+               :stage-all-gated-refused (boolean (:stage-all-gated-refused s))
+               :stage-care-gated-admissible (boolean (:stage-care-gated-admissible s))
+               :stage-mitsuho-gated-admissible (boolean (:stage-mitsuho-gated-admissible s))
+               :stage-hikari-gated-admissible (boolean (:stage-hikari-gated-admissible s))
                :disclosure-state (:disclosure-state s)
                :entitlements-may-flow? (boolean (:entitlements-may-flow? s))
                :held-stress-held? (boolean (:held-stress-held? s))
@@ -530,7 +535,13 @@
                          (or (:stage-care-hours-floor-yr sp) 0) "/"
                          (or (:stage-housing-months-floor-yr sp) 0)
                          " land-grant=" (boolean (:stage-land-grant-executed sp))
-                         " r2-all-refused=" (boolean (:stage-r2-all-refused sp)) "\n"))
+                         " r2-all-refused=" (boolean (:stage-r2-all-refused sp))
+                         " gated-all-refused=" (boolean (:stage-all-gated-refused sp))
+                         " gated-count=" (or (:stage-gated-count sp) 0) "\n"))
+        (conj! lines (str "- stage care/mitsuho/hikari gated-admissible: "
+                         (boolean (:stage-care-gated-admissible sp)) "/"
+                         (boolean (:stage-mitsuho-gated-admissible sp)) "/"
+                         (boolean (:stage-hikari-gated-admissible sp)) "\n"))
         (conj! lines (str "- disclosure state / entitlements-may-flow: "
                          (:disclosure-state sp) "/"
                          (boolean (:entitlements-may-flow? sp)) "\n"))

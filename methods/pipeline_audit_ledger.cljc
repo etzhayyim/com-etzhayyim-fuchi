@@ -107,6 +107,16 @@
             (or (get-in sc [:scorecard/ss-priority-path :stage-rails-second]) "n/a")
             :audit/ss-stage-r2-all-refused
             (boolean (get-in sc [:scorecard/ss-priority-path :stage-r2-all-refused] true))
+            :audit/ss-stage-all-gated-refused
+            (boolean (get-in sc [:scorecard/ss-priority-path :stage-all-gated-refused] true))
+            :audit/ss-stage-gated-count
+            (or (get-in sc [:scorecard/ss-priority-path :stage-gated-count]) 0)
+            :audit/ss-stage-care-gated-admissible
+            (boolean (get-in sc [:scorecard/ss-priority-path :stage-care-gated-admissible]))
+            :audit/ss-stage-mitsuho-gated-admissible
+            (boolean (get-in sc [:scorecard/ss-priority-path :stage-mitsuho-gated-admissible]))
+            :audit/ss-stage-hikari-gated-admissible
+            (boolean (get-in sc [:scorecard/ss-priority-path :stage-hikari-gated-admissible]))
             :audit/ss-stage-land-grant-executed
             (boolean (get-in sc [:scorecard/ss-priority-path :stage-land-grant-executed]))
             :audit/ss-disclosure-state

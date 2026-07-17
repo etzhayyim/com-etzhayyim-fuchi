@@ -328,11 +328,24 @@
                  :stage-housing-months-floor-yr
                  (or (get-in stage-pkg [:packages "housing" :floor :housing-months-floor-yr]) 0)
                  :stage-land-grant-executed
-                 (boolean (get-in stage-pkg [:packages "housing" :plan :land-grant-executed]))
-                 :stage-r2-count (count stage-r2-phases)
+                 (boolean (or (get-in stage-pkg [:packages "housing" :plan :land-grant-executed])
+                              (get-in stage-pkg [:gated-summary :housing-land-grant-executed])))
+                 :stage-r2-count (or (:r2-count stage-pkg) (count stage-r2-phases))
                  :stage-r2-all-refused
-                 (and (seq stage-r2-phases)
-                      (every? #(= :refused %) stage-r2-phases))
+                 (boolean (or (:r2-all-refused stage-pkg)
+                              (and (seq stage-r2-phases)
+                                   (every? #(= :refused %) stage-r2-phases))))
+                 :stage-gated-count (or (:gated-count stage-pkg) 0)
+                 :stage-gated-admissible-count (or (:gated-admissible-count stage-pkg) 0)
+                 :stage-all-gated-refused (boolean (:all-gated-refused stage-pkg))
+                 :stage-care-gated-admissible
+                 (boolean (get-in stage-pkg [:gated-summary :care-gated-admissible]))
+                 :stage-food-gated-admissible
+                 (boolean (get-in stage-pkg [:gated-summary :food-gated-admissible]))
+                 :stage-mitsuho-gated-admissible
+                 (boolean (get-in stage-pkg [:gated-summary :food-gated-admissible]))
+                 :stage-hikari-gated-admissible
+                 (boolean (get-in stage-pkg [:gated-summary :energy-gated-admissible]))
                  :stage-live false
                  :stage-cash-usd-micros 0
                  :disclosure-state (name (or (:state hold) :open))

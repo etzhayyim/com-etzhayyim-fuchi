@@ -57,13 +57,31 @@
   (let [p (person "L4")
         hm (dh/initial p)
         pkg (st/build-for-stage p hm)
-        rails (:rails pkg)]
+        rails (:rails pkg)
+        gsum (:gated-summary pkg)]
     (is (= "L4" (:stage pkg)))
     (is (= "care" (first rails)))
     (is (= "housing" (second rails)))
     (is (some #{"compute"} rails))
     (is (get-in pkg [:packages "care" :plan]))
-    (is (get-in pkg [:packages "housing" :plan]))))
+    (is (get-in pkg [:packages "housing" :plan]))
+    ;; R1→gated-live DESIGN default refuse on every stage rail
+    (is (pos? (:gated-count pkg)))
+    (is (zero? (:gated-admissible-count pkg)))
+    (is (true? (:all-gated-refused pkg)))
+    (is (false? (get-in pkg [:packages "care" :gated :admissible])))
+    (is (false? (get-in pkg [:packages "food" :gated :admissible])))
+    (is (false? (get-in pkg [:packages "energy" :gated :admissible])))
+    (is (false? (get-in pkg [:packages "housing" :gated :land-grant-executed])))
+    (is (true? (:r2-all-refused pkg)))
+    (is (true? (:all-gated-refused gsum)))
+    (is (false? (:care-gated-admissible gsum)))
+    (is (false? (:food-gated-admissible gsum)))
+    (let [row (st/public-floor-row pkg)]
+      (is (true? (:all-gated-refused row)))
+      (is (true? (:r2-all-refused row)))
+      (is (pos? (:gated-count row)))
+      (pp/assert-no-public-scores! row))))
 
 (deftest test-l6-multi-gen-first
   (let [p (person "L6")

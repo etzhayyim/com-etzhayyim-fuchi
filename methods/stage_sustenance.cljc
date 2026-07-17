@@ -1,7 +1,8 @@
 (ns fuchi.methods.stage-sustenance
   "stage_sustenance.cljc — offline stage-aware in-kind floor packages.
 
-  Maps Liberation Ladder stage rails-hint → R1 dry packages + produce plans.
+  Maps Liberation Ladder stage rails-hint → R1 dry packages + produce plans
+  + R1→gated-live DESIGN status (default refuse) + R2 execute refuse.
   Multi-gen priority: care/housing/food/energy before vocation rails.
   live=false, cash≡0, produce-executed=false. Portable .cljc."
   (:require [fuchi.methods.liberation-ladder :as ladder]
@@ -35,6 +36,19 @@
   (or (get-in ladder/STAGE-FACTS [(ladder/normalize-stage stage) :rails-hint])
       ["care"]))
 
+(defn- gated-for
+  "R1→gated-live DESIGN status for a stage rail package (default refuse)."
+  [kind pkg hold]
+  (when (and pkg (not= :refused (:phase pkg)))
+    (case kind
+      "food" (food/gated-live-status pkg :hold-machine hold)
+      "energy" (energy/gated-live-status pkg :hold-machine hold)
+      "care" (care/gated-live-status pkg :hold-machine hold)
+      "housing" (housing/gated-live-status pkg :hold-machine hold)
+      "tooling" (tooling/gated-live-status pkg :hold-machine hold)
+      "compute" (compute/gated-live-status pkg :hold-machine hold)
+      nil)))
+
 (defn- package+plan
   [kind subject-did imputed person hold]
   (let [opts {:alloc-id (str kind "-" subject-did)
@@ -43,30 +57,42 @@
               :person person
               :hold-machine hold}]
     (case kind
-      "food" (let [pkg (food/r1-dry-package opts)]
+      "food" (let [pkg (food/r1-dry-package opts)
+                   plan (when (not= :refused (:phase pkg)) (mprod/plan-from-r1 pkg))]
                {:package pkg
-                :plan (when (not= :refused (:phase pkg)) (mprod/plan-from-r1 pkg))
-                :execute-leg "produce"})
-      "energy" (let [pkg (energy/r1-dry-package opts)]
+                :plan plan
+                :execute-leg "produce"
+                :gated (gated-for "food" pkg hold)})
+      "energy" (let [pkg (energy/r1-dry-package opts)
+                     plan (when (not= :refused (:phase pkg)) (hprod/plan-from-r1 pkg))]
                  {:package pkg
-                  :plan (when (not= :refused (:phase pkg)) (hprod/plan-from-r1 pkg))
-                  :execute-leg "generate"})
-      "care" (let [pkg (care/r1-dry-package opts)]
+                  :plan plan
+                  :execute-leg "generate"
+                  :gated (gated-for "energy" pkg hold)})
+      "care" (let [pkg (care/r1-dry-package opts)
+                   plan (when (not= :refused (:phase pkg)) (cprod/plan-from-r1 pkg))]
                {:package pkg
-                :plan (when (not= :refused (:phase pkg)) (cprod/plan-from-r1 pkg))
-                :execute-leg "produce"})
-      "housing" (let [pkg (housing/r1-dry-package opts)]
+                :plan plan
+                :execute-leg "produce"
+                :gated (gated-for "care" pkg hold)})
+      "housing" (let [pkg (housing/r1-dry-package opts)
+                      plan (when (not= :refused (:phase pkg)) (housprod/plan-from-r1 pkg))]
                   {:package pkg
-                   :plan (when (not= :refused (:phase pkg)) (housprod/plan-from-r1 pkg))
-                   :execute-leg "grant"})
-      "tooling" (let [pkg (tooling/r1-dry-package opts)]
+                   :plan plan
+                   :execute-leg "grant"
+                   :gated (gated-for "housing" pkg hold)})
+      "tooling" (let [pkg (tooling/r1-dry-package opts)
+                      plan (when (not= :refused (:phase pkg)) (tprod/plan-from-r1 pkg))]
                   {:package pkg
-                   :plan (when (not= :refused (:phase pkg)) (tprod/plan-from-r1 pkg))
-                   :execute-leg "produce"})
-      "compute" (let [pkg (compute/r1-dry-package opts)]
+                   :plan plan
+                   :execute-leg "produce"
+                   :gated (gated-for "tooling" pkg hold)})
+      "compute" (let [pkg (compute/r1-dry-package opts)
+                      plan (when (not= :refused (:phase pkg)) (cmpprod/plan-from-r1 pkg))]
                   {:package pkg
-                   :plan (when (not= :refused (:phase pkg)) (cmpprod/plan-from-r1 pkg))
-                   :execute-leg "quota"})
+                   :plan plan
+                   :execute-leg "quota"
+                   :gated (gated-for "compute" pkg hold)})
       nil)))
 
 (defn floor-facts [plan]
@@ -83,8 +109,47 @@
       (:tool-units-floor-yr plan) (assoc :tool-units-floor-yr (:tool-units-floor-yr plan))
       (:gpu-hours-floor-yr plan) (assoc :gpu-hours-floor-yr (:gpu-hours-floor-yr plan)))))
 
+(defn gated-summary
+  "Aggregate gated-live DESIGN facts from a stage package (facts only)."
+  [stage-pkg]
+  (let [gated (keep (fn [[k v]]
+                      (when-let [g (:gated v)]
+                        {:rail k
+                         :admissible (boolean (:admissible g))
+                         :phase (when-let [p (:phase g)] (name p))
+                         :land-grant-executed (boolean (:land-grant-executed g))
+                         :produce-executed (boolean (:produce-executed g false))
+                         :live (boolean (:live g))
+                         :cash-usd-micros 0}))
+                    (or (:packages stage-pkg) {}))
+        n (count gated)
+        adm (count (filter :admissible gated))
+        out {:gated-count n
+             :gated-admissible-count adm
+             :all-gated-refused (and (pos? n) (zero? adm))
+             :care-gated-admissible
+             (boolean (some #(and (= "care" (:rail %)) (:admissible %)) gated))
+             :food-gated-admissible
+             (boolean (some #(and (= "food" (:rail %)) (:admissible %)) gated))
+             :energy-gated-admissible
+             (boolean (some #(and (= "energy" (:rail %)) (:admissible %)) gated))
+             :housing-gated-admissible
+             (boolean (some #(and (= "housing" (:rail %)) (:admissible %)) gated))
+             :housing-land-grant-executed
+             (boolean (some #(and (= "housing" (:rail %)) (:land-grant-executed %)) gated))
+             :by-rail (into {} (map (fn [g] [(:rail g) (dissoc g :rail)]) gated))
+             :live false
+             :cash-usd-micros 0
+             :score-surface []
+             :priority-stack PRIORITY-STACK
+             :note "stage R1→gated-live DESIGN — default refuse; no side-effects"}]
+    (pp/assert-no-public-scores! (dissoc out :by-rail))
+    out))
+
 (defn build-for-stage
-  "Build offline rail packages for a person's stage. imputed-overrides: map kind→micros."
+  "Build offline rail packages for a person's stage.
+   Includes R1 dry + produce plan + gated-live DESIGN status + R2 refuse.
+   imputed-overrides: map kind→micros."
   [person hold-machine & {:keys [imputed-overrides]}]
   (let [stage (ladder/normalize-stage (or (:stage person) "L0"))
         kinds (rails-for-stage stage)
@@ -109,6 +174,8 @@
                                          (:plan built))))])))
                kinds))
         total (reduce + 0 (map :imputed-usd-micros-yr (vals rails)))
+        r2-phases (keep (fn [[_ v]] (get-in v [:r2 :phase])) rails)
+        gsum (gated-summary {:packages rails})
         out {:stage stage
              :subject-did did
              :rails kinds
@@ -116,12 +183,20 @@
              :floor-usd-micros-yr total
              :label (get-in ladder/STAGE-FACTS [stage :label])
              :multi-gen-fact (get-in ladder/STAGE-FACTS [stage :multi-gen])
+             :gated-count (:gated-count gsum)
+             :gated-admissible-count (:gated-admissible-count gsum)
+             :all-gated-refused (:all-gated-refused gsum)
+             :gated-summary gsum
+             :r2-count (count r2-phases)
+             :r2-all-refused (and (seq r2-phases) (every? #(= :refused %) r2-phases))
              :live false
              :cash-usd-micros 0
              :score-surface []
              :priority-stack PRIORITY-STACK
-             :note "stage sustenance dry only — R2 execute refused"}]
-    (pp/assert-no-public-scores! out)
+             :note "stage sustenance dry — gated-live DESIGN refuse + R2 refuse"}]
+    (pp/assert-no-public-scores! (dissoc out :packages :gated-summary :rails))
+    (when-let [gs (:gated-summary out)]
+      (pp/assert-no-public-scores! (dissoc gs :by-rail)))
     out))
 
 (defn public-floor-row
@@ -131,12 +206,21 @@
                      (map (fn [[k v]]
                             [k (or (:floor v) {})])
                           (:packages stage-pkg)))
+        gsum (or (:gated-summary stage-pkg) (gated-summary stage-pkg))
         row {:subject-did (:subject-did stage-pkg)
              :stage (:stage stage-pkg)
              :label (:label stage-pkg)
              :rails (:rails stage-pkg)
              :floors floors
              :floor-usd-micros-yr (:floor-usd-micros-yr stage-pkg)
+             :gated-count (or (:gated-count stage-pkg) (:gated-count gsum) 0)
+             :gated-admissible-count
+             (or (:gated-admissible-count stage-pkg)
+                 (:gated-admissible-count gsum) 0)
+             :all-gated-refused
+             (boolean (or (:all-gated-refused stage-pkg)
+                          (:all-gated-refused gsum)))
+             :r2-all-refused (boolean (:r2-all-refused stage-pkg true))
              :cash-usd-micros 0
              :live false
              :score-surface []
