@@ -91,6 +91,16 @@
             (boolean (get-in sc [:scorecard/ss-priority-path :all-r2-not-executed] true))
             :audit/ss-l0-published
             (boolean (get-in sc [:scorecard/ss-priority-path :l0-published]))
+            :audit/ss-ladder-to
+            (or (get-in sc [:scorecard/ss-priority-path :ladder-to]) "n/a")
+            :audit/ss-ladder-steps
+            (or (get-in sc [:scorecard/ss-priority-path :ladder-steps]) 0)
+            :audit/ss-ladder-rails-hint-first
+            (or (get-in sc [:scorecard/ss-priority-path :ladder-rails-hint-first]) "n/a")
+            :audit/ss-ladder-published
+            (boolean (get-in sc [:scorecard/ss-priority-path :ladder-published]))
+            :audit/ss-held-stress-ladder-refused
+            (boolean (get-in sc [:scorecard/ss-priority-path :held-stress-ladder-refused]))
             :audit/ss-disclosure-state
             (or (get-in sc [:scorecard/ss-priority-path :disclosure-state]) "n/a")
             :audit/ss-housing-land-grant-executed
@@ -186,6 +196,12 @@
                :ss-all-r2-not-executed
                (boolean (:audit/ss-all-r2-not-executed ev true))
                :ss-l0-published (boolean (:audit/ss-l0-published ev))
+               :ss-ladder-to (or (:audit/ss-ladder-to ev) "n/a")
+               :ss-ladder-steps (or (:audit/ss-ladder-steps ev) 0)
+               :ss-ladder-rails-hint-first
+               (or (:audit/ss-ladder-rails-hint-first ev) "n/a")
+               :ss-held-stress-ladder-refused
+               (boolean (:audit/ss-held-stress-ladder-refused ev))
                :ss-disclosure-state (or (:audit/ss-disclosure-state ev) "n/a")
                :all-live-refused (boolean (:audit/all-live-refused ev))
                :l4-disclosure-open (or (:audit/l4-disclosure-open ev) 0)
@@ -268,6 +284,12 @@
                  (boolean (:audit/ss-all-r2-not-executed last-ev true))
                  :last-run-ss-l0-published
                  (boolean (:audit/ss-l0-published last-ev))
+                 :last-run-ss-ladder-to
+                 (or (:audit/ss-ladder-to last-ev) "n/a")
+                 :last-run-ss-ladder-rails-hint-first
+                 (or (:audit/ss-ladder-rails-hint-first last-ev) "n/a")
+                 :last-run-ss-held-stress-ladder-refused
+                 (boolean (:audit/ss-held-stress-ladder-refused last-ev))
                  :cash-usd-micros 0
                  :cash-to-workers-usd-micros 0
                  :live false

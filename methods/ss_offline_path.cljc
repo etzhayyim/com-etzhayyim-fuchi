@@ -2,7 +2,7 @@
   "ss_offline_path.cljc — end-to-end OFFLINE path for covenantal SS fragment.
 
   Priority stack path (offline only):
-    (1) L0 enroll scaffold
+    (1) L0 enroll scaffold + liberation ladder climb (disclosure-gated, care-first for 孫/子)
     (2) disclosure hold machine + continuity tick (+ optional held stress)
     (3) mitsuho/hikari (and other rails) R1 → gated-live DESIGN status (default refuse)
     + dry receive / dry produce plans + R2 execute refuse
@@ -11,6 +11,7 @@
   live=false throughout. cash≡0. liquidity is member-principal only. no scores.
   Portable .cljc."
   (:require [fuchi.methods.l0-enroll :as l0]
+            [fuchi.methods.liberation-ladder :as lad]
             [fuchi.methods.rail-mitsuho :as food]
             [fuchi.methods.rail-hikari :as energy]
             [fuchi.methods.rail-care-iyashi :as care]
@@ -60,12 +61,14 @@
            energy-imputed-usd-micros-yr care-imputed-usd-micros-yr
            housing-imputed-usd-micros-yr tooling-imputed-usd-micros-yr
            compute-imputed-usd-micros-yr liquidity-imputed-usd-micros-yr
-           include-disclosure-stress]
+           include-disclosure-stress ladder-target-stage]
     :or {food-imputed-usd-micros-yr 2000000000 energy-imputed-usd-micros-yr 0
          care-imputed-usd-micros-yr 0 housing-imputed-usd-micros-yr 0
          tooling-imputed-usd-micros-yr 0 compute-imputed-usd-micros-yr 0
          liquidity-imputed-usd-micros-yr 0
-         include-disclosure-stress true}}]
+         include-disclosure-stress true
+         ;; L4 = multi-gen care first (wellbecoming > 孫 > 子)
+         ladder-target-stage "L4"}}]
   (let [enrolled (l0/enroll {:subject-did subject-did
                              :vow-text (or vow-text "L0 offline path vow")
                              :member-signature (or member-signature (str "sig-" subject-did))
@@ -92,16 +95,26 @@
         cont-open (disc/tick hold0 person :disclosure FRESH-DISC :reason "fresh-open")
         hold (:machine cont-open)
         person-open (:person cont-open)
+        ;; (1) liberation ladder climb offline while disclosure open (care-first L4)
+        ladder-open (lad/climb-to-stage
+                     person-open hold ladder-target-stage
+                     :member-signature (or member-signature (str "sig-" subject-did)))
+        person-ladder (or (:person ladder-open) person-open)
+        ladder-hist (or (:history ladder-open) [])
+        ladder-last (last ladder-hist)
         cont-series (when include-disclosure-stress
                       (disc/tick-series person [FRESH-DISC STALE-DISC FRESH-DISC]))
         held-stress (when include-disclosure-stress
                       (let [t (disc/tick hold person :disclosure STALE-DISC
-                                         :reason "stale-hold-stress")]
+                                         :reason "stale-hold-stress")
+                            hm (:machine t)
+                            lad-ref (lad/advance-offline person-open hm
+                                                         :member-signature "sig-held")]
                         {:action (:action t)
                          :to-state (:to-state t)
                          :held? (:held? t)
                          :entitlements-may-flow?
-                         (disc/entitlements-may-flow? (:machine t))
+                         (disc/entitlements-may-flow? hm)
                          :food-r1-when-held
                          (when (pos? food-imputed-usd-micros-yr)
                            (food/r1-dry-package
@@ -109,7 +122,9 @@
                              :subject-did subject-did
                              :imputed-usd-micros-yr food-imputed-usd-micros-yr
                              :person (assoc person :disclosure STALE-DISC)
-                             :hold-machine (:machine t)}))
+                             :hold-machine hm}))
+                         :ladder-advance-phase (name (:phase lad-ref))
+                         :ladder-refusal-reason (:refusal-reason lad-ref)
                          :live false
                          :cash-usd-micros 0
                          :score-surface []
@@ -260,6 +275,30 @@
                                             (get-in enrolled [:entitlement :published])))
                  :l0-token-stub (or (get-in enrolled [:vow :token-id])
                                    (get-in enrolled [:entitlement :token-id]))
+                 ;; liberation ladder (care/housing first at L4 = 孫/子 priority)
+                 :ladder-phase (when-let [p (:phase ladder-open)] (name p))
+                 :ladder-from "L0"
+                 :ladder-to (or (:stage person-ladder)
+                                (get-in ladder-open [:person :stage])
+                                "L0")
+                 :ladder-target (or (:target-stage ladder-open) ladder-target-stage)
+                 :ladder-steps (count ladder-hist)
+                 :ladder-rails-hint (or (:rails-hint ladder-last)
+                                        (get-in lad/STAGE-FACTS
+                                                [(or (:stage person-ladder) "L0") :rails-hint])
+                                        [])
+                 :ladder-rails-hint-first
+                 (first (or (:rails-hint ladder-last)
+                            (get-in lad/STAGE-FACTS
+                                    [(or (:stage person-ladder) "L0") :rails-hint])))
+                 :ladder-multi-gen-fact (or (:multi-gen-fact ladder-last)
+                                            (get-in lad/STAGE-FACTS
+                                                    [(or (:stage person-ladder) "L0") :multi-gen]))
+                 :ladder-live false
+                 :ladder-published false
+                 :held-stress-ladder-refused
+                 (boolean (and held-stress
+                               (= "refused" (:ladder-advance-phase held-stress))))
                  :disclosure-state (name (or (:state hold) :open))
                  :entitlements-may-flow? (disc/entitlements-may-flow? hold)
                  :continuity-action (:action cont-open)
@@ -309,11 +348,14 @@
              :cash-usd-micros 0
              :score-surface []
              :l0 enrolled
+             :ladder ladder-open
+             :person-after-ladder person-ladder
              :disclosure-hold hold
              :disclosure-continuity cont-open
              :disclosure-continuity-series cont-series
              :disclosure-held-stress held-stress
-             :public-person (pp/public-surface person-open :stage "L0")
+             :public-person (pp/public-surface person-ladder
+                                               :stage (or (:stage person-ladder) "L0"))
              :food-package food-pkg
              :food-gated-live-status food-gated
              :food-produce-plan food-plan

@@ -260,9 +260,20 @@
               :l0-stage (:l0-stage s)
               :l0-published (boolean (:l0-published s))
               :l0-token-stub (:l0-token-stub s)
+              :ladder-phase (:ladder-phase s)
+              :ladder-from (:ladder-from s)
+              :ladder-to (:ladder-to s)
+              :ladder-target (:ladder-target s)
+              :ladder-steps (or (:ladder-steps s) 0)
+              :ladder-rails-hint (vec (or (:ladder-rails-hint s) []))
+              :ladder-rails-hint-first (:ladder-rails-hint-first s)
+              :ladder-multi-gen-fact (:ladder-multi-gen-fact s)
+              :ladder-published false
+              :held-stress-ladder-refused (boolean (:held-stress-ladder-refused s))
               :disclosure-state (:disclosure-state s)
               :entitlements-may-flow? (boolean (:entitlements-may-flow? s))
-              :continuity-action (when-let [a (:continuity-action s)] (name a))
+              :continuity-action (when-let [a (:continuity-action s)]
+                                   (if (keyword? a) (name a) (str a)))
               :held-stress-held? (boolean (:held-stress-held? s))
               :held-stress-food-phase (:held-stress-food-phase s)
               :mitsuho-r1-phase (:mitsuho-r1-phase s)
@@ -798,6 +809,16 @@
                          (:l0-stage sp) "/"
                          (boolean (:l0-published sp)) "/"
                          (or (:l0-token-stub sp) "—") "\n"))
+        (conj! lines (str "- (1) ladder climb offline: "
+                         (or (:ladder-from sp) "L0") "→"
+                         (or (:ladder-to sp) "—")
+                         " target=" (or (:ladder-target sp) "—")
+                         " steps=" (or (:ladder-steps sp) 0)
+                         " phase=" (or (:ladder-phase sp) "—")
+                         " published=" (boolean (:ladder-published sp)) "\n"))
+        (conj! lines (str "- (1) ladder rails-hint (care-first for 孫/子): "
+                         (str/join "," (or (:ladder-rails-hint sp) []))
+                         " first=" (or (:ladder-rails-hint-first sp) "—") "\n"))
         (conj! lines (str "- (2) disclosure open path: state="
                          (:disclosure-state sp)
                          " entitlements-may-flow="
@@ -805,7 +826,9 @@
         (conj! lines (str "- (2) held-stress: held="
                          (boolean (:held-stress-held? sp))
                          " food-r1-phase="
-                         (or (:held-stress-food-phase sp) "—") "\n"))
+                         (or (:held-stress-food-phase sp) "—")
+                         " ladder-refused="
+                         (boolean (:held-stress-ladder-refused sp)) "\n"))
         (conj! lines (str "- (3) mitsuho R1/gated-admissible/produce-executed: "
                          (or (:mitsuho-r1-phase sp) "—") "/"
                          (boolean (:mitsuho-gated-admissible sp)) "/"
@@ -1075,10 +1098,14 @@
           "<p class=\"note\">(1) L0 stage=" (:l0-stage sp)
           " published=" (boolean (:l0-published sp))
           " token-stub=" (or (:l0-token-stub sp) "—")
+          " ladder=" (or (:ladder-from sp) "L0") "→" (or (:ladder-to sp) "—")
+          " rails-hint-first=" (or (:ladder-rails-hint-first sp) "—")
+          " ladder-published=" (boolean (:ladder-published sp))
           ". (2) disclosure=" (:disclosure-state sp)
           " entitlements-may-flow=" (boolean (:entitlements-may-flow? sp))
           " held-stress-held=" (boolean (:held-stress-held? sp))
           " held-food-r1=" (or (:held-stress-food-phase sp) "—")
+          " held-ladder-refused=" (boolean (:held-stress-ladder-refused sp))
           ". (3) mitsuho/hikari gated="
           (boolean (:mitsuho-gated-admissible sp)) "/"
           (boolean (:hikari-gated-admissible sp))

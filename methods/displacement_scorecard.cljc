@@ -68,6 +68,14 @@
           out {:path (:path path)
                :l0-stage (:l0-stage s)
                :l0-published (boolean (:l0-published s))
+               :ladder-from (:ladder-from s)
+               :ladder-to (:ladder-to s)
+               :ladder-target (:ladder-target s)
+               :ladder-steps (or (:ladder-steps s) 0)
+               :ladder-phase (:ladder-phase s)
+               :ladder-rails-hint-first (:ladder-rails-hint-first s)
+               :ladder-published false
+               :held-stress-ladder-refused (boolean (:held-stress-ladder-refused s))
                :disclosure-state (:disclosure-state s)
                :entitlements-may-flow? (boolean (:entitlements-may-flow? s))
                :held-stress-held? (boolean (:held-stress-held? s))
@@ -499,12 +507,19 @@
         (conj! lines "\n## SS priority path (L0 + disclosure + all rails gated)\n\n")
         (conj! lines (str "- L0 stage/published: " (:l0-stage sp) "/"
                          (boolean (:l0-published sp)) "\n"))
+        (conj! lines (str "- ladder offline: " (or (:ladder-from sp) "L0") "→"
+                         (or (:ladder-to sp) "—")
+                         " target=" (or (:ladder-target sp) "—")
+                         " steps=" (or (:ladder-steps sp) 0)
+                         " rails-hint-first=" (or (:ladder-rails-hint-first sp) "—")
+                         " published=" (boolean (:ladder-published sp)) "\n"))
         (conj! lines (str "- disclosure state / entitlements-may-flow: "
                          (:disclosure-state sp) "/"
                          (boolean (:entitlements-may-flow? sp)) "\n"))
-        (conj! lines (str "- held-stress held / food-r1: "
+        (conj! lines (str "- held-stress held / food-r1 / ladder-refused: "
                          (boolean (:held-stress-held? sp)) "/"
-                         (or (:held-stress-food-phase sp) "—") "\n"))
+                         (or (:held-stress-food-phase sp) "—") "/"
+                         (boolean (:held-stress-ladder-refused sp)) "\n"))
         (conj! lines (str "- rails-gated-count / admissible / all-rails-gated-refused: "
                          (or (:rails-gated-count sp) 0) "/"
                          (or (:rails-gated-admissible-count sp) 0) "/"

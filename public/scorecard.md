@@ -44,8 +44,9 @@ Priority: wellbecoming > mago(孫) > ko(子) > present. cash≡0. live=false. No
 ## SS priority path (L0 + disclosure + all rails gated)
 
 - L0 stage/published: L0/false
+- ladder offline: L0→L4 target=L4 steps=4 rails-hint-first=care published=false
 - disclosure state / entitlements-may-flow: open/true
-- held-stress held / food-r1: true/refused
+- held-stress held / food-r1 / ladder-refused: true/refused/true
 - rails-gated-count / admissible / all-rails-gated-refused: 7/0/true
 - mitsuho/hikari/care gated-admissible: false/false/false
 - housing land-grant / liquidity loan / cash: false/false/0
