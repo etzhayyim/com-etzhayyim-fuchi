@@ -13,6 +13,8 @@
             [fuchi.methods.live-gate :as live-gate]
             [fuchi.methods.public-person :as pp]
             [fuchi.methods.displacement-book :as dbook]
+            [fuchi.methods.displacement-couple :as dcouple]
+            [fuchi.methods.couple :as couple]
             [fuchi.methods.r2-execute :as r2]))
 
 (def PRIORITY-STACK pp/PRIORITY-STACK)
@@ -250,8 +252,24 @@
              :live false
              :cash-usd-micros 0))))
 
+(defn- event-from-pkg
+  "Rebuild displacement event facts for G2 re-eval after gov packaging."
+  [pkg]
+  (let [ear (:earmark pkg)
+        c (:couple pkg)]
+    (couple/make-displacement-event
+     {:displacing-actor (:displacing-actor pkg)
+      :cohort-id (:cohort-id pkg)
+      :displaced-count (long (or (get-in pkg [:slots-plan :displaced-count])
+                                 (count (:subjects pkg))
+                                 0))
+      :surplus-usd-micros-yr (long (or (:gross-usd-micros-yr ear)
+                                       (:gross-usd-micros-yr c)
+                                       0))
+      :funded (boolean (or (:funded ear) (:funded c)))})))
+
 (defn package-cohort
-  "Attach gov packages + optional council ratify rebook for multi-gen housing path."
+  "Attach gov packages + optional council ratify rebook + flowable-first couple re-eval."
   [pkg & {:keys [apply-ratify?] :or {apply-ratify? true}}]
   (if-not (= :offline-enrolled (:phase pkg))
     (assoc pkg :gov nil)
@@ -267,7 +285,28 @@
           substrate (count (filter :may-flow-substrate? govs))
           flowable-total (reduce + 0 (map #(or (get-in % [:flowable-booking :in-kind-total-usd-micros]) 0) govs))
           post-ratify-total (reduce + 0 (map #(or (get-in % [:post-ratify-booking :in-kind-total-usd-micros]) 0) govs))
+          ear (or (:earmark pkg)
+                  (when-let [c (:couple pkg)]
+                    (couple/make-cohort-earmark
+                     {:cohort-id (:cohort-id pkg)
+                      :displacing-actor (:displacing-actor pkg)
+                      :gross-usd-micros-yr (or (:gross-usd-micros-yr c) 0)
+                      :tithe-usd-micros (or (:tithe-usd-micros c) 0)
+                      :earmark-usd-micros-yr (or (:earmark-usd-micros-yr c) 0)
+                      :funded (boolean (:funded c))})))
+          pre-couple (:couple pkg)
+          re (when ear
+               (try
+                 (dcouple/reevaluate-after-gov (event-from-pkg pkg) ear subjects govs)
+                 (catch Exception _ nil)))
+          subjects' (or (:subjects re) subjects)
+          couple' (or (:couple re) pre-couple)
+          couple-post (:couple-post-ratify re)
           out (assoc pkg
+                     :subjects subjects'
+                     :couple-pre-gov pre-couple
+                     :couple couple'
+                     :couple-post-ratify couple-post
                      :gov-subjects govs
                      :gov-route-counts routes
                      :gov-entitlements-held held
@@ -283,18 +322,21 @@
       out)))
 
 (defn package-batch
-  "Map package-cohort over a displacement batch."
+  "Map package-cohort over a displacement batch. Idempotent if already packaged."
   [batch & opts]
-  (let [pkgs (mapv #(apply package-cohort % opts) (:packages batch))
-        all-routes (apply merge-with + (map #(or (:gov-route-counts %) {}) pkgs))
-        flowable (reduce + 0 (map #(or (:gov-flowable-committed-usd-micros %) 0) pkgs))
-        post (reduce + 0 (map #(or (:gov-post-ratify-committed-usd-micros %) 0) pkgs))]
-    (assoc batch
-           :packages pkgs
-           :gov-route-counts all-routes
-           :gov-flowable-committed-usd-micros flowable
-           :gov-post-ratify-committed-usd-micros post
-           :live false
-           :cash-usd-micros 0
-           :score-surface []
-           :priority-stack PRIORITY-STACK)))
+  (if (:gov-packaged? batch)
+    batch
+    (let [pkgs (mapv #(apply package-cohort % opts) (:packages batch))
+          all-routes (apply merge-with + (map #(or (:gov-route-counts %) {}) pkgs))
+          flowable (reduce + 0 (map #(or (:gov-flowable-committed-usd-micros %) 0) pkgs))
+          post (reduce + 0 (map #(or (:gov-post-ratify-committed-usd-micros %) 0) pkgs))]
+      (assoc batch
+             :packages pkgs
+             :gov-route-counts all-routes
+             :gov-flowable-committed-usd-micros flowable
+             :gov-post-ratify-committed-usd-micros post
+             :gov-packaged? true
+             :live false
+             :cash-usd-micros 0
+             :score-surface []
+             :priority-stack PRIORITY-STACK))))

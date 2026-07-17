@@ -32,14 +32,52 @@
                            0)))
                subjects)))
 
+(defn committed-post-ratify-from-subjects
+  "Post-council-ratify book totals (housing in book; land-grant still false)."
+  [subjects]
+  (reduce + 0
+          (map (fn [s]
+                 (long (or (get-in s [:post-ratify-booking :in-kind-total-usd-micros])
+                           (get-in s [:flowable-booking :in-kind-total-usd-micros])
+                           (get-in s [:booking :in-kind-total-usd-micros])
+                           (get-in s [:stage-sustenance :floor-usd-micros-yr])
+                           0)))
+               subjects)))
+
+(defn merge-gov-bookings
+  "Align subjects with package-subject gov rows; attach flowable + post-ratify books."
+  [subjects gov-subjects]
+  (mapv (fn [s g]
+          (cond-> s
+            (:flowable-booking g)
+            (assoc :flowable-booking (:flowable-booking g))
+            (:post-ratify-booking g)
+            (assoc :post-ratify-booking (:post-ratify-booking g)
+                   :post-ratify-includes-housing
+                   (boolean (:post-ratify-includes-housing g))
+                   :land-grant-executed false)))
+        subjects
+        (or gov-subjects [])))
+
+(defn subjects-as-post-ratify-flowable
+  "Project post-ratify booking into flowable-booking slot for G2 re-eval."
+  [subjects]
+  (mapv (fn [s]
+          (if-let [pr (:post-ratify-booking s)]
+            (assoc s :flowable-booking pr)
+            s))
+        subjects))
+
 (defn evaluate-cohort
   "G2 gate with earmark + committed floors from subjects. Offline only.
    Uses flowable-first committed (partial hold aware)."
   [event earmark subjects]
   (let [committed (committed-from-subjects subjects)
         committed-full (committed-full-from-subjects subjects)
+        committed-post (committed-post-ratify-from-subjects subjects)
         gate (couple/coupling-gate event earmark committed)
         gate-full (couple/coupling-gate event earmark committed-full)
+        gate-post (couple/coupling-gate event earmark committed-post)
         live-st (live-gate/gate-status
                  (live-gate/make-live-gate {:leg "couple"}) {})
         out {:phase (if (true? (get gate "admissible"))
@@ -53,10 +91,13 @@
              :funded (boolean (:funded earmark))
              :committed-usd-micros-yr committed
              :committed-full-usd-micros-yr committed-full
+             :committed-post-ratify-usd-micros-yr committed-post
              :headroom-usd-micros-yr (long (get gate "headroom" 0))
              :headroom-full-usd-micros-yr (long (get gate-full "headroom" 0))
+             :headroom-post-ratify-usd-micros-yr (long (get gate-post "headroom" 0))
              :admissible (boolean (get gate "admissible"))
              :admissible-if-full-booked (boolean (get gate-full "admissible"))
+             :admissible-if-post-ratify (boolean (get gate-post "admissible"))
              :reason (get gate "reason")
              :subject-count (count subjects)
              :commit-live-admissible (boolean (get live-st "admissible"))
@@ -80,6 +121,31 @@
              :committed true
              :commit-live false
              :note "offline earmark commitment plan only — not live couple commit"))))
+
+(defn reevaluate-after-gov
+  "After package-subject holds: re-run G2 flowable-first + post-ratify plan couple.
+   Does not call commit_live. land-grant-executed remains false."
+  [event earmark subjects gov-subjects]
+  (let [merged (merge-gov-bookings subjects gov-subjects)
+        flow (commit-offline-plan event earmark merged)
+        post-subs (subjects-as-post-ratify-flowable merged)
+        post (evaluate-cohort event earmark post-subs)
+        post-plan (if-not (:admissible post)
+                    (assoc post :phase :refused :committed false
+                           :note "post-ratify G2 refuse — still offline plan only")
+                    (assoc post
+                           :phase :committed-offline-post-ratify-plan
+                           :committed true
+                           :commit-live false
+                           :land-grant-executed false
+                           :note "post-council-ratify offline couple plan — land grant not executed; live refuse"))]
+    {:subjects merged
+     :couple flow
+     :couple-post-ratify post-plan
+     :live false
+     :cash-usd-micros 0
+     :score-surface []
+     :priority-stack PRIORITY-STACK}))
 
 (defn public-couple-summary
   "Facts-only public row for reports."

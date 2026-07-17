@@ -9,6 +9,7 @@
             [fuchi.methods.live-gate :as live-gate]
             [fuchi.methods.displacement-l0-path :as dl0]
             [fuchi.methods.displacement-tenure :as ten]
+            [fuchi.methods.displacement-gov :as dgov]
             [fuchi.methods.itonami-bridge :as itonami]
             [fuchi.methods.itonami-surplus-ledger :as led]
             #?(:clj [fuchi.methods.edn :as edn])
@@ -40,18 +41,22 @@
         (edn/load-edn (io/file actor "data" "itonami-displacement-events.edn"))))))
 
 (defn build
-  "Full offline scorecard. Default: L4 enroll + L6 tenure on admissible cohorts."
+  "Full offline scorecard. Default: L4 enroll + L6 tenure + G7 gov package on admissible cohorts."
   ([]
    #?(:clj
       (let [batch (dl0/run-default-seed :max-slots 2 :climb-steps 4)
             events (try (load-events) (catch Exception _ []))
             with-ten (if (seq events)
                        (ten/run-batch-with-tenure batch events :target-stage "L6")
-                       batch)]
-        (build with-ten))
+                       batch)
+            with-gov (dgov/package-batch with-ten)]
+        (build with-gov))
       :cljs {:error "clj-only seed load"}))
   ([batch]
-   (let [pkgs (or (:packages batch) [])
+   (let [batch (if (and (seq (:packages batch)) (not (:gov-packaged? batch)))
+                 (dgov/package-batch batch)
+                 batch)
+         pkgs (or (:packages batch) [])
          enrolled (filter #(= :offline-enrolled (:phase %)) pkgs)
          refused (filter #(#{:refused :refused-over-earmark} (:phase %)) pkgs)
          subjects (mapcat :subjects enrolled)
@@ -89,6 +94,11 @@
                (reduce + 0 (map #(or (get-in % [:couple :committed-usd-micros-yr]) 0) enrolled))
                :scorecard/headroom-usd-micros-yr
                (reduce + 0 (map #(or (get-in % [:couple :headroom-usd-micros-yr]) 0) enrolled))
+               :scorecard/committed-post-ratify-usd-micros-yr
+               (reduce + 0 (map #(or (get-in % [:couple-post-ratify :committed-usd-micros-yr])
+                                     (get-in % [:couple :committed-post-ratify-usd-micros-yr])
+                                     0)
+                                enrolled))
                :scorecard/tenure-committed-usd-micros-yr
                (reduce + 0 (map #(or (get-in % [:tenure-couple :committed-usd-micros-yr]) 0)
                                 tenure-ok))
@@ -111,9 +121,13 @@
                         :phase (name (:phase p))
                         :subjects (count (:subjects p))
                         :committed (or (get-in p [:couple :committed-usd-micros-yr]) 0)
+                        :committed-post-ratify
+                        (or (get-in p [:couple-post-ratify :committed-usd-micros-yr]) 0)
                         :headroom (or (get-in p [:couple :headroom-usd-micros-yr]) 0)
                         :g2 (boolean (get-in p [:couple :admissible]))
                         :gov-routes (or (:gov-route-counts p) {})
+                        :gov-flowable (or (:gov-flowable-committed-usd-micros p) 0)
+                        :gov-post-ratify (or (:gov-post-ratify-committed-usd-micros p) 0)
                         :tenure-phase (when (:tenure-phase p) (name (:tenure-phase p)))
                         :tenure-subjects (count (:tenure-subjects p))
                         :tenure-g2 (boolean (get-in p [:tenure-couple :admissible]))
@@ -154,15 +168,19 @@
                 (str "- gov flowable committed (housing held): "
                      (:scorecard/gov-flowable-committed-usd-micros body) "\n")
                 (str "- gov post-ratify committed (housing in book, grant false): "
-                     (:scorecard/gov-post-ratify-committed-usd-micros body) "\n\n")
+                     (:scorecard/gov-post-ratify-committed-usd-micros body) "\n")
+                (str "- couple post-ratify committed (G2 re-eval, grant false): "
+                     (or (:scorecard/committed-post-ratify-usd-micros-yr body) 0) "\n\n")
                 "## Cohorts\n\n"
-                "| actor | cohort | phase | n | committed | headroom | tenure | tenure-n |\n"
-                "|---|---|---|---|---|---|---|---|\n"])]
+                "| actor | cohort | phase | n | committed (flowable) | post-ratify | headroom | gov-flow | tenure | tenure-n |\n"
+                "|---|---|---|---|---|---|---|---|---|---|\n"])]
     (doseq [c (:scorecard/cohorts body)]
       (conj! lines
              (str "| " (:displacing-actor c) " | " (:cohort-id c) " | "
                   (:phase c) " | " (:subjects c) " | " (:committed c) " | "
-                  (:headroom c) " | " (or (:tenure-phase c) "—") " | "
+                  (or (:committed-post-ratify c) 0) " | "
+                  (:headroom c) " | " (or (:gov-flowable c) 0) " | "
+                  (or (:tenure-phase c) "—") " | "
                   (:tenure-subjects c) " |\n")))
     (conj! lines "\n## Live legs (default refuse)\n\n")
     (conj! lines "| leg | admissible | reason |\n|---|---|---|\n")

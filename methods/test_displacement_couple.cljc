@@ -65,3 +65,26 @@
     (is (= 5000000000 (:committed-usd-micros-yr out)))
     (is (= 50000000000 (:committed-full-usd-micros-yr out)))
     (is (false? (:admissible-if-full-booked out)))))
+
+(deftest test-reevaluate-after-gov-prefers-flowable
+  (let [ev (couple/make-displacement-event
+            {:displacing-actor "itonami-robotics" :cohort-id "c5"
+             :displaced-count 2 :surplus-usd-micros-yr 100000000000 :funded true})
+        ear (couple/earmark-from-surplus ev)
+        subjects [{:booking {:in-kind-total-usd-micros 30000000000}
+                   :stage-sustenance {:floor-usd-micros-yr 30000000000}}]
+        govs [{:flowable-booking {:in-kind-total-usd-micros 12000000000}
+               :post-ratify-booking {:in-kind-total-usd-micros 30000000000
+                                     :rails ["care-iyashi" "housing-commons"]}
+               :post-ratify-includes-housing true}]
+        out (dc/reevaluate-after-gov ev ear subjects govs)]
+    (is (map? (:flowable-booking (first (:subjects out)))))
+    (is (map? (:post-ratify-booking (first (:subjects out)))))
+    (is (true? (:admissible (:couple out))))
+    (is (= 12000000000 (get-in out [:couple :committed-usd-micros-yr])))
+    (is (= :committed-offline-post-ratify-plan (get-in out [:couple-post-ratify :phase])))
+    (is (= 30000000000 (get-in out [:couple-post-ratify :committed-usd-micros-yr])))
+    (is (false? (get-in out [:couple-post-ratify :land-grant-executed])))
+    (is (false? (:live out)))
+    (is (= 0 (:cash-usd-micros out)))
+    (pp/assert-no-public-scores! (dc/public-couple-summary (:couple out)))))
