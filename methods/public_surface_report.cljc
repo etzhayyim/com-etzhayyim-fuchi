@@ -218,8 +218,10 @@
         pkgs (mapv
               (fn [p]
                 (let [subs (:subjects p)
+                      ten-subs (or (:tenure-subjects p) [])
                       stages (frequencies (map :stage subs))
                       c (:couple p)
+                      tc (:tenure-couple p)
                       open-n (count (filter #(or (true? (:entitlements-may-flow? %))
                                                  (= :open (:disclosure-state %))
                                                  (= :open (get-in % [:disclosure-hold :state])))
@@ -249,6 +251,20 @@
                            (or (:gov-flowable-committed-usd-micros p) 0)
                            :gov-post-ratify-usd-micros
                            (or (:gov-post-ratify-committed-usd-micros p) 0)
+                           ;; L6 tenure path (when batch includes tenure + gov package)
+                           :tenure-phase (when (:tenure-phase p) (name (:tenure-phase p)))
+                           :tenure-subjects (count ten-subs)
+                           :tenure-g2 (boolean (and tc (true? (:admissible tc))))
+                           :tenure-committed-usd-micros-yr
+                           (or (:committed-usd-micros-yr tc) 0)
+                           :tenure-committed-full-usd-micros-yr
+                           (or (:committed-full-usd-micros-yr tc)
+                               (get-in p [:tenure-couple-pre-gov :committed-usd-micros-yr])
+                               0)
+                           :tenure-gov-flowable-usd-micros
+                           (or (:tenure-gov-flowable-committed-usd-micros p) 0)
+                           :tenure-gov-post-ratify-usd-micros
+                           (or (:tenure-gov-post-ratify-committed-usd-micros p) 0)
                            ;; refused / missing couple → not G2-admissible (no free-riding)
                            :g2-admissible (boolean (and c (true? (:admissible c))))
                            :funded (boolean (or (:funded c)
@@ -352,6 +368,18 @@
      (reduce + 0 (map #(or (:gov-flowable-usd-micros %) 0) pkgs))
      :gov-post-ratify-usd-micros
      (reduce + 0 (map #(or (:gov-post-ratify-usd-micros %) 0) pkgs))
+     :tenure-subjects
+     (reduce + 0 (map #(or (:tenure-subjects %) 0) pkgs))
+     :tenure-g2-cohorts
+     (count (filter :tenure-g2 pkgs))
+     :tenure-committed-usd-micros-yr
+     (reduce + 0 (map #(or (:tenure-committed-usd-micros-yr %) 0) pkgs))
+     :tenure-committed-full-usd-micros-yr
+     (reduce + 0 (map #(or (:tenure-committed-full-usd-micros-yr %) 0) pkgs))
+     :tenure-gov-flowable-usd-micros
+     (reduce + 0 (map #(or (:tenure-gov-flowable-usd-micros %) 0) pkgs))
+     :tenure-gov-post-ratify-usd-micros
+     (reduce + 0 (map #(or (:tenure-gov-post-ratify-usd-micros %) 0) pkgs))
      :g2-admissible-cohorts
      (count (filter :g2-admissible pkgs))
      :packages pkgs
@@ -499,7 +527,13 @@
                           " headroom-total=" (or (:headroom-usd-micros-yr dl0) 0) "\n"))
         (conj! lines (str "gov-flowable-total=" (or (:gov-flowable-usd-micros dl0) 0)
                           " gov-post-ratify-total=" (or (:gov-post-ratify-usd-micros dl0) 0) "\n"))
-        (conj! lines "| actor | cohort | phase | n | g2 | funded | earmark | disc-o/h | committed-flow | committed-full | headroom |\n|---|---|---|---|---|---|---|---|---|---|---|\n")
+        (conj! lines (str "tenure-subjects=" (or (:tenure-subjects dl0) 0)
+                          " tenure-g2-cohorts=" (or (:tenure-g2-cohorts dl0) 0)
+                          " tenure-committed-flow=" (or (:tenure-committed-usd-micros-yr dl0) 0)
+                          " tenure-committed-full=" (or (:tenure-committed-full-usd-micros-yr dl0) 0) "\n"))
+        (conj! lines (str "tenure-gov-flowable=" (or (:tenure-gov-flowable-usd-micros dl0) 0)
+                          " tenure-gov-post-ratify=" (or (:tenure-gov-post-ratify-usd-micros dl0) 0) "\n"))
+        (conj! lines "| actor | cohort | phase | n | g2 | funded | earmark | disc-o/h | L4-flow | L4-full | ten-n | ten-flow | headroom |\n|---|---|---|---|---|---|---|---|---|---|---|---|---|\n")
         (doseq [p (:packages dl0)]
           (conj! lines
                  (str "| " (:displacing-actor p) " | " (:cohort-id p) " | "
@@ -511,6 +545,8 @@
                       (or (:disclosure-held p) 0) " | "
                       (:committed-usd-micros-yr p) " | "
                       (or (:committed-full-usd-micros-yr p) 0) " | "
+                      (or (:tenure-subjects p) 0) " | "
+                      (or (:tenure-committed-usd-micros-yr p) 0) " | "
                       (:headroom-usd-micros-yr p) " |\n"))))
     (when-let [sc (:report/displacement-scorecard body)]
       (when (seq sc)
@@ -657,9 +693,11 @@
         " earmark-total=" (or (get-in body [:report/displacement-l0 :earmark-usd-micros-yr]) 0)
         " committed-flowable-total=" (or (get-in body [:report/displacement-l0 :committed-usd-micros-yr]) 0)
         " committed-full-total=" (or (get-in body [:report/displacement-l0 :committed-full-usd-micros-yr]) 0)
+        " tenure-subjects=" (or (get-in body [:report/displacement-l0 :tenure-subjects]) 0)
+        " tenure-committed-flow=" (or (get-in body [:report/displacement-l0 :tenure-committed-usd-micros-yr]) 0)
         ".</p>"
         "<table><thead>"
-        (rows "th" ["actor" "cohort" "phase" "n" "g2" "funded" "earmark" "disc-o/h" "committed-flow" "committed-full" "headroom"])
+        (rows "th" ["actor" "cohort" "phase" "n" "g2" "funded" "earmark" "disc-o/h" "L4-flow" "L4-full" "ten-n" "ten-flow" "headroom"])
         "</thead><tbody>"
         (apply str
                (for [p (get-in body [:report/displacement-l0 :packages])]
@@ -672,6 +710,8 @@
                                   (or (:disclosure-held p) 0))
                              (:committed-usd-micros-yr p)
                              (or (:committed-full-usd-micros-yr p) 0)
+                             (or (:tenure-subjects p) 0)
+                             (or (:tenure-committed-usd-micros-yr p) 0)
                              (:headroom-usd-micros-yr p)])))
         "</tbody></table>"))
      (when (get-in body [:report/displacement-scorecard :scorecard/id])
