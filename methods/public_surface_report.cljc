@@ -326,6 +326,12 @@
      (reduce + 0 (map #(or (:liquidity-loan-executed %) 0) pkgs))
      :liquidity-cash-usd-micros
      (reduce + 0 (map #(or (:liquidity-cash-usd-micros %) 0) pkgs))
+     :earmark-usd-micros-yr
+     (reduce + 0 (map #(or (:earmark-usd-micros-yr %) 0) pkgs))
+     :headroom-usd-micros-yr
+     (reduce + 0 (map #(or (:headroom-usd-micros-yr %) 0) pkgs))
+     :g2-admissible-cohorts
+     (count (filter :g2-admissible pkgs))
      :packages pkgs
      :cash-usd-micros 0
      :live false
@@ -450,14 +456,19 @@
                           " enrolled-subjects=" (:enrolled-subjects dl0)
                           " stages=" (pr-str (:stage-counts dl0)) "\n"))
         (conj! lines (str "disclosure-open=" (or (:disclosure-open dl0) 0)
-                          " disclosure-held=" (or (:disclosure-held dl0) 0) "\n"))
-        (conj! lines "| actor | cohort | phase | subjects | g2 | funded | disc-open | disc-held | committed | headroom |\n|---|---|---|---|---|---|---|---|---|---|\n")
+                          " disclosure-held=" (or (:disclosure-held dl0) 0)
+                          " g2-admissible-cohorts=" (or (:g2-admissible-cohorts dl0) 0) "\n"))
+        (conj! lines (str "earmark-total=" (or (:earmark-usd-micros-yr dl0) 0)
+                          " committed-total=" (or (:committed-usd-micros-yr dl0) 0)
+                          " headroom-total=" (or (:headroom-usd-micros-yr dl0) 0) "\n"))
+        (conj! lines "| actor | cohort | phase | subjects | g2 | funded | earmark | disc-open | disc-held | committed | headroom |\n|---|---|---|---|---|---|---|---|---|---|---|\n")
         (doseq [p (:packages dl0)]
           (conj! lines
                  (str "| " (:displacing-actor p) " | " (:cohort-id p) " | "
                       (:phase p) " | " (:subject-count p) " | "
                       (:g2-admissible p) " | "
                       (boolean (:funded p)) " | "
+                      (or (:earmark-usd-micros-yr p) 0) " | "
                       (or (:disclosure-open p) 0) " | "
                       (or (:disclosure-held p) 0) " | "
                       (:committed-usd-micros-yr p) " | "
@@ -603,9 +614,12 @@
         " stages=" (pr-str (get-in body [:report/displacement-l0 :stage-counts]))
         " disclosure-open=" (or (get-in body [:report/displacement-l0 :disclosure-open]) 0)
         " disclosure-held=" (or (get-in body [:report/displacement-l0 :disclosure-held]) 0)
+        " g2-admissible-cohorts=" (or (get-in body [:report/displacement-l0 :g2-admissible-cohorts]) 0)
+        " earmark-total=" (or (get-in body [:report/displacement-l0 :earmark-usd-micros-yr]) 0)
+        " committed-total=" (or (get-in body [:report/displacement-l0 :committed-usd-micros-yr]) 0)
         ".</p>"
         "<table><thead>"
-        (rows "th" ["actor" "cohort" "phase" "subjects" "g2" "funded" "disc-open" "disc-held" "committed" "headroom"])
+        (rows "th" ["actor" "cohort" "phase" "subjects" "g2" "funded" "earmark" "disc-open" "disc-held" "committed" "headroom"])
         "</thead><tbody>"
         (apply str
                (for [p (get-in body [:report/displacement-l0 :packages])]
@@ -613,6 +627,7 @@
                              (:phase p) (:subject-count p)
                              (:g2-admissible p)
                              (boolean (:funded p))
+                             (or (:earmark-usd-micros-yr p) 0)
                              (or (:disclosure-open p) 0)
                              (or (:disclosure-held p) 0)
                              (:committed-usd-micros-yr p)
