@@ -40,9 +40,13 @@
             [fuchi.methods.provision :as prov]
             [fuchi.methods.live-gate :as live-gate]))
 
-;; ── fixture locators (*file*-relative; repo root + actor lex/) ────────────────
-#?(:clj (def ^:private root-dir (-> *file* io/file .getParentFile .getParentFile)))
-#?(:clj (def ^:private repo-dir (-> root-dir .getParentFile .getParentFile)))
+;; ── fixture locators (env override for west checkout + monorepo layouts) ──────
+#?(:clj (def ^:private root-dir
+          (io/file (or (System/getenv "FUCHI_ACTOR_DIR")
+                       (-> *file* io/file .getParentFile .getParentFile .getCanonicalPath)))))
+#?(:clj (def ^:private repo-dir
+          (io/file (or (System/getenv "FUCHI_REPO_ROOT")
+                       (-> root-dir .getParentFile .getParentFile .getCanonicalPath)))))
 #?(:clj (def ^:private schema-file
           (io/file repo-dir "00-contracts" "schemas" "maintainer-sustenance-ontology.kotoba.edn")))
 #?(:clj (def ^:private lex-dir (io/file root-dir "lex")))

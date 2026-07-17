@@ -12,7 +12,20 @@ exit / dividend) is *unrepresentable* — `:alloc/instrument` is `:db/allowed` o
 set, exactly as nusa's `:psychoactive`, tazuna's `:weaponizable`, and kamado's
 `:fossil-virgin-crude` are unrepresentable.
 
-Per **ADR-2606052300**.
+Per **ADR-2606052300** + **ADR-2607177000** (public-person as-of, wellbecoming/mago/ko priority).
+
+## Priority & public person
+
+| Rule | Meaning |
+|---|---|
+| **P0–P2** | wellbecoming → 孫 → 子 (present recipient is subordinate) |
+| **public-person?** | as-of: covenant ∧ active SS rails ∧ ¬exit-suspended |
+| **PUBLIC** | identity, rails, imputed **facts**, disclosure status |
+| **SCORE** | unrepresentable (no personal rank/leaderboard on public surface) |
+| **INTERNAL** | tenure weight / priority-rank for rationing only |
+
+Machine-readable SSoT: [`data/public-person-dynamic.edn`](data/public-person-dynamic.edn).  
+Implementation: [`methods/public_person.cljc`](methods/public_person.cljc).
 
 ## Why it exists
 

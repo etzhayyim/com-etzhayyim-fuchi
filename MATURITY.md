@@ -1,7 +1,7 @@
 # fuchi (扶持) — maturity ledger
 
 **Actor**: 扶持 (fuchi) — maintainer sustenance allocator (investment-fund inverse) · **ADR**:
-2606052300 · **DID**: `did:web:etzhayyim.com:actor:fuchi`
+2606052300 + **2607177000** (public-person as-of; wellbecoming/mago/ko priority; scores unrepresentable) · **DID**: `did:web:etzhayyim.com:actor:fuchi`
 
 | Axis | R0 + R1 a/b/c/d (offline) | R1 live-but-gated (this) | live execution (Council-gated) |
 |---|---|---|---|

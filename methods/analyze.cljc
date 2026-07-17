@@ -22,7 +22,8 @@
             [fuchi.methods.book :as book]
             [fuchi.methods.couple :as couple]
             [fuchi.methods.vote :as vote]
-            [fuchi.methods.live-gate :as live-gate]))
+            [fuchi.methods.live-gate :as live-gate]
+            [fuchi.methods.public-person :as public-person]))
 
 (defn- kw* [v]
   (-> (str (or v "")) (#(if (str/starts-with? % ":") (subs % 1) %))
@@ -64,8 +65,32 @@
               live-status (mapv (fn [leg]
                                   (live-gate/gate-status (live-gate/make-live-gate {:leg leg}) (array-map)))
                                 (keys live-gate/LEG-POLICY))]
-          {:rows rows :derived derived :intents intents :ledger ledger
-           :flows flows :coupling coupling :live-status live-status})
+          (let [public-persons
+                (mapv (fn [row]
+                        (let [did (get row "did")
+                              rec (first (filter #(= (get % ":maintainer/did") did) records))
+                              env (envelopes-for seed did)
+                              person (public-person/persons-from-seed-row rec env
+                                       ;; representative seed: full disclosure for vowed recipients
+                                       (when (contains? #{"vowed" "outreach"}
+                                                        (kw* (get rec ":maintainer/covenant" ":vowed")))
+                                         {:wage-labor-band "seed-representative"
+                                          :state-benefits? false
+                                          :wellbecoming-attest-fact :submitted
+                                          :related-party-edges []
+                                          :rider-s2-self-report :none}))
+                              a (get allocs did)
+                              surf (public-person/public-surface person
+                                     :allocation a
+                                     :stage "L2"
+                                     :disclosure-status (get row "outcome"))]
+                          (public-person/assert-no-public-scores! surf)
+                          surf))
+                      rows)]
+            {:rows rows :derived derived :intents intents :ledger ledger
+             :flows flows :coupling coupling :live-status live-status
+             :public-persons public-persons
+             :priority-stack public-person/PRIORITY-STACK}))
         (let [r (first rs)
               as-of (+ as-of 10)
               did (get r ":maintainer/did")
@@ -101,11 +126,15 @@
                     (= route0 "refused") ["refused" route0]
                     :else ["pending" route0])
                   a (get allocs did)
+                  ;; PUBLIC row: facts only — internal rationing rank is NOT on public surface
+                  ;; (ADR-2607177000). Internal allocate still uses priority-rank for rationing.
                   rows' (conj rows
                               {"did" did "covenant" cov "route" (str ":" route) "imputed" imputed-total
-                               "in_kind" coverage "share" (if a (:share a) 0.0)
-                               "rank" (if a (:priority-rank a) "-")
+                               "in_kind" coverage
                                "floor" (if a (:floor-usd-micros-yr a) 0)
+                               "public_person" (boolean
+                                                (and a (pos? (or (:floor-usd-micros-yr a) 0))
+                                                     (contains? #{"vowed" "outreach"} cov)))
                                "outcome" outcome "note" (get note-of did "")})]
               (if (and (some? a) (contains? #{"accepted" "pending"} outcome))
                 (let [in-kind-imputed (allocate/round-half-even (* imputed-total coverage))
@@ -114,19 +143,24 @@
                                     in-kind-by-actor acts)
                       these-intents (prov/provision rails (:maintainer-did a))
                       these-ledger (book/book-toritate rails (:maintainer-did a) (:maintainer-did a))
-                      these-flows (book/flow-graph rails (:maintainer-did a) (:maintainer-did a))]
+                      these-flows (book/flow-graph rails (:maintainer-did a) (:maintainer-did a))
+                      ;; INTERNAL derived keeps rationing fields; PUBLIC projection is :public-persons
+                      internal (public-person/internal-rationing a)]
                   (recur (rest rs) as-of rows'
                          (conj derived
                                (array-map
                                 ":alloc/maintainer" did ":alloc/instrument" (str ":" (:instrument a))
-                                ":alloc/share" (:share a) ":alloc/priority-rank" (:priority-rank a)
                                 ":alloc/floor-usd-micros-yr" (:floor-usd-micros-yr a)
                                 ":alloc/cash-usd-micros" 0 ":alloc/server-held-key" false
                                 ":gov/route" (str ":" (first (str/split route #"\s+")))
                                 ":gov/outcome" (str ":" outcome)
                                 ":rail/coverage-in-kind" coverage
                                 ":prov/intents" (count these-intents) ":book/entries" (count these-ledger)
-                                ":wb/as-of" as-of))
+                                ":wb/as-of" as-of
+                                ":person/public?" true
+                                ":internal/tenure-weight" (:tenure-weight internal)
+                                ":internal/priority-rank" (:priority-rank internal)
+                                ":internal/share" (:share internal)))
                          (into intents these-intents)
                          (into ledger these-ledger)
                          (into flows these-flows)
@@ -184,8 +218,11 @@
                    "No equity, no ROI, no exit; **cash≡0** everywhere. No live disbursement / provisioning / "
                    "land grant / binding vote (G10).\n")
               "## Allocation routing + governance\n"
-              "| maintainer | covenant | imputed USD/yr | in-kind | share | rank | floor USD/yr | route | outcome |"
-              "|---|---|---|---|---|---|---|---|---|"])]
+              (str "Priority (Tier-0): wellbecoming > mago(孫) > ko(子) > present-adherent "
+                   "(ADR-2607177000). Public surface = facts; personal score/rank unrepresentable.\n")
+              "## Allocation routing + governance (public facts)\n"
+              "| maintainer | covenant | public-person | imputed USD/yr | in-kind | floor USD/yr | route | outcome |"
+              "|---|---|---|---|---|---|---|---|"])]
     (doseq [r (:rows res)]
       (let [imp (get r "imputed")
             imp-s (if (integer? imp) (usd-micros->dollar-str imp) imp)
@@ -193,9 +230,9 @@
             floor-s (if (integer? floor) (usd-micros->dollar-str floor) floor)
             ik (get r "in_kind")
             ik-s (if (float? ik) (pct-str ik) ik)
-            did (last-seg (get r "did"))]
-        (conj! out (str "| " did " | " (get r "covenant") " | " imp-s " | " ik-s " | "
-                        (float-str (get r "share" 0.0)) " | " (get r "rank" "-") " | "
+            did (last-seg (get r "did"))
+            pp (if (get r "public_person") "yes" "—")]
+        (conj! out (str "| " did " | " (get r "covenant") " | " pp " | " imp-s " | " ik-s " | "
                         floor-s " | " (get r "route") " | " (get r "outcome") " |"))))
 
     (conj! out "\n## R1(a) provisioning intents → real producing actors (dry-run, published=false)\n")
