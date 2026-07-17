@@ -2,7 +2,7 @@
 # fuchi 扶持 — standalone bb/clj suite; no monorepo-relative classpath.
 set -euo pipefail
 cd "$(dirname "$0")"
-exec bb --classpath src:test -e '
+exec bb -e '
 (require (quote clojure.test)
          (quote fuchi.murakumo-test)
          (quote fuchi.cells.test-state-machine)
