@@ -64,7 +64,8 @@ public-person?(p,t) ≔ covenant?(p,t) ∧ receives-ss?(p,t) ∧ ¬exit-suspende
   — do not invent a second tenure formula.
 - New in-kind needs → add an `:envelope/line` + a rail in `LINE_TO_RAIL`, mapped to a **producing
   actor** (mitsuho/hikari/okaimono/iyashi/commons-land/warifu). Never add a rail that pays cash.
-- Keep tests green: `./run_tests.sh` (174 tests). The `test_charter_invariants.py` suite parses the
+- Keep tests green: `./run_tests.sh` (184 tests / 488 assertions). The
+  `fuchi.methods.test-charter-invariants` suite parses the
   ontology + lexicons + code and will fail if an invariant drifts out of any of the three places —
   including the R1-live locks (every leg refused by default; `couple` is Lv7).
 
