@@ -101,19 +101,20 @@
   Boolean false is a valid answer (e.g. state-benefits? false)."
   [disclosure]
   (let [d (or disclosure {})]
-    (every? (fn [k]
-              (let [v (if (contains? d k)
-                        (get d k)
-                        (if (contains? d (keyword (name k)))
-                          (get d (keyword (name k)))
-                          (get d (str k) ::missing)))]
-                (and (not= v ::missing)
-                     (not= v :stale)
-                     (not= v "stale")
-                     (not= v :falsehood)
-                     (not= v "falsehood")
-                     (not (nil? v)))))
-            DISCLOSURE-MUST)))
+    (and (seq d)
+         (every? (fn [k]
+                   (let [v (if (contains? d k)
+                             (get d k)
+                             (if (contains? d (keyword (name k)))
+                               (get d (keyword (name k)))
+                               (get d (str k) ::missing)))]
+                     (and (not= v ::missing)
+                          (not= v :stale)
+                          (not= v "stale")
+                          (not= v :falsehood)
+                          (not= v "falsehood")
+                          (not (nil? v)))))
+                 DISCLOSURE-MUST))))
 
 (defn disclosure-ok?
   [person]
@@ -221,8 +222,66 @@
                       {:bad bad})))
     true))
 
+(defn- lookup-any
+  "First present key in rec among candidates (supports false values; unlike `some`+`or`)."
+  [rec ks]
+  (loop [ks ks]
+    (when (seq ks)
+      (let [k (first ks)]
+        (cond
+          (contains? rec k) (get rec k)
+          (and (keyword? k) (contains? rec (str k))) (get rec (str k))
+          (and (string? k) (contains? rec (keyword (subs k (if (str/starts-with? k ":") 1 0)))))
+          (get rec (keyword (subs k (if (str/starts-with? k ":") 1 0))))
+          :else (recur (rest ks)))))))
+
+(defn normalize-disclosure
+  "Map seed/lexicon disclosure record (string-keyed EDN or keyword map) → internal disclosure map.
+  wellbecoming-attest-fact of :stale / wage band \"stale\" fail freshness."
+  [rec]
+  (when rec
+    (let [wb (norm-kw (or (lookup-any rec [":disclosure/wellbecoming-attest-fact"
+                                           :wellbecoming-attest-fact
+                                           ":wellbecoming-attest-fact"])
+                          "submitted"))
+          wage-raw (lookup-any rec [":disclosure/wage-labor-band" :wage-labor-band ":wage-labor-band"])
+          wage (str (or wage-raw ""))
+          rider (norm-kw (or (lookup-any rec [":disclosure/rider-s2-self-report"
+                                              :rider-s2-self-report
+                                              ":rider-s2-self-report"])
+                             "none"))
+          edges (or (lookup-any rec [":disclosure/related-party-edges"
+                                     :related-party-edges
+                                     ":related-party-edges"])
+                    [])
+          state-b (lookup-any rec [":disclosure/state-benefits" :state-benefits
+                                   :state-benefits? ":state-benefits"])]
+      {:wage-labor-band (if (or (= wage "stale") (= wage ":stale") (str/blank? wage))
+                          :stale
+                          wage)
+       :state-benefits? (boolean state-b)
+       :wellbecoming-attest-fact (if (= wb "stale") :stale (keyword wb))
+       :related-party-edges (vec edges)
+       :rider-s2-self-report (if (= rider "falsehood") :falsehood (keyword rider))
+       :multi-gen-care-facts (vec (or (lookup-any rec [":disclosure/multi-gen-care-facts"
+                                                       :multi-gen-care-facts])
+                                      []))
+       :as-of (str (or (lookup-any rec [":disclosure/as-of" :as-of]) ""))})))
+
+(defn disclosure-for-did
+  "Lookup :disclosure/batch entry for a DID."
+  [seed did]
+  (let [batch (or (get seed ":disclosure/batch") (:disclosure/batch seed) [])]
+    (some (fn [r]
+            (when (= (or (get r ":disclosure/maintainer")
+                         (get r :disclosure/maintainer)
+                         (get r ":maintainerDid"))
+                     did)
+              r))
+          batch)))
+
 (defn persons-from-seed-row
-  "Build a person map from fuchi seed maintainer + envelopes + optional disclosure."
+  "Build a person map from fuchi seed maintainer + envelopes + disclosure (seed or explicit)."
   [maintainer-rec envelopes disclosure]
   (let [did (get maintainer-rec ":maintainer/did")
         cov (norm-kw (get maintainer-rec ":maintainer/covenant" ":vowed"))
@@ -231,10 +290,35 @@
                        :active? true
                        :imputed-usd-micros-yr (long (get e ":envelope/imputed-usd-micros-yr" 0))})
                     envelopes)
-        floor (reduce + 0 (map :imputed-usd-micros-yr rails))]
+        floor (reduce + 0 (map :imputed-usd-micros-yr rails))
+        d (normalize-disclosure disclosure)]
     {:did did
      :covenant cov
      :rails rails
      :floor-usd-micros-yr floor
-     :disclosure (or disclosure {})
+     :disclosure (or d {})
+     :multi-gen-care-facts (or (:multi-gen-care-facts d) [])
      :exit-suspended? false}))
+
+(defn persons-from-seed
+  "All public-person projections for a seed graph (ADR-2607177000)."
+  [seed]
+  (let [records (get seed ":maintainer/batch" [])
+        env-of (fn [did]
+                 (filterv #(= (get % ":envelope/maintainer") did)
+                          (get seed ":envelope/batch" [])))]
+    (mapv (fn [rec]
+            (let [did (get rec ":maintainer/did")
+                  drec (disclosure-for-did seed did)
+                  person (persons-from-seed-row rec (env-of did) drec)
+                  gate (disclosure-gate person)
+                  surf (public-surface person
+                                       :stage "L2"
+                                       :disclosure-status (:action gate)
+                                       :hold-reason (when (= :hold (:action gate))
+                                                      (:reason gate)))]
+              (assert-no-public-scores! surf)
+              (assoc surf
+                     :disclosure-gate gate
+                     :priority-stack PRIORITY-STACK)))
+          records)))

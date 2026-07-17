@@ -26,7 +26,8 @@
    "provisioningIntent.edn" "com.etzhayyim.fuchi.provisioningIntent"
    "voteBallot.edn"         "com.etzhayyim.fuchi.voteBallot"
    "sustenanceBooking.edn"  "com.etzhayyim.fuchi.sustenanceBooking"
-   "cohortEarmark.edn"      "com.etzhayyim.fuchi.cohortEarmark"))
+   "cohortEarmark.edn"      "com.etzhayyim.fuchi.cohortEarmark"
+   "disclosureAttestation.edn" "com.etzhayyim.fuchi.disclosureAttestation"))
 
 #?(:clj
    (defn- present-edn-files []

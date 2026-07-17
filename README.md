@@ -25,7 +25,10 @@ Per **ADR-2606052300** + **ADR-2607177000** (public-person as-of, wellbecoming/m
 | **INTERNAL** | tenure weight / priority-rank for rationing only |
 
 Machine-readable SSoT: [`data/public-person-dynamic.edn`](data/public-person-dynamic.edn).  
-Implementation: [`methods/public_person.cljc`](methods/public_person.cljc).
+Implementation: [`methods/public_person.cljc`](methods/public_person.cljc).  
+Disclosure lexicon: [`lex/disclosureAttestation.edn`](lex/disclosureAttestation.edn)  
+Seed packages: `:disclosure/batch` in [`data/seed-sustenance-graph.kotoba.edn`](data/seed-sustenance-graph.kotoba.edn)  
+(stale package → `disclosure-gate :hold` while `public-person?` stays true).
 
 ## Why it exists
 

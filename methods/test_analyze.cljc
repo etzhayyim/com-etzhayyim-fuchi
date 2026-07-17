@@ -54,6 +54,13 @@
       (is (nil? (:score p)))
       (is (= [] (:score-surface p))))))
 
+(deftest test-seed-disclosure-hold-emitted
+  (let [res (run*)
+        holds (:disclosure-holds res)
+        noah (first (filter #(str/ends-with? (str (:did %)) "noah") (:public-persons res)))]
+    (is (seq holds) "noah stale disclosure should produce a hold")
+    (is (= :hold (get-in noah [:disclosure-gate :action])))))
+
 (deftest test-seth-in-kind-coverage-below-one
   (is (< (get (get (rows-by-did) "seth") "in_kind") 1.0)))
 

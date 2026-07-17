@@ -1,0 +1,34 @@
+{:lexicon 1
+ :id "com.etzhayyim.fuchi.disclosureAttestation"
+ :defs
+ {:main
+  {:type "record"
+   :key "tid"
+   :description "Public-person disclosure package for a covenantal SS recipient (ADR-2607177000). Facts only — no personal score/rank/percentile. Member-signed (no-server-key). Freshness is stage-dependent; stale → hold entitlements while public-person? remains true."
+   :record
+   {:type "object"
+    :required ["maintainerDid" "asOf" "wageLaborBand" "stateBenefits" "wellbecomingAttestFact"
+               "relatedPartyEdges" "riderS2SelfReport" "serverHeldKey"]
+    :properties
+    {:maintainerDid {:type "string"
+                     :description "SBT-bound DID of the recipient (public identity)."}
+     :asOf {:type "string"
+            :description "ISO-8601 or quarter tag for this disclosure package (freshness)."}
+     :wageLaborBand {:type "string"
+                     :description "Wage/subsistence labor band fact (e.g. 0-10h). Not a score."}
+     :stateBenefits {:type "boolean"
+                     :description "Whether the recipient also receives state benefits (dual-recognition honesty, N4). false is a valid fact."}
+     :wellbecomingAttestFact {:type "string"
+                              :enum ["submitted" "pass" "fail" "stale"]
+                              :description "Attestation fact — NOT a wellbecoming points score."}
+     :relatedPartyEdges {:type "array" :items {:type "string"}
+                         :description "Declared 縁 to producing actors / vote subjects (private capture guard)."}
+     :riderS2SelfReport {:type "string"
+                         :enum ["none" "disclosed" "falsehood"]
+                         :description "Charter-Rider §2 self-report. falsehood → hold."}
+     :multiGenCareFacts {:type "array" :items {:type "string"}
+                         :description "Optional public multi-gen care facts (子/孫 rails). Not scores."}
+     :serverHeldKey {:type "boolean" :const false
+                     :description "G9 — only false; member-signed."}
+     :memberSignature {:type "string"
+                       :description "Optional signature CID / attest token (R1 offline may be :representative)."}}}}}}
