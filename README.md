@@ -75,6 +75,9 @@ bb -cp . -e '(require (quote fuchi.methods.public-surface-report)) (fuchi.method
 | [`methods/itonami_bridge.cljc`](methods/itonami_bridge.cljc) | itonami displacement EDN → couple events / public facts |
 | [`data/itonami-displacement-events.edn`](data/itonami-displacement-events.edn) | representative surplus events |
 | [`methods/mitsuho_receive.cljc`](methods/mitsuho_receive.cljc) | actor-side dry-ack of food intent (produce not invoked) |
+| [`methods/hikari_receive.cljc`](methods/hikari_receive.cljc) | energy dry-ack (generate not invoked) |
+| [`methods/mitsuho_produce_plan.cljc`](methods/mitsuho_produce_plan.cljc) | dry kcal floor plan (produce-executed=false) |
+| [`methods/ss_offline_path.cljc`](methods/ss_offline_path.cljc) | L0→food/energy→receive→produce-plan E2E offline |
 
 ## Why it exists
 
