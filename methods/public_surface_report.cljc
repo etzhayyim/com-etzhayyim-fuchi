@@ -236,7 +236,11 @@
                                                       (get-in p [:earmark :earmark-usd-micros-yr])
                                                       0)
                            :headroom-usd-micros-yr (or (:headroom-usd-micros-yr c) 0)
-                           :g2-admissible (boolean (if (nil? c) true (boolean (:admissible c))))
+                           ;; refused / missing couple → not G2-admissible (no free-riding)
+                           :g2-admissible (boolean (and c (true? (:admissible c))))
+                           :funded (boolean (or (:funded c)
+                                               (get-in p [:earmark :funded])
+                                               (get-in p [:couple :funded])))
                            :disclosure-open open-n
                            :disclosure-held held-n
                            :mitsuho-r1-dry
@@ -447,11 +451,13 @@
                           " stages=" (pr-str (:stage-counts dl0)) "\n"))
         (conj! lines (str "disclosure-open=" (or (:disclosure-open dl0) 0)
                           " disclosure-held=" (or (:disclosure-held dl0) 0) "\n"))
-        (conj! lines "| actor | cohort | phase | subjects | disc-open | disc-held | committed | headroom |\n|---|---|---|---|---|---|---|---|\n")
+        (conj! lines "| actor | cohort | phase | subjects | g2 | funded | disc-open | disc-held | committed | headroom |\n|---|---|---|---|---|---|---|---|---|---|\n")
         (doseq [p (:packages dl0)]
           (conj! lines
                  (str "| " (:displacing-actor p) " | " (:cohort-id p) " | "
                       (:phase p) " | " (:subject-count p) " | "
+                      (:g2-admissible p) " | "
+                      (boolean (:funded p)) " | "
                       (or (:disclosure-open p) 0) " | "
                       (or (:disclosure-held p) 0) " | "
                       (:committed-usd-micros-yr p) " | "
@@ -599,12 +605,14 @@
         " disclosure-held=" (or (get-in body [:report/displacement-l0 :disclosure-held]) 0)
         ".</p>"
         "<table><thead>"
-        (rows "th" ["actor" "cohort" "phase" "subjects" "disc-open" "disc-held" "committed" "headroom"])
+        (rows "th" ["actor" "cohort" "phase" "subjects" "g2" "funded" "disc-open" "disc-held" "committed" "headroom"])
         "</thead><tbody>"
         (apply str
                (for [p (get-in body [:report/displacement-l0 :packages])]
                  (rows "td" [(:displacing-actor p) (:cohort-id p)
                              (:phase p) (:subject-count p)
+                             (:g2-admissible p)
+                             (boolean (:funded p))
                              (or (:disclosure-open p) 0)
                              (or (:disclosure-held p) 0)
                              (:committed-usd-micros-yr p)

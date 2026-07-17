@@ -31,6 +31,30 @@
     (is (= :refused (:phase out)))
     (is (false? (:deployed out)))))
 
+(deftest test-gated-deploy-status-default-refuse-no-throw
+  (let [st (dep/gated-deploy-status {:operator-did "did:op:x"} :env {})]
+    (is (= :refused (:phase st)))
+    (is (false? (:admissible st)))
+    (is (false? (:deployed st)))
+    (is (false? (:wrangler-invoked st)))
+    (is (false? (:cloudflare-api-invoked st)))
+    (is (false? (:live st)))
+    (is (= 0 (:cash-usd-micros st)))
+    (pp/assert-no-public-scores! st)))
+
+(deftest test-gated-deploy-status-plan-with-flag
+  (let [st (dep/gated-deploy-status
+            {:operator-did "did:op:pages" :project-name "fuchi-public-surface"}
+            :env {"FUCHI_ALLOW_PAGES_DEPLOY" "1"})]
+    (is (= :gated-deploy-plan (:phase st)))
+    (is (true? (:admissible st)))
+    (is (true? (:authorized-to-deploy st)))
+    (is (false? (:deployed st)))
+    (is (false? (:wrangler-invoked st)))
+    (is (false? (:live st)))
+    (is (= 0 (:cash-usd-micros st)))
+    (pp/assert-no-public-scores! st)))
+
 #?(:clj
    (deftest test-write-deploy-package
      (let [pkg (dep/write-deploy-package! {})]

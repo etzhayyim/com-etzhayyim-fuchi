@@ -75,6 +75,43 @@
       (pp/assert-no-public-scores! out)
       out)))
 
+(defn gated-deploy-status
+  "Non-raising R1-style status for Pages deploy DESIGN.
+   Default env refuses. Never invokes wrangler/Cloudflare API."
+  [opts & {:keys [env]}]
+  (let [env (or env {})
+        operator-did (:operator-did opts)
+        project-name (or (:project-name opts) "fuchi-public-surface")]
+    (try
+      (let [plan (gated-deploy-plan
+                  {:operator-did operator-did :project-name project-name}
+                  :env env)
+            out (assoc plan
+                       :admissible true
+                       :score-surface []
+                       :priority-stack PRIORITY-STACK)]
+        (pp/assert-no-public-scores! out)
+        out)
+      (catch #?(:clj Exception :cljs :default) ex
+        (let [st (default-refuse-status env)
+              out {:phase :refused
+                   :deploy-target "cloudflare-pages"
+                   :project-name project-name
+                   :admissible false
+                   :authorized-to-deploy false
+                   :deployed false
+                   :wrangler-invoked false
+                   :cloudflare-api-invoked false
+                   :refusal-reason (or (ex-message ex) (get st "reason"))
+                   :gate-admissible (boolean (get st "admissible"))
+                   :live false
+                   :cash-usd-micros 0
+                   :score-surface []
+                   :priority-stack PRIORITY-STACK
+                   :note "Pages deploy gated status — no side-effect; static package only"}]
+          (pp/assert-no-public-scores! out)
+          out)))))
+
 (defn deploy-or-refuse
   "If flag+operator present → gated-deploy-plan; else refuse map."
   [opts & {:keys [env]}]
