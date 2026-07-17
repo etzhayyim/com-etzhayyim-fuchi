@@ -104,6 +104,7 @@ bb -cp . -e '(require (quote fuchi.methods.public-surface-report)) (fuchi.method
 | [`methods/displacement_tenure.cljc`](methods/displacement_tenure.cljc) | optional L4→L5/L6 tenure climb + re-book/G2 |
 | [`methods/displacement_pipeline.cljc`](methods/displacement_pipeline.cljc) | single offline entry: L4 + L6 tenure + scorecard |
 | [`methods/pipeline_audit_ledger.cljc`](methods/pipeline_audit_ledger.cljc) | append-only offline pipeline audit (`.ednl`) |
+| [`methods/displacement_gov.cljc`](methods/displacement_gov.cljc) | G7 route + dry sbt-vote/council packages (no finalize) |
 | [`methods/r2_execute.cljc`](methods/r2_execute.cljc) | R2 execute membrane (default refuse; executed=false) |
 | [`methods/pages_publish.cljc`](methods/pages_publish.cljc) | Pages-ready `public/` static package (no deploy) |
 | [`methods/pages_deploy.cljc`](methods/pages_deploy.cljc) | Pages deploy membrane (default refuse; wrangler not invoked) |

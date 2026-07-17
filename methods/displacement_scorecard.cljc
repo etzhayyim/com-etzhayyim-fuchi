@@ -98,6 +98,7 @@
                (reduce + 0 (map #(or (get-in % [:booking :entry-count]) 0) tenure-subjects))
                :scorecard/live-legs live-legs
                :scorecard/all-live-refused (every? #(false? (:admissible %)) live-legs)
+               :scorecard/gov-route-counts (or (:gov-route-counts batch) {})
                :scorecard/itonami-ledger ledger
                :scorecard/cohorts
                (mapv (fn [p]
@@ -108,6 +109,7 @@
                         :committed (or (get-in p [:couple :committed-usd-micros-yr]) 0)
                         :headroom (or (get-in p [:couple :headroom-usd-micros-yr]) 0)
                         :g2 (boolean (get-in p [:couple :admissible]))
+                        :gov-routes (or (:gov-route-counts p) {})
                         :tenure-phase (when (:tenure-phase p) (name (:tenure-phase p)))
                         :tenure-subjects (count (:tenure-subjects p))
                         :tenure-g2 (boolean (get-in p [:tenure-couple :admissible]))
@@ -117,7 +119,8 @@
                      pkgs)}]
      (pp/assert-no-public-scores!
       (dissoc body :scorecard/itonami-ledger :scorecard/cohorts :scorecard/live-legs
-              :scorecard/tenure-stage-counts :scorecard/stage-counts))
+              :scorecard/tenure-stage-counts :scorecard/stage-counts
+              :scorecard/gov-route-counts))
      (doseq [c (:scorecard/cohorts body)] (pp/assert-no-public-scores! c))
      body)))
 
@@ -142,7 +145,8 @@
                 (str "- tenure committed USD micros: " (:scorecard/tenure-committed-usd-micros-yr body) "\n")
                 (str "- booked ledger entries (L4): " (:scorecard/booked-entries body) "\n")
                 (str "- tenure booked entries: " (:scorecard/tenure-booked-entries body) "\n")
-                (str "- all live legs refused: " (:scorecard/all-live-refused body) "\n\n")
+                (str "- all live legs refused: " (:scorecard/all-live-refused body) "\n")
+                (str "- gov routes: " (pr-str (:scorecard/gov-route-counts body)) "\n\n")
                 "## Cohorts\n\n"
                 "| actor | cohort | phase | n | committed | headroom | tenure | tenure-n |\n"
                 "|---|---|---|---|---|---|---|---|\n"])]

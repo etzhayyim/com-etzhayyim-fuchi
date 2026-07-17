@@ -18,6 +18,7 @@ Priority: wellbecoming > mago(孫) > ko(子) > present. cash≡0. live=false. No
 - booked ledger entries (L4): 24
 - tenure booked entries: 0
 - all live legs refused: true
+- gov routes: {}
 
 ## Cohorts
 

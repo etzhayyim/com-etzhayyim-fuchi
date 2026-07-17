@@ -8,6 +8,7 @@
             [fuchi.methods.displacement-tenure :as ten]
             [fuchi.methods.displacement-scorecard :as sc]
             [fuchi.methods.pipeline-audit-ledger :as audit]
+            [fuchi.methods.displacement-gov :as dgov]
             [fuchi.methods.itonami-bridge :as itonami]
             [fuchi.methods.public-person :as pp]
             #?(:clj [fuchi.methods.edn :as edn])
@@ -28,14 +29,16 @@
            batch2 (if include-tenure
                     (ten/run-batch-with-tenure batch events :target-stage tenure-target)
                     batch)
-           scorecard (sc/build batch2)
+           batch3 (dgov/package-batch batch2)
+           scorecard (sc/build batch3)
            out {:pipeline "displacement-ss-offline"
                 :live false
                 :cash-usd-micros 0
                 :score-surface []
                 :priority-stack PRIORITY-STACK
-                :batch batch2
+                :batch batch3
                 :scorecard scorecard
+                :gov-route-counts (:gov-route-counts batch3)
                 :admissible-cohorts (:scorecard/admissible-cohorts scorecard)
                 :tenure-subjects (:scorecard/tenure-subjects scorecard)
                 :all-live-refused (:scorecard/all-live-refused scorecard)}]

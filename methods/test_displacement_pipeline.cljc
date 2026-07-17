@@ -13,7 +13,9 @@
        (is (pos? (:admissible-cohorts out)))
        (is (pos? (:tenure-subjects out)))
        (is (map? (:scorecard out)))
-       (is (map? (:batch out))))))
+       (is (map? (:batch out)))
+       (is (map? (:gov-route-counts out)))
+       (is (pos? (get-in out [:gov-route-counts "council-lv7"] 0))))))
 
 #?(:clj
    (deftest test-write-all
