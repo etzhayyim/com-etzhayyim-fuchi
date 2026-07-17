@@ -10,6 +10,7 @@
             [fuchi.methods.rail-hikari :as hikari]
             [fuchi.methods.disclosure-hold :as dh]
             [fuchi.methods.l0-enroll :as l0]
+            [fuchi.methods.displacement-surface :as disp]
             #?(:clj [fuchi.methods.edn :as edn])
             #?(:clj [clojure.java.io :as io])))
 
@@ -106,17 +107,21 @@
   [seed & {:keys [include-l0-demo]}]
   (let [facts (seed-public-facts seed)
         rails (food-energy-packages seed)
+        drows (disp/public-displacement-facts seed)
         body {:report/id "fuchi.public-surface"
-              :report/adr "2607177000"
+              :report/adr ["2607177000" "2606032130"]
               :report/priority-stack PRIORITY-STACK
               :report/score-surface []
               :report/cash-usd-micros 0
               :report/live false
               :report/public-persons facts
               :report/rail-packages rails
+              :report/displacement drows
+              :report/displacement-summary (disp/summary drows)
               :report/l0-demo (when include-l0-demo
                                 (l0-demo-fact "did:web:etzhayyim.com:member:lot"))}]
     (doseq [f facts] (pp/assert-no-public-scores! f))
+    (doseq [d drows] (pp/assert-no-public-scores! d))
     body))
 
 (defn report-md
@@ -142,6 +147,19 @@
              (str "| " (last-seg (:did r)) " | "
                   (or (some-> r :food :phase name) "—") " | "
                   (or (some-> r :energy :phase name) "—") " |\n")))
+    (conj! lines "\n## Displacement → earmark (itonami/robotics coupling facts)\n")
+    (conj! lines "| actor | cohort | displaced | funded | admissible | earmark USD micros |\n")
+    (conj! lines "|---|---|---|---|---|---|\n")
+    (doseq [d (:report/displacement body)]
+      (conj! lines
+             (str "| " (:displacing-actor d) " | " (:cohort-id d) " | "
+                  (:displaced-count d) " | " (:funded d) " | " (:admissible d) " | "
+                  (:earmark-usd-micros-yr d) " |\n")))
+    (let [s (:report/displacement-summary body)]
+      (conj! lines (str "\nSummary: events=" (:displacement-events s)
+                        " admissible=" (:funded-admissible s)
+                        " refused=" (:refused s)
+                        " total-displaced=" (:total-displaced s) "\n")))
     (when-let [l0 (:report/l0-demo body)]
       (conj! lines "\n## L0 demo (offline)\n")
       (conj! lines (str "- did: " (last-seg (:did l0)) " stage=" (:stage l0)
@@ -149,9 +167,51 @@
     (conj! lines "\n_No personal scores, ranks, or percentiles._\n")
     (apply str (persistent! lines))))
 
+(defn report-html
+  "Minimal static HTML public surface (facts only). No live, no scores."
+  [seed & {:keys [include-l0-demo]}]
+  (let [body (report-edn seed :include-l0-demo include-l0-demo)
+        esc (fn [x] (-> (str x)
+                        (str/replace "&" "&amp;")
+                        (str/replace "<" "&lt;")
+                        (str/replace ">" "&gt;")))
+        rows (fn [header cells]
+               (str "<tr>" (apply str (map #(str "<" header ">" (esc %) "</" header ">") cells)) "</tr>"))]
+    (str
+     "<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"utf-8\"/>"
+     "<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"/>"
+     "<title>fuchi public surface (facts only)</title>"
+     "<style>body{font-family:system-ui,sans-serif;margin:1.5rem;line-height:1.4}"
+     "table{border-collapse:collapse;width:100%;margin:1rem 0}"
+     "th,td{border:1px solid #ccc;padding:.4rem .6rem;text-align:left}"
+     "th{background:#f4f4f4}.note{color:#444;font-size:.9rem}</style></head><body>"
+     "<h1>fuchi — public surface (facts only)</h1>"
+     "<p class=\"note\">Priority: wellbecoming &gt; mago(孫) &gt; ko(子) &gt; present. "
+     "cash≡0. live=false. No personal scores or ranks.</p>"
+     "<h2>Public persons</h2><table><thead>"
+     (rows "th" ["did" "covenant" "public?" "disclosure" "rails" "imputed"])
+     "</thead><tbody>"
+     (apply str
+            (for [f (:report/public-persons body)]
+              (rows "td" [(last-seg (:did f)) (:covenant f) (:public-person? f)
+                          (:disclosure-status f) (str/join "," (:rails f))
+                          (:imputed-fact f)])))
+     "</tbody></table>"
+     "<h2>Displacement → earmark</h2><table><thead>"
+     (rows "th" ["actor" "cohort" "displaced" "funded" "admissible" "earmark"])
+     "</thead><tbody>"
+     (apply str
+            (for [d (:report/displacement body)]
+              (rows "td" [(:displacing-actor d) (:cohort-id d) (:displaced-count d)
+                          (:funded d) (:admissible d) (:earmark-usd-micros-yr d)])))
+     "</tbody></table>"
+     "<p class=\"note\">G2: no live displacement without a funded cohort. "
+     "Recipient scores are unrepresentable.</p>"
+     "</body></html>")))
+
 #?(:clj
    (defn write-report!
-     "Write out/public-surface.md + out/public-surface.edn from seed path."
+     "Write out/public-surface.{md,edn,html} from seed path."
      ([]
       (let [actor (or (System/getenv "FUCHI_ACTOR_DIR")
                       (-> *file* io/file .getParentFile .getParentFile .getCanonicalPath))
@@ -161,5 +221,8 @@
         (spit (io/file outd "public-surface.md") (report-md seed :include-l0-demo true))
         (spit (io/file outd "public-surface.edn")
               (pr-str (report-edn seed :include-l0-demo true)))
+        (spit (io/file outd "public-surface.html")
+              (report-html seed :include-l0-demo true))
         {:md (str (io/file outd "public-surface.md"))
-         :edn (str (io/file outd "public-surface.edn"))}))))
+         :edn (str (io/file outd "public-surface.edn"))
+         :html (str (io/file outd "public-surface.html"))}))))

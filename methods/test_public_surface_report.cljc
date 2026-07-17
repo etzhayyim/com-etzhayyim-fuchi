@@ -38,11 +38,24 @@
        (is (= 0 (:report/cash-usd-micros body)))
        (is (false? (:report/live body)))
        (is (= pp/PRIORITY-STACK (:report/priority-stack body)))
-       (is (seq (:report/rail-packages body))))))
+       (is (seq (:report/rail-packages body)))
+       (is (seq (:report/displacement body)))
+       (is (= 2 (get-in body [:report/displacement-summary :displacement-events]))))))
 
 #?(:clj
    (deftest test-write-report
      (let [paths (rep/write-report!)]
        (is (.exists (io/file (:md paths))))
        (is (.exists (io/file (:edn paths))))
-       (is (str/includes? (slurp (:md paths)) "facts only")))))
+       (is (.exists (io/file (:html paths))))
+       (is (str/includes? (slurp (:md paths)) "facts only"))
+       (is (str/includes? (slurp (:html paths)) "Displacement"))
+       (is (not (re-find #"(?i)\| *rank *\|" (slurp (:html paths))))))))
+
+#?(:clj
+   (deftest test-html-no-scores
+     (let [html (rep/report-html seed)]
+       (is (str/includes? html "public surface"))
+       (is (str/includes? html "wellbecoming"))
+       (is (str/includes? html "sanae"))
+       (is (false? (str/includes? html "priority-rank"))))))
