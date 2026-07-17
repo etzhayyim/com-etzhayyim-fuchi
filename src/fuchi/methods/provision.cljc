@@ -11,7 +11,9 @@
   House style: ':…' strings stay strings; pure fns; structural gates → ex-info; the abaki
   routing-policy file read is at the #?(:clj) edge. Portable .cljc."
   (:require [clojure.string :as str]
-            [fuchi.methods.live-gate :as live-gate]))
+            [fuchi.methods.live-gate :as live-gate]
+            #?(:clj [clojure.edn :as edn])
+            #?(:clj [clojure.java.io :as io])))
 
 ;; rail kind → [provider-id provider-kind short-label]. Mirrors route/LINE-TO-RAIL.
 (def PROVIDER-REGISTRY
@@ -53,15 +55,15 @@
 
 #?(:clj
    (defn- abaki-blocked-ids
-     "Read the abaki Anti-Monopoly routing-policy.json (if present) → set of blocked entity ids.
+     "Read the pinned abaki routing-policy.edn contract (if present) → blocked entity ids.
      File I/O only at this edge; absent/malformed → empty set."
      []
      (try
-       (let [f (-> (clojure.java.io/file *file*) .getParentFile .getParentFile .getParentFile
-                   (clojure.java.io/file "abaki" "out" "routing-policy.json"))]
+       (let [f (io/file (or (System/getenv "ABAKI_POLICY_PATH")
+                            "../com-etzhayyim-abaki/out/routing-policy.edn"))]
          (if (.exists f)
-           ;; minimal JSON-free extraction: parse "id" fields under blocked_entities
-           (set (map second (re-seq #"\"id\"\s*:\s*\"([^\"]*)\"" (slurp f))))
+           (->> (get (edn/read-string (slurp f)) "blocked_entities" [])
+                (keep #(get % "id")) set)
            #{}))
        (catch Exception _ #{}))))
 
