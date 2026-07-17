@@ -3,6 +3,7 @@
             [clojure.string :as str]
             [fuchi.methods.displacement-scorecard :as sc]
             [fuchi.methods.public-person :as pp]
+            #?(:clj [fuchi.methods.displacement-l0-path :as dl0])
             #?(:clj [clojure.java.io :as io])))
 
 (deftest test-live-refuse-matrix
@@ -27,13 +28,30 @@
        (is (pos? (:scorecard/tenure-admissible-cohorts body)))
        (is (= "L6" (or (ffirst (:scorecard/tenure-stage-counts body))
                        (some-> (:scorecard/tenure-stage-counts body) keys first))))
+       (is (pos? (:scorecard/gov-flowable-committed-usd-micros body)))
+       (is (pos? (:scorecard/tenure-gov-flowable-committed-usd-micros body)))
+       (is (pos? (:scorecard/tenure-gov-post-ratify-committed-usd-micros body)))
+       (is (< (:scorecard/tenure-gov-flowable-committed-usd-micros body)
+              (:scorecard/tenure-gov-post-ratify-committed-usd-micros body)))
        (is (= pp/PRIORITY-STACK (:scorecard/priority-stack body)))
        (let [md (sc/scorecard-md body)]
          (is (str/includes? md "scorecard"))
          (is (str/includes? md "wellbecoming"))
          (is (str/includes? md "tenure"))
+         (is (str/includes? md "tenure gov flowable"))
          (is (str/includes? md "all live legs refused"))
          (is (not (str/includes? md "| rank |")))))))
+
+#?(:clj
+   (deftest test-build-from-bare-l0-batch-attaches-tenure
+     (let [bare (dl0/run-default-seed :max-slots 2 :climb-steps 4)
+           body (sc/build bare)]
+       (is (nil? (some :tenure-phase (:packages bare))))
+       (is (pos? (:scorecard/tenure-subjects body)))
+       (is (pos? (:scorecard/tenure-admissible-cohorts body)))
+       (is (pos? (:scorecard/tenure-gov-flowable-committed-usd-micros body)))
+       (is (false? (:scorecard/live body)))
+       (is (= 0 (:scorecard/cash-usd-micros body))))))
 
 #?(:clj
    (deftest test-write-scorecard

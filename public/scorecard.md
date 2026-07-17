@@ -9,27 +9,31 @@ Priority: wellbecoming > mago(孫) > ko(子) > present. cash≡0. live=false. No
 - enrolled subjects (L4 path): 4
 - stages (L4 path): {"L4" 4}
 - tenure target: L6
-- tenure admissible cohorts: 0
-- tenure subjects: 0
-- tenure stages: {}
+- tenure admissible cohorts: 2
+- tenure subjects: 4
+- tenure stages: {"L6" 4}
 - committed USD micros (L4): 18800000000
 - headroom USD micros (L4): 143200000000
-- tenure committed USD micros: 0
+- tenure committed USD micros (flowable-first): 18800000000
+- tenure post-ratify committed: 42800000000
 - booked ledger entries (L4): 24
-- tenure booked entries: 0
+- tenure booked entries: 24
 - all live legs refused: true
-- gov routes: {"council-lv7" 4}
-- gov flowable committed (housing held): 18800000000
-- gov post-ratify committed (housing in book, grant false): 42800000000
-- couple post-ratify committed (G2 re-eval, grant false): 42800000000
+- gov routes (L4): {"council-lv7" 8}
+- gov flowable committed L4 (housing held): 18800000000
+- gov post-ratify committed L4 (grant false): 42800000000
+- couple post-ratify committed L4: 42800000000
+- tenure gov routes: {"council-lv7" 4}
+- tenure gov flowable (housing held): 18800000000
+- tenure gov post-ratify (grant false): 42800000000
 
 ## Cohorts
 
-| actor | cohort | phase | n | committed (flowable) | post-ratify | headroom | gov-flow | tenure | tenure-n |
+| actor | cohort | phase | n | L4-flow | L4-post | headroom | ten-flow | tenure | tenure-n |
 |---|---|---|---|---|---|---|---|---|---|
-| sanae | cohort-sanae-2026 | offline-enrolled | 2 | 9400000000 | 21400000000 | 44600000000 | 9400000000 | — | 0 |
+| sanae | cohort-sanae-2026 | offline-enrolled | 2 | 9400000000 | 21400000000 | 44600000000 | 9400000000 | tenure-offline | 2 |
 | hataori | cohort-hataori-2026 | refused | 0 | 0 | 0 | 0 | 0 | — | 0 |
-| itonami-robotics | cohort-robotics-remote-2026 | offline-enrolled | 2 | 9400000000 | 21400000000 | 98600000000 | 9400000000 | — | 0 |
+| itonami-robotics | cohort-robotics-remote-2026 | offline-enrolled | 2 | 9400000000 | 21400000000 | 98600000000 | 9400000000 | tenure-offline | 2 |
 | warehouse-amr | cohort-warehouse-amr-2026 | refused | 0 | 0 | 0 | 0 | 0 | — | 0 |
 
 ## Live legs (default refuse)

@@ -268,57 +268,109 @@
                                        0))
       :funded (boolean (or (:funded ear) (:funded c)))})))
 
-(defn package-cohort
-  "Attach gov packages + optional council ratify rebook + flowable-first couple re-eval."
-  [pkg & {:keys [apply-ratify?] :or {apply-ratify? true}}]
-  (if-not (= :offline-enrolled (:phase pkg))
-    (assoc pkg :gov nil)
-    (let [subjects (:subjects pkg)
-          govs0 (mapv package-subject subjects)
-          govs (if apply-ratify?
-                 (mapv (fn [g s] (apply-council-ratify-rebook g s))
-                       govs0 subjects)
-                 govs0)
+(defn- package-subject-row
+  "Route + optional council ratify rebook for one subject (L4 or tenure)."
+  [subject apply-ratify?]
+  (let [g0 (package-subject subject)]
+    (if (and apply-ratify? (= "council-lv7" (:route g0)))
+      (apply-council-ratify-rebook g0 subject)
+      g0)))
+
+(defn- earmark-from-pkg
+  [pkg]
+  (or (:earmark pkg)
+      (when-let [c (or (:couple pkg) (:tenure-couple pkg))]
+        (couple/make-cohort-earmark
+         {:cohort-id (:cohort-id pkg)
+          :displacing-actor (:displacing-actor pkg)
+          :gross-usd-micros-yr (or (:gross-usd-micros-yr c) 0)
+          :tithe-usd-micros (or (:tithe-usd-micros c) 0)
+          :earmark-usd-micros-yr (or (:earmark-usd-micros-yr c) 0)
+          :funded (boolean (:funded c))}))))
+
+(defn- package-subject-list
+  "Gov package + flowable couple re-eval for a subject list."
+  [pkg subjects apply-ratify? ear pre-couple]
+  (if-not (seq subjects)
+    {:subjects subjects
+     :gov-subjects []
+     :couple pre-couple
+     :couple-post-ratify nil
+     :gov-route-counts {}
+     :gov-flowable-committed-usd-micros 0
+     :gov-post-ratify-committed-usd-micros 0
+     :gov-entitlements-held 0
+     :gov-entitlements-may-flow 0
+     :gov-substrate-may-flow 0}
+    (let [govs (mapv #(package-subject-row % apply-ratify?) subjects)
           routes (frequencies (map :route govs))
           held (count (filter :entitlements-held? govs))
           flow (count (filter :may-flow? govs))
           substrate (count (filter :may-flow-substrate? govs))
           flowable-total (reduce + 0 (map #(or (get-in % [:flowable-booking :in-kind-total-usd-micros]) 0) govs))
           post-ratify-total (reduce + 0 (map #(or (get-in % [:post-ratify-booking :in-kind-total-usd-micros]) 0) govs))
-          ear (or (:earmark pkg)
-                  (when-let [c (:couple pkg)]
-                    (couple/make-cohort-earmark
-                     {:cohort-id (:cohort-id pkg)
-                      :displacing-actor (:displacing-actor pkg)
-                      :gross-usd-micros-yr (or (:gross-usd-micros-yr c) 0)
-                      :tithe-usd-micros (or (:tithe-usd-micros c) 0)
-                      :earmark-usd-micros-yr (or (:earmark-usd-micros-yr c) 0)
-                      :funded (boolean (:funded c))})))
-          pre-couple (:couple pkg)
           re (when ear
                (try
                  (dcouple/reevaluate-after-gov (event-from-pkg pkg) ear subjects govs)
-                 (catch Exception _ nil)))
-          subjects' (or (:subjects re) subjects)
-          couple' (or (:couple re) pre-couple)
-          couple-post (:couple-post-ratify re)
-          out (assoc pkg
-                     :subjects subjects'
-                     :couple-pre-gov pre-couple
-                     :couple couple'
-                     :couple-post-ratify couple-post
-                     :gov-subjects govs
-                     :gov-route-counts routes
-                     :gov-entitlements-held held
-                     :gov-entitlements-may-flow flow
-                     :gov-substrate-may-flow substrate
-                     :gov-flowable-committed-usd-micros flowable-total
-                     :gov-post-ratify-committed-usd-micros post-ratify-total
-                     :gov-live false
-                     :live false
-                     :cash-usd-micros 0
-                     :score-surface []
-                     :priority-stack PRIORITY-STACK)]
+                 (catch Exception _ nil)))]
+      {:subjects (or (:subjects re) subjects)
+       :gov-subjects govs
+       :couple (or (:couple re) pre-couple)
+       :couple-post-ratify (:couple-post-ratify re)
+       :gov-route-counts routes
+       :gov-flowable-committed-usd-micros flowable-total
+       :gov-post-ratify-committed-usd-micros post-ratify-total
+       :gov-entitlements-held held
+       :gov-entitlements-may-flow flow
+       :gov-substrate-may-flow substrate})))
+
+(defn package-cohort
+  "Attach gov packages for L4 subjects and (if present) L6 tenure subjects.
+   Flowable-first couple re-eval on both; post-ratify plan keeps land-grant false."
+  [pkg & {:keys [apply-ratify?] :or {apply-ratify? true}}]
+  (if-not (= :offline-enrolled (:phase pkg))
+    (assoc pkg :gov nil)
+    (let [ear (earmark-from-pkg pkg)
+          l4 (package-subject-list pkg (:subjects pkg) apply-ratify? ear (:couple pkg))
+          ten-subs (or (:tenure-subjects pkg) [])
+          ten (when (seq ten-subs)
+                (package-subject-list pkg ten-subs apply-ratify? ear (:tenure-couple pkg)))
+          routes (merge-with +
+                             (:gov-route-counts l4)
+                             (or (:gov-route-counts ten) {}))
+          out (cond-> (assoc pkg
+                             :subjects (:subjects l4)
+                             :couple-pre-gov (:couple pkg)
+                             :couple (:couple l4)
+                             :couple-post-ratify (:couple-post-ratify l4)
+                             :gov-subjects (:gov-subjects l4)
+                             :gov-route-counts routes
+                             :gov-entitlements-held (:gov-entitlements-held l4)
+                             :gov-entitlements-may-flow (:gov-entitlements-may-flow l4)
+                             :gov-substrate-may-flow (:gov-substrate-may-flow l4)
+                             :gov-flowable-committed-usd-micros
+                             (:gov-flowable-committed-usd-micros l4)
+                             :gov-post-ratify-committed-usd-micros
+                             (:gov-post-ratify-committed-usd-micros l4)
+                             :gov-live false
+                             :live false
+                             :cash-usd-micros 0
+                             :score-surface []
+                             :priority-stack PRIORITY-STACK)
+                ten
+                (assoc :tenure-subjects (:subjects ten)
+                       :tenure-couple-pre-gov (:tenure-couple pkg)
+                       :tenure-couple (:couple ten)
+                       :tenure-couple-post-ratify (:couple-post-ratify ten)
+                       :tenure-gov-subjects (:gov-subjects ten)
+                       :tenure-gov-route-counts (:gov-route-counts ten)
+                       :tenure-gov-flowable-committed-usd-micros
+                       (:gov-flowable-committed-usd-micros ten)
+                       :tenure-gov-post-ratify-committed-usd-micros
+                       (:gov-post-ratify-committed-usd-micros ten)
+                       :tenure-gov-entitlements-held (:gov-entitlements-held ten)
+                       :tenure-gov-entitlements-may-flow (:gov-entitlements-may-flow ten)
+                       :tenure-gov-substrate-may-flow (:gov-substrate-may-flow ten)))]
       out)))
 
 (defn package-batch
@@ -329,12 +381,18 @@
     (let [pkgs (mapv #(apply package-cohort % opts) (:packages batch))
           all-routes (apply merge-with + (map #(or (:gov-route-counts %) {}) pkgs))
           flowable (reduce + 0 (map #(or (:gov-flowable-committed-usd-micros %) 0) pkgs))
-          post (reduce + 0 (map #(or (:gov-post-ratify-committed-usd-micros %) 0) pkgs))]
+          post (reduce + 0 (map #(or (:gov-post-ratify-committed-usd-micros %) 0) pkgs))
+          ten-flow (reduce + 0 (map #(or (:tenure-gov-flowable-committed-usd-micros %) 0) pkgs))
+          ten-post (reduce + 0 (map #(or (:tenure-gov-post-ratify-committed-usd-micros %) 0) pkgs))
+          ten-routes (apply merge-with + (map #(or (:tenure-gov-route-counts %) {}) pkgs))]
       (assoc batch
              :packages pkgs
              :gov-route-counts all-routes
              :gov-flowable-committed-usd-micros flowable
              :gov-post-ratify-committed-usd-micros post
+             :tenure-gov-route-counts ten-routes
+             :tenure-gov-flowable-committed-usd-micros ten-flow
+             :tenure-gov-post-ratify-committed-usd-micros ten-post
              :gov-packaged? true
              :live false
              :cash-usd-micros 0

@@ -21,7 +21,10 @@
        (is (pos? (:scorecard/gov-post-ratify-committed-usd-micros sc)))
        (is (< (:scorecard/gov-flowable-committed-usd-micros sc)
               (:scorecard/gov-post-ratify-committed-usd-micros sc)))
-       (is (pos? (or (:scorecard/committed-post-ratify-usd-micros-yr sc) 0))))))
+       (is (pos? (or (:scorecard/committed-post-ratify-usd-micros-yr sc) 0)))
+       (is (pos? (:scorecard/tenure-gov-flowable-committed-usd-micros sc)))
+       (is (pos? (:scorecard/tenure-gov-post-ratify-committed-usd-micros sc)))
+       (is (pos? (:scorecard/tenure-committed-usd-micros-yr sc))))))
 
 #?(:clj
    (deftest test-write-all

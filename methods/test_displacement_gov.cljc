@@ -3,6 +3,7 @@
             [clojure.string :as str]
             [fuchi.methods.displacement-gov :as g]
             [fuchi.methods.displacement-l0-path :as d]
+            [fuchi.methods.displacement-tenure :as ten]
             [fuchi.methods.couple :as couple]
             [fuchi.methods.public-person :as pp]
             [fuchi.methods.live-gate :as live-gate]))
@@ -91,6 +92,31 @@
     (is (some? (get-in gp [:subjects 0 :flowable-booking])))
     (is (true? (:gov-packaged? out)))
     (is (= out (g/package-batch out)))
+    (is (false? (:live out)))
+    (is (= 0 (:cash-usd-micros out)))))
+
+(deftest test-package-batch-tenure-subjects
+  (let [ev (couple/make-displacement-event
+            {:displacing-actor "itonami-robotics"
+             :cohort-id "cohort-robotics-remote-2026"
+             :displaced-count 48
+             :surplus-usd-micros-yr 120000000000
+             :funded true})
+        pkg0 (d/run-for-event ev :max-slots 1 :climb-steps 4)
+        pkg (ten/run-tenure-for-package pkg0 ev :target-stage "L6")
+        out (g/package-batch {:packages [pkg] :path "t-tenure"})
+        gp (first (:packages out))]
+    (is (= :tenure-offline (:tenure-phase gp)))
+    (is (pos? (count (:tenure-subjects gp))))
+    (is (pos? (:tenure-gov-flowable-committed-usd-micros gp)))
+    (is (pos? (:tenure-gov-post-ratify-committed-usd-micros gp)))
+    (is (< (:tenure-gov-flowable-committed-usd-micros gp)
+           (:tenure-gov-post-ratify-committed-usd-micros gp)))
+    (is (map? (:tenure-couple gp)))
+    (is (true? (get-in gp [:tenure-couple :admissible])))
+    (is (map? (:tenure-couple-post-ratify gp)))
+    (is (some? (get-in gp [:tenure-subjects 0 :flowable-booking])))
+    (is (pos? (get-in out [:tenure-gov-route-counts "council-lv7"] 0)))
     (is (false? (:live out)))
     (is (= 0 (:cash-usd-micros out)))))
 
