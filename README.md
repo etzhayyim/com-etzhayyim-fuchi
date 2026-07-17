@@ -30,6 +30,16 @@ Disclosure lexicon: [`lex/disclosureAttestation.edn`](lex/disclosureAttestation.
 Seed packages: `:disclosure/batch` in [`data/seed-sustenance-graph.kotoba.edn`](data/seed-sustenance-graph.kotoba.edn)  
 (stale package → `disclosure-gate :hold` while `public-person?` stays true).
 
+### L0 enroll + disclosure hold (offline)
+
+| Module | Role |
+|---|---|
+| [`methods/l0_enroll.cljc`](methods/l0_enroll.cljc) | draft vow → triple CID stubs → L0 floor (cash≡0, published=false) |
+| [`lex/commitmentVow.edn`](lex/commitmentVow.edn) | §1.16.3a lexicon |
+| [`methods/disclosure_hold.cljc`](methods/disclosure_hold.cljc) | open/held/exit-suspended SM |
+
+Live mint/pin/mail remain refuse-by-default (G10).
+
 ## Why it exists
 
 Real-world maintainers must be able to live; robotics/remote-control work cannot maintain itself.

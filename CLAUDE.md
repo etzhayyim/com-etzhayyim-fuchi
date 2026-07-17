@@ -26,6 +26,8 @@ public-person?(p,t) ≔ covenant?(p,t) ∧ receives-ss?(p,t) ∧ ¬exit-suspende
 - **SCORE**: empty (no leaderboard)
 - Disclosure fail → **hold** entitlements; history retained on exit
 - SSoT: `data/public-person-dynamic.edn` + `methods/public_person.cljc`
+- L0 offline enroll: `methods/l0_enroll.cljc` (triple-permanent stubs only; no live mint)
+- Disclosure continuity: `methods/disclosure_hold.cljc` (open/held/exit-suspended)
 
 ## What this actor is (and is NOT)
 

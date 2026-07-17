@@ -55,7 +55,8 @@
     { "id": "com.etzhayyim.fuchi.voteBallot", "status": "implemented", "emittedBy": ["governance_gate (R1b — methods/vote.py, 1 SBT=1 vote + 48h timelock)"] },
     { "id": "com.etzhayyim.fuchi.sustenanceBooking", "status": "implemented", "emittedBy": ["governance_gate (R1c — methods/book.py, toritate ledgerEntry + kanae flow)"] },
     { "id": "com.etzhayyim.fuchi.cohortEarmark", "status": "implemented", "emittedBy": ["allocation_compute (R1d — methods/couple.py, Displacement-Dividend coupling + G2 gate)"] },
-    { "id": "com.etzhayyim.fuchi.disclosureAttestation", "status": "implemented", "emittedBy": ["public_person (ADR-2607177000 — seed :disclosure/batch; disclosure-gate hold on stale)"] }
+    { "id": "com.etzhayyim.fuchi.disclosureAttestation", "status": "implemented", "emittedBy": ["public_person (ADR-2607177000 — seed :disclosure/batch; disclosure-gate hold on stale)"] },
+    { "id": "com.etzhayyim.fuchi.commitmentVow", "status": "implemented", "emittedBy": ["l0_enroll (ADR-2605302357 §1.16.3a offline scaffold — no live mint)"] }
   ],
 
   "constitutionalGates": {
