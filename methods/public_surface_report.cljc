@@ -245,6 +245,29 @@
                            :housing-land-grant-executed
                            (count (filter #(true? (get-in % [:housing-gated-live-status :land-grant-executed]))
                                           (filter :housing-gated-live-status subs)))
+                           :tooling-r1-dry
+                           (count (filter #(= :R1-dry (get-in % [:tooling-package :phase])) subs))
+                           :tooling-gated-refused
+                           (count (filter #(false? (get-in % [:tooling-gated-live-status :admissible]))
+                                          (filter :tooling-gated-live-status subs)))
+                           :compute-r1-dry
+                           (count (filter #(= :R1-dry (get-in % [:compute-package :phase])) subs))
+                           :compute-gated-refused
+                           (count (filter #(false? (get-in % [:compute-gated-live-status :admissible]))
+                                          (filter :compute-gated-live-status subs)))
+                           :liquidity-r1-dry
+                           (count (filter #(= :R1-dry (get-in % [:liquidity-package :phase])) subs))
+                           :liquidity-gated-refused
+                           (count (filter #(false? (get-in % [:liquidity-gated-live-status :admissible]))
+                                          (filter :liquidity-gated-live-status subs)))
+                           :liquidity-member-principal
+                           (count (filter #(true? (get-in % [:liquidity-package :member-principal]))
+                                          subs))
+                           :liquidity-loan-executed
+                           (count (filter #(true? (get-in % [:liquidity-gated-live-status :loan-executed]))
+                                          (filter :liquidity-gated-live-status subs)))
+                           :liquidity-cash-usd-micros
+                           (reduce + 0 (map #(or (get-in % [:liquidity-package :cash-usd-micros]) 0) subs))
                            :refusal-reason (:refusal-reason p)
                            :cash-usd-micros 0
                            :live false
@@ -270,6 +293,18 @@
      :housing-gated-refused (reduce + 0 (map #(or (:housing-gated-refused %) 0) pkgs))
      :housing-land-grant-executed
      (reduce + 0 (map #(or (:housing-land-grant-executed %) 0) pkgs))
+     :tooling-r1-dry (reduce + 0 (map #(or (:tooling-r1-dry %) 0) pkgs))
+     :tooling-gated-refused (reduce + 0 (map #(or (:tooling-gated-refused %) 0) pkgs))
+     :compute-r1-dry (reduce + 0 (map #(or (:compute-r1-dry %) 0) pkgs))
+     :compute-gated-refused (reduce + 0 (map #(or (:compute-gated-refused %) 0) pkgs))
+     :liquidity-r1-dry (reduce + 0 (map #(or (:liquidity-r1-dry %) 0) pkgs))
+     :liquidity-gated-refused (reduce + 0 (map #(or (:liquidity-gated-refused %) 0) pkgs))
+     :liquidity-member-principal
+     (reduce + 0 (map #(or (:liquidity-member-principal %) 0) pkgs))
+     :liquidity-loan-executed
+     (reduce + 0 (map #(or (:liquidity-loan-executed %) 0) pkgs))
+     :liquidity-cash-usd-micros
+     (reduce + 0 (map #(or (:liquidity-cash-usd-micros %) 0) pkgs))
      :packages pkgs
      :cash-usd-micros 0
      :live false
@@ -404,12 +439,56 @@
         (conj! lines "\n## Displacement SS scorecard (offline)\n")
         (conj! lines (str "- all-live-refused: " (:scorecard/all-live-refused sc) "\n"))
         (conj! lines (str "- booked-entries: " (:scorecard/booked-entries sc) "\n"))
-        (conj! lines (str "- committed: " (:scorecard/committed-usd-micros-yr sc) "\n"))
+        (conj! lines (str "- committed (flowable-first): "
+                         (:scorecard/committed-usd-micros-yr sc) "\n"))
         (conj! lines (str "- headroom: " (:scorecard/headroom-usd-micros-yr sc) "\n"))
         (conj! lines (str "- tenure-subjects (L6): " (:scorecard/tenure-subjects sc) "\n"))
         (conj! lines (str "- tenure-stages: " (pr-str (:scorecard/tenure-stage-counts sc)) "\n"))
         (conj! lines (str "- gov-routes: " (pr-str (:scorecard/gov-route-counts sc)) "\n"))
-        (conj! lines (str "  (housing held for council-lv7; care/food/energy substrate may dry-flow)\n")))))
+        (conj! lines "  (housing held for council-lv7; multi-gen substrate may dry-flow)\n")
+        (conj! lines (str "- L4 disclosure open/held: "
+                         (or (:scorecard/l4-disclosure-open sc) 0) "/"
+                         (or (:scorecard/l4-disclosure-held sc) 0) "\n"))
+        (conj! lines (str "- mitsuho food R1/gated/produce: "
+                         (or (:scorecard/mitsuho-r1-dry sc) 0) "/"
+                         (or (:scorecard/mitsuho-gated-refused sc) 0) "/"
+                         (or (:scorecard/mitsuho-produce-executed sc) 0) "\n"))
+        (conj! lines (str "- hikari energy R1/gated/generate: "
+                         (or (:scorecard/hikari-r1-dry sc) 0) "/"
+                         (or (:scorecard/hikari-gated-refused sc) 0) "/"
+                         (or (:scorecard/hikari-generate-executed sc) 0) "\n"))
+        (conj! lines (str "- care-iyashi R1/gated/delivery: "
+                         (or (:scorecard/care-r1-dry sc) 0) "/"
+                         (or (:scorecard/care-gated-refused sc) 0) "/"
+                         (or (:scorecard/care-delivery-executed sc) 0) "\n"))
+        (conj! lines (str "- housing-commons R1/gated/land-grant: "
+                         (or (:scorecard/housing-r1-dry sc) 0) "/"
+                         (or (:scorecard/housing-gated-refused sc) 0) "/"
+                         (or (:scorecard/housing-land-grant-executed sc) 0) "\n"))
+        (conj! lines (str "- housing council-held: "
+                         (or (:scorecard/housing-council-held sc) 0) "\n"))
+        (conj! lines (str "- tooling-okaimono R1/gated/fulfill: "
+                         (or (:scorecard/tooling-r1-dry sc) 0) "/"
+                         (or (:scorecard/tooling-gated-refused sc) 0) "/"
+                         (or (:scorecard/tooling-fulfillment-executed sc) 0) "\n"))
+        (conj! lines (str "- compute-murakumo R1/gated/quota: "
+                         (or (:scorecard/compute-r1-dry sc) 0) "/"
+                         (or (:scorecard/compute-gated-refused sc) 0) "/"
+                         (or (:scorecard/compute-quota-executed sc) 0) "\n"))
+        (conj! lines (str "- liquidity-warifu R1/gated/loan: "
+                         (or (:scorecard/liquidity-r1-dry sc) 0) "/"
+                         (or (:scorecard/liquidity-gated-refused sc) 0) "/"
+                         (or (:scorecard/liquidity-loan-executed sc) 0) "\n"))
+        (conj! lines (str "- liquidity member-principal / cash-usd-micros: "
+                         (or (:scorecard/liquidity-member-principal sc) 0) "/"
+                         (or (:scorecard/liquidity-cash-usd-micros sc) 0) "\n"))
+        (when-let [st (:scorecard/all-held-stress sc)]
+          (conj! lines "\n### All-disclosure-held stress (priority #2)\n")
+          (conj! lines (str "- held-subjects: " (:held-subjects st) "\n"))
+          (conj! lines (str "- open-path gov flowable: " (:open-gov-flowable st) "\n"))
+          (conj! lines (str "- all-held gov flowable: " (:gov-flowable st) "\n"))
+          (conj! lines (str "- land-grant-executed: " (:land-grant-executed st) "\n"))
+          (conj! lines (str "- live: " (:live st) " cash: " (:cash-usd-micros st) "\n"))))))
     (when-let [l0 (:report/l0-demo body)]
       (conj! lines "\n## L0 demo (offline)\n")
       (conj! lines (str "- did: " (last-seg (:did l0)) " stage=" (:stage l0)
@@ -498,21 +577,69 @@
                              (:headroom-usd-micros-yr p)])))
         "</tbody></table>"))
      (when (get-in body [:report/displacement-scorecard :scorecard/id])
-       (str
-        "<h2>SS scorecard (offline)</h2>"
-        "<p class=\"note\">all-live-refused="
-        (get-in body [:report/displacement-scorecard :scorecard/all-live-refused])
-        " booked-entries="
-        (get-in body [:report/displacement-scorecard :scorecard/booked-entries])
-        " committed="
-        (get-in body [:report/displacement-scorecard :scorecard/committed-usd-micros-yr])
-        " gov-routes="
-        (pr-str (get-in body [:report/displacement-scorecard :scorecard/gov-route-counts]))
-        " (housing held for Council; care/food/energy substrate may dry-flow).</p>"))
+       (let [sc (:report/displacement-scorecard body)
+             st (:scorecard/all-held-stress sc)]
+         (str
+          "<h2>SS scorecard (offline)</h2>"
+          "<p class=\"note\">all-live-refused="
+          (:scorecard/all-live-refused sc)
+          " booked-entries=" (:scorecard/booked-entries sc)
+          " committed-flowable=" (:scorecard/committed-usd-micros-yr sc)
+          " gov-routes=" (pr-str (:scorecard/gov-route-counts sc))
+          ". Housing held for Council; multi-gen substrate may dry-flow.</p>"
+          "<table><thead>"
+          (rows "th" ["rail" "R1-dry" "gated-refused" "executed"])
+          "</thead><tbody>"
+          (rows "td" ["mitsuho food"
+                      (or (:scorecard/mitsuho-r1-dry sc) 0)
+                      (or (:scorecard/mitsuho-gated-refused sc) 0)
+                      (or (:scorecard/mitsuho-produce-executed sc) 0)])
+          (rows "td" ["hikari energy"
+                      (or (:scorecard/hikari-r1-dry sc) 0)
+                      (or (:scorecard/hikari-gated-refused sc) 0)
+                      (or (:scorecard/hikari-generate-executed sc) 0)])
+          (rows "td" ["care-iyashi"
+                      (or (:scorecard/care-r1-dry sc) 0)
+                      (or (:scorecard/care-gated-refused sc) 0)
+                      (or (:scorecard/care-delivery-executed sc) 0)])
+          (rows "td" ["housing-commons"
+                      (or (:scorecard/housing-r1-dry sc) 0)
+                      (or (:scorecard/housing-gated-refused sc) 0)
+                      (or (:scorecard/housing-land-grant-executed sc) 0)])
+          (rows "td" ["tooling-okaimono"
+                      (or (:scorecard/tooling-r1-dry sc) 0)
+                      (or (:scorecard/tooling-gated-refused sc) 0)
+                      (or (:scorecard/tooling-fulfillment-executed sc) 0)])
+          (rows "td" ["compute-murakumo"
+                      (or (:scorecard/compute-r1-dry sc) 0)
+                      (or (:scorecard/compute-gated-refused sc) 0)
+                      (or (:scorecard/compute-quota-executed sc) 0)])
+          (rows "td" ["liquidity-warifu"
+                      (or (:scorecard/liquidity-r1-dry sc) 0)
+                      (or (:scorecard/liquidity-gated-refused sc) 0)
+                      (or (:scorecard/liquidity-loan-executed sc) 0)])
+          "</tbody></table>"
+          "<p class=\"note\">liquidity residual (housing Council-held): member-principal="
+          (or (:scorecard/liquidity-member-principal sc) 0)
+          " cash-usd-micros="
+          (or (:scorecard/liquidity-cash-usd-micros sc) 0)
+          " (fuchi never cash creditor). housing-council-held="
+          (or (:scorecard/housing-council-held sc) 0)
+          " land-grant-executed="
+          (or (:scorecard/housing-land-grant-executed sc) 0)
+          ".</p>"
+          (when st
+            (str
+             "<h3>All-disclosure-held stress (priority #2)</h3>"
+             "<p class=\"note\">held-subjects=" (:held-subjects st)
+             " open-gov-flowable=" (:open-gov-flowable st)
+             " all-held-gov-flowable=" (:gov-flowable st)
+             " land-grant-executed=" (:land-grant-executed st)
+             " live=" (:live st)
+             " cash=" (:cash-usd-micros st) ".</p>")))))
      "<p class=\"note\">G2: no live displacement without a funded cohort. "
-     "Recipient scores are unrepresentable. Live rails default refuse.</p>"
+     "Recipient scores are unrepresentable. Live rails default refuse. cash≡0.</p>"
      "</body></html>")))
-
 #?(:clj
    (defn write-report!
      "Write out/public-surface.{md,edn,html} from seed path."

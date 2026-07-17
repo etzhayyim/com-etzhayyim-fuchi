@@ -63,7 +63,13 @@
        (is (= 0 (get-in body [:report/displacement-l0 :cash-usd-micros])))
        (is (= [] (get-in body [:report/displacement-l0 :score-surface])))
        (is (true? (get-in body [:report/displacement-scorecard :scorecard/all-live-refused])))
-       (is (pos? (get-in body [:report/displacement-scorecard :scorecard/enrolled-subjects] 0))))))
+       (is (pos? (get-in body [:report/displacement-scorecard :scorecard/enrolled-subjects] 0)))
+       (is (pos? (get-in body [:report/displacement-scorecard :scorecard/liquidity-r1-dry] 0)))
+       (is (pos? (get-in body [:report/displacement-scorecard :scorecard/liquidity-member-principal] 0)))
+       (is (zero? (get-in body [:report/displacement-scorecard :scorecard/liquidity-loan-executed] 0)))
+       (is (zero? (get-in body [:report/displacement-scorecard :scorecard/liquidity-cash-usd-micros] 0)))
+       (is (zero? (get-in body [:report/displacement-scorecard :scorecard/housing-land-grant-executed] 0)))
+       (is (map? (get-in body [:report/displacement-scorecard :scorecard/all-held-stress]))))))
 
 #?(:clj
    (deftest test-write-report
@@ -74,6 +80,23 @@
        (is (str/includes? (slurp (:md paths)) "facts only"))
        (is (str/includes? (slurp (:html paths)) "Displacement"))
        (is (not (re-find #"(?i)\| *rank *\|" (slurp (:html paths))))))))
+
+#?(:clj
+   (deftest test-public-md-html-liquidity-and-rails
+     (let [md (rep/report-md seed :include-l0-demo true :include-itonami true)
+           html (rep/report-html seed :include-l0-demo true :include-itonami true)]
+       (is (str/includes? md "liquidity-warifu"))
+       (is (str/includes? md "member-principal"))
+       (is (str/includes? md "All-disclosure-held stress"))
+       (is (str/includes? md "housing-commons"))
+       (is (str/includes? md "care-iyashi"))
+       (is (str/includes? html "liquidity-warifu"))
+       (is (str/includes? html "member-principal"))
+       (is (str/includes? html "All-disclosure-held stress"))
+       (is (str/includes? html "land-grant-executed"))
+       (is (str/includes? html "cash-usd-micros"))
+       (is (not (str/includes? md "| rank |")))
+       (is (not (re-find #"(?i)percentile" html))))))
 
 #?(:clj
    (deftest test-html-no-scores
