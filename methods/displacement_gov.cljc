@@ -100,8 +100,29 @@
     (pp/assert-no-public-scores! out)
     out))
 
+(defn entitlement-hold-for-route
+  "Entitlements flow only on auto. Council/vote/refused hold floors (facts, not scores).
+   Multi-gen care/housing waits for Council — no free-ride auto grant."
+  [route]
+  (case route
+    "auto" {:entitlements-held? false
+            :entitlement-hold-reason nil
+            :may-flow? true}
+    "council-lv7" {:entitlements-held? true
+                   :entitlement-hold-reason "awaiting-council-lv7-multi-gen-housing"
+                   :may-flow? false}
+    "sbt-vote" {:entitlements-held? true
+                :entitlement-hold-reason "awaiting-sbt-vote-timelock"
+                :may-flow? false}
+    "refused" {:entitlements-held? true
+               :entitlement-hold-reason "gov-refused"
+               :may-flow? false}
+    {:entitlements-held? true
+     :entitlement-hold-reason "unknown-route"
+     :may-flow? false}))
+
 (defn package-subject
-  "Route subject and attach dry vote/council package when needed."
+  "Route subject and attach dry vote/council package + entitlement hold facts."
   [subject]
   (let [r (route-subject subject)
         pkg (case (:route r)
@@ -114,8 +135,15 @@
               {:phase :auto-offline :route "auto"
                :subject-did (:subject-did r)
                :live false :cash-usd-micros 0 :score-surface []
-               :priority-stack PRIORITY-STACK})]
-    (assoc r :gov-package pkg)))
+               :priority-stack PRIORITY-STACK})
+        hold (entitlement-hold-for-route (:route r))
+        out (merge r hold {:gov-package pkg
+                           :live false
+                           :cash-usd-micros 0
+                           :score-surface []
+                           :priority-stack PRIORITY-STACK})]
+    (pp/assert-no-public-scores! (dissoc out :gov-package))
+    out))
 
 (defn package-cohort
   "Attach gov packages to all subjects in a displacement cohort package."
@@ -124,9 +152,13 @@
     (assoc pkg :gov nil)
     (let [govs (mapv package-subject (:subjects pkg))
           routes (frequencies (map :route govs))
+          held (count (filter :entitlements-held? govs))
+          flow (count (filter :may-flow? govs))
           out (assoc pkg
                      :gov-subjects govs
                      :gov-route-counts routes
+                     :gov-entitlements-held held
+                     :gov-entitlements-may-flow flow
                      :gov-live false
                      :live false
                      :cash-usd-micros 0

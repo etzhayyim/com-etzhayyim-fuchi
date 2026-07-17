@@ -30,6 +30,9 @@
             :audit/tenure-booked-entries (or (:scorecard/tenure-booked-entries sc) 0)
             :audit/all-live-refused (boolean (or (:all-live-refused pipeline-result)
                                                  (:scorecard/all-live-refused sc)))
+            :audit/gov-route-counts (or (:gov-route-counts pipeline-result)
+                                        (:scorecard/gov-route-counts sc)
+                                        {})
             :audit/cash-usd-micros 0
             :audit/cash-to-workers-usd-micros 0
             :audit/live false
