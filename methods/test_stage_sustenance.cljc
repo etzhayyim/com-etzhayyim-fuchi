@@ -38,3 +38,17 @@
         pkg (st/build-for-stage p hm)]
     (is (= ["care"] (:rails pkg)))
     (is (get-in pkg [:packages "care" :plan]))))
+
+(deftest test-l3-vocation-plus-substrate
+  (let [p (person "L3")
+        hm (dh/initial p)
+        pkg (st/build-for-stage p hm)]
+    (is (= "L3" (:stage pkg)))
+    (is (some #{"tooling"} (:rails pkg)))
+    (is (some #{"compute"} (:rails pkg)))
+    (is (some #{"housing"} (:rails pkg)))
+    (is (some #{"care"} (:rails pkg)))
+    (is (get-in pkg [:packages "tooling" :plan]))
+    (is (get-in pkg [:packages "compute" :plan]))
+    (is (false? (get-in pkg [:packages "tooling" :plan :fulfillment-executed])))
+    (is (= :refused (get-in pkg [:packages "compute" :r2 :phase])))))

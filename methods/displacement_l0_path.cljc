@@ -2,9 +2,10 @@
   "displacement_l0_path.cljc — offline path: itonami/robotics displacement → L0 enroll.
 
   When a funded Public-Fund earmark exists (G2), project representative displaced
-  subjects into L0 enrollment, climb offline toward L2 (vowed multi-gen sustenance:
-  food + energy + care + housing; wellbecoming > 孫 > 子), attach stage-aware dry
-  floors. R2 execute stays refused. Unfunded surplus → refused (no free-riding).
+  subjects into L0 enrollment, climb offline toward L3 (multi-gen substrate +
+  vocation recovery: food/energy/care/housing/tooling/compute;
+  wellbecoming > 孫 > 子), attach stage-aware dry floors, run disclosure continuity
+  tick. R2 execute stays refused. Unfunded surplus → refused (no free-riding).
 
   Never cash. Never scores. Never live mint/dispatch. Portable .cljc."
   (:require [fuchi.methods.l0-enroll :as l0]
@@ -12,6 +13,7 @@
             [fuchi.methods.itonami-bridge :as itonami]
             [fuchi.methods.public-person :as pp]
             [fuchi.methods.disclosure-hold :as dh]
+            [fuchi.methods.disclosure-continuity :as disc]
             [fuchi.methods.liberation-ladder :as ladder]
             [fuchi.methods.stage-sustenance :as stage]
             #?(:clj [fuchi.methods.edn :as edn])
@@ -20,11 +22,13 @@
 (def PRIORITY-STACK pp/PRIORITY-STACK)
 
 ;; Per-subject advisory floors within cohort earmark (illustrative offline).
-;; L2 multi-gen package: food + care + energy + housing.
+;; L3: multi-gen substrate + vocation rails for robotics displacement recovery.
 (def DEFAULT-FOOD-MICROS-YR 2000000000)
 (def DEFAULT-CARE-MICROS-YR 1000000000)
 (def DEFAULT-ENERGY-MICROS-YR 800000000)
 (def DEFAULT-HOUSING-MICROS-YR 6000000000)
+(def DEFAULT-TOOLING-MICROS-YR 500000000)
+(def DEFAULT-COMPUTE-MICROS-YR 400000000)
 
 (defn subject-did-for
   "Stable offline DID stub for a displaced worker slot in a cohort."
@@ -37,7 +41,8 @@
   (let [n (long (:displaced-count event 0))
         earmark (:earmark-usd-micros-yr (couple/earmark-from-surplus event))
         per (+ DEFAULT-FOOD-MICROS-YR DEFAULT-CARE-MICROS-YR
-               DEFAULT-ENERGY-MICROS-YR DEFAULT-HOUSING-MICROS-YR)
+               DEFAULT-ENERGY-MICROS-YR DEFAULT-HOUSING-MICROS-YR
+               DEFAULT-TOOLING-MICROS-YR DEFAULT-COMPUTE-MICROS-YR)
         by-budget (if (pos? per) (quot earmark per) 0)
         slots (min max-slots n (max 0 by-budget))]
     {:cohort-id (:cohort-id event)
@@ -51,24 +56,27 @@
      :score-surface []}))
 
 (defn enroll-displaced-subject
-  "Offline L0 enroll → climb to target stage (default L2) → stage-aware dry floors.
+  "Offline L0 enroll → climb to target stage (default L3) → stage dry floors + disclosure tick.
    R2 execute remains default refuse."
   [{:keys [subject-did cohort-id displacing-actor food-imputed-usd-micros-yr
            care-imputed-usd-micros-yr energy-imputed-usd-micros-yr
-           housing-imputed-usd-micros-yr vow-text member-signature
+           housing-imputed-usd-micros-yr tooling-imputed-usd-micros-yr
+           compute-imputed-usd-micros-yr vow-text member-signature
            climb-steps target-stage]
     :or {food-imputed-usd-micros-yr DEFAULT-FOOD-MICROS-YR
          care-imputed-usd-micros-yr DEFAULT-CARE-MICROS-YR
          energy-imputed-usd-micros-yr DEFAULT-ENERGY-MICROS-YR
          housing-imputed-usd-micros-yr DEFAULT-HOUSING-MICROS-YR
-         climb-steps 2
-         target-stage "L2"}}]
+         tooling-imputed-usd-micros-yr DEFAULT-TOOLING-MICROS-YR
+         compute-imputed-usd-micros-yr DEFAULT-COMPUTE-MICROS-YR
+         climb-steps 3
+         target-stage "L3"}}]
   (let [sig (or member-signature (str "sig-displaced-" subject-did))
         enrolled (l0/enroll {:subject-did subject-did
                              :vow-text (or vow-text
                                            (str "L0 after displacement cohort " cohort-id
                                                 " by " displacing-actor
-                                                " — multi-gen wellbecoming"))
+                                                " — multi-gen wellbecoming + vocation"))
                              :member-signature sig
                              :covenant "outreach"})
         person0 {:did subject-did
@@ -76,11 +84,15 @@
                  :rails [{:kind "food" :active? true}
                          {:kind "care" :active? true}
                          {:kind "energy" :active? true}
-                         {:kind "housing" :active? true}]
+                         {:kind "housing" :active? true}
+                         {:kind "tooling" :active? true}
+                         {:kind "compute" :active? true}]
                  :floor-usd-micros-yr (+ food-imputed-usd-micros-yr
                                          care-imputed-usd-micros-yr
                                          energy-imputed-usd-micros-yr
-                                         housing-imputed-usd-micros-yr)
+                                         housing-imputed-usd-micros-yr
+                                         tooling-imputed-usd-micros-yr
+                                         compute-imputed-usd-micros-yr)
                  :disclosure {:wage-labor-band "0-10h" :state-benefits? false
                               :wellbecoming-attest-fact :submitted
                               :related-party-edges [] :rider-s2-self-report :none}
@@ -89,8 +101,12 @@
                  :cohort-id cohort-id
                  :displacement-source displacing-actor
                  :cash-usd-micros 0}
-        hold (dh/initial person0)
-        climb (ladder/climb-offline person0 hold :steps climb-steps :member-signature sig)
+        hold0 (dh/initial person0)
+        ;; continuity tick with fresh disclosure (must stay open for climb/floors)
+        cont (disc/tick hold0 person0 :reason "post-enroll-continuity")
+        hold (:machine cont)
+        person1 (:person cont)
+        climb (ladder/climb-offline person1 hold :steps climb-steps :member-signature sig)
         person (:person climb)
         stage (or (:stage person) "L0")
         stage-pkg (stage/build-for-stage
@@ -98,7 +114,9 @@
                    :imputed-overrides {"food" food-imputed-usd-micros-yr
                                        "care" care-imputed-usd-micros-yr
                                        "energy" energy-imputed-usd-micros-yr
-                                       "housing" housing-imputed-usd-micros-yr})
+                                       "housing" housing-imputed-usd-micros-yr
+                                       "tooling" tooling-imputed-usd-micros-yr
+                                       "compute" compute-imputed-usd-micros-yr})
         pkgs (:packages stage-pkg)
         out {:path "displacement-l0"
              :subject-did subject-did
@@ -110,6 +128,7 @@
              :score-surface []
              :l0 enrolled
              :disclosure-hold hold
+             :disclosure-continuity cont
              :ladder climb
              :ladder-fact (ladder/ladder-public-fact person)
              :stage stage
@@ -117,7 +136,6 @@
              :public-person (pp/public-surface person :stage stage)
              :stage-sustenance stage-pkg
              :stage-public (stage/public-floor-row stage-pkg)
-             ;; convenience aliases for tests / path consumers
              :food-package (get-in pkgs ["food" :package])
              :food-produce-plan (get-in pkgs ["food" :plan])
              :care-package (get-in pkgs ["care" :package])
@@ -126,14 +144,19 @@
              :energy-produce-plan (get-in pkgs ["energy" :plan])
              :housing-package (get-in pkgs ["housing" :package])
              :housing-produce-plan (get-in pkgs ["housing" :plan])
+             :tooling-package (get-in pkgs ["tooling" :package])
+             :tooling-produce-plan (get-in pkgs ["tooling" :plan])
+             :compute-package (get-in pkgs ["compute" :package])
+             :compute-produce-plan (get-in pkgs ["compute" :plan])
              :r2-execute-status (or (get-in pkgs ["food" :r2])
+                                    (get-in pkgs ["tooling" :r2])
                                     (get-in pkgs ["care" :r2]))}]
     (pp/assert-no-public-scores! (:public-person out))
     out))
 
 (defn run-for-event
-  "One funded displacement event → slot plan + offline L0→L2 paths (or refuse package)."
-  [event & {:keys [max-slots climb-steps] :or {max-slots 5 climb-steps 2}}]
+  "One funded displacement event → slot plan + offline L0→L3 paths (or refuse package)."
+  [event & {:keys [max-slots climb-steps] :or {max-slots 5 climb-steps 3}}]
   (let [ear (couple/earmark-from-surplus event)
         gate (couple/coupling-gate event ear 0)]
     (if-not (true? (get gate "admissible"))
@@ -170,11 +193,11 @@
          :cash-usd-micros 0
          :score-surface []
          :priority-stack PRIORITY-STACK
-         :note "offline L0→L2 stage sustenance only — no live mint, no cash, no produce execute"}))))
+         :note "offline L0→L3 multi-gen+vocation dry floors — no live mint/execute"}))))
 
 (defn run-from-itonami-seed
-  "All itonami seed events → displacement-L0 packages (admissible + refused)."
-  [itonami-seed & {:keys [max-slots climb-steps] :or {max-slots 5 climb-steps 2}}]
+  "All itonami seed events → displacement packages (admissible + refused)."
+  [itonami-seed & {:keys [max-slots climb-steps] :or {max-slots 5 climb-steps 3}}]
   (let [events (if (sequential? itonami-seed)
                  (mapv itonami/itonami->couple-event itonami-seed)
                  (itonami/load-itonami-batch itonami-seed))
@@ -196,8 +219,8 @@
 
 #?(:clj
    (defn run-default-seed
-     "Load data/itonami-displacement-events.edn and run displacement→L2 offline path."
-     [& {:keys [max-slots climb-steps] :or {max-slots 3 climb-steps 2}}]
+     "Load data/itonami-displacement-events.edn and run displacement→L3 offline path."
+     [& {:keys [max-slots climb-steps] :or {max-slots 3 climb-steps 3}}]
      (let [actor (or (System/getenv "FUCHI_ACTOR_DIR")
                      (-> *file* io/file .getParentFile .getParentFile .getCanonicalPath))
            seed (edn/load-edn (io/file actor "data" "itonami-displacement-events.edn"))]

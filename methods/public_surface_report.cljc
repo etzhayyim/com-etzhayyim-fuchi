@@ -324,7 +324,7 @@
                         " total-displaced=" (:total-displaced s) "\n")))
     (when-let [dl0 (:report/displacement-l0 body)]
       (when (seq (:packages dl0))
-        (conj! lines "\n## Displacement → L0→L2 enroll (offline; G2 gated)\n")
+        (conj! lines "\n## Displacement → L0→L3 enroll (offline; G2 gated)\n")
         (conj! lines (str "admissible-cohorts=" (:admissible-cohorts dl0)
                           " refused-cohorts=" (:refused-cohorts dl0)
                           " enrolled-subjects=" (:enrolled-subjects dl0)
@@ -407,8 +407,8 @@
         "</tbody></table>"))
      (when (seq (get-in body [:report/displacement-l0 :packages]))
        (str
-        "<h2>Displacement → L0→L2 enroll (offline)</h2>"
-        "<p class=\"note\">Funded cohorts open L0 climb to L2 multi-gen floors (food/energy/care/housing); unfunded refuse. "
+        "<h2>Displacement → L0→L3 enroll (offline)</h2>"
+        "<p class=\"note\">Funded cohorts open L0 climb to L3 multi-gen+vocation floors; unfunded refuse. "
         "enrolled-subjects=" (get-in body [:report/displacement-l0 :enrolled-subjects])
         " refused-cohorts=" (get-in body [:report/displacement-l0 :refused-cohorts])
         " stages=" (pr-str (get-in body [:report/displacement-l0 :stage-counts])) ".</p>"

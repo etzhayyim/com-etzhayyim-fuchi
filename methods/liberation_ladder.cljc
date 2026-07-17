@@ -37,10 +37,11 @@
          :rails-hint ["food" "energy" "care" "housing"]
          :multi-gen "ko-mago-housing-and-care"}
    "L3" {:label "vocation-rails"
-         :rails-hint ["tooling" "compute" "food" "care"]
-         :multi-gen "vocation-recovery-after-displacement"}
+         ;; multi-gen substrate first, then vocation recovery (robotics/itonami displacement)
+         :rails-hint ["food" "energy" "care" "housing" "tooling" "compute"]
+         :multi-gen "vocation-recovery-after-displacement-with-substrate"}
    "L4" {:label "multi-gen-care"
-         :rails-hint ["care" "food" "housing" "energy"]
+         :rails-hint ["care" "food" "housing" "energy" "tooling"]
          :multi-gen "explicit-mago-ko-priority"}
    "L5" {:label "commons-participation"
          :rails-hint ["housing" "care" "compute"]
