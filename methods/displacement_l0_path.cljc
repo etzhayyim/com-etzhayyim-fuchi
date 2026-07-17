@@ -2,9 +2,9 @@
   "displacement_l0_path.cljc — offline path: itonami/robotics displacement → L0 enroll.
 
   When a funded Public-Fund earmark exists (G2), project representative displaced
-  subjects into L0 enrollment + multi-gen floor rails (food + care + energy;
-  wellbecoming > 孫 > 子), then offline L0→L1 ladder climb when disclosure open.
-  R2 execute stays refused. Unfunded surplus → refused (no free-riding).
+  subjects into L0 enrollment, climb offline toward L2 (vowed multi-gen sustenance:
+  food + energy + care + housing; wellbecoming > 孫 > 子), attach stage-aware dry
+  floors. R2 execute stays refused. Unfunded surplus → refused (no free-riding).
 
   Never cash. Never scores. Never live mint/dispatch. Portable .cljc."
   (:require [fuchi.methods.l0-enroll :as l0]
@@ -12,46 +12,32 @@
             [fuchi.methods.itonami-bridge :as itonami]
             [fuchi.methods.public-person :as pp]
             [fuchi.methods.disclosure-hold :as dh]
-            [fuchi.methods.rail-mitsuho :as food]
-            [fuchi.methods.rail-care-iyashi :as care]
-            [fuchi.methods.rail-hikari :as energy]
-            [fuchi.methods.mitsuho-produce-plan :as mprod]
-            [fuchi.methods.care-iyashi-produce-plan :as cprod]
-            [fuchi.methods.hikari-produce-plan :as hprod]
             [fuchi.methods.liberation-ladder :as ladder]
-            [fuchi.methods.r2-execute :as r2]
+            [fuchi.methods.stage-sustenance :as stage]
             #?(:clj [fuchi.methods.edn :as edn])
             #?(:clj [clojure.java.io :as io])))
 
 (def PRIORITY-STACK pp/PRIORITY-STACK)
 
 ;; Per-subject advisory floors within cohort earmark (illustrative offline).
-;; Multi-gen first: food + care + energy substrate (wellbecoming > 孫 > 子).
-(def DEFAULT-FOOD-MICROS-YR 2000000000)   ; $2k food
-(def DEFAULT-CARE-MICROS-YR 1000000000)   ; $1k care (子・孫)
-(def DEFAULT-ENERGY-MICROS-YR 800000000)  ; $0.8k energy
+;; L2 multi-gen package: food + care + energy + housing.
+(def DEFAULT-FOOD-MICROS-YR 2000000000)
+(def DEFAULT-CARE-MICROS-YR 1000000000)
+(def DEFAULT-ENERGY-MICROS-YR 800000000)
+(def DEFAULT-HOUSING-MICROS-YR 6000000000)
 
 (defn subject-did-for
   "Stable offline DID stub for a displaced worker slot in a cohort."
   [cohort-id slot]
   (str "did:web:etzhayyim.com:displaced:" cohort-id ":w" slot))
 
-(defn- admissible-events
-  "itonami/couple events that pass G2 with zero committed floor probe."
-  [events]
-  (filterv
-   (fn [ev]
-     (let [ear (couple/earmark-from-surplus ev)
-           gate (couple/coupling-gate ev ear 0)]
-       (true? (get gate "admissible"))))
-   events))
-
 (defn plan-cohort-slots
   "How many L0 slots to open offline (capped; not a ranking score)."
   [event & {:keys [max-slots] :or {max-slots 5}}]
   (let [n (long (:displaced-count event 0))
         earmark (:earmark-usd-micros-yr (couple/earmark-from-surplus event))
-        per (+ DEFAULT-FOOD-MICROS-YR DEFAULT-CARE-MICROS-YR DEFAULT-ENERGY-MICROS-YR)
+        per (+ DEFAULT-FOOD-MICROS-YR DEFAULT-CARE-MICROS-YR
+               DEFAULT-ENERGY-MICROS-YR DEFAULT-HOUSING-MICROS-YR)
         by-budget (if (pos? per) (quot earmark per) 0)
         slots (min max-slots n (max 0 by-budget))]
     {:cohort-id (:cohort-id event)
@@ -65,15 +51,18 @@
      :score-surface []}))
 
 (defn enroll-displaced-subject
-  "Offline L0 + food/care/energy R1 dry packages + produce plans + optional L0→L1 climb.
+  "Offline L0 enroll → climb to target stage (default L2) → stage-aware dry floors.
    R2 execute remains default refuse."
   [{:keys [subject-did cohort-id displacing-actor food-imputed-usd-micros-yr
            care-imputed-usd-micros-yr energy-imputed-usd-micros-yr
-           vow-text member-signature climb-to-l1?]
+           housing-imputed-usd-micros-yr vow-text member-signature
+           climb-steps target-stage]
     :or {food-imputed-usd-micros-yr DEFAULT-FOOD-MICROS-YR
          care-imputed-usd-micros-yr DEFAULT-CARE-MICROS-YR
          energy-imputed-usd-micros-yr DEFAULT-ENERGY-MICROS-YR
-         climb-to-l1? true}}]
+         housing-imputed-usd-micros-yr DEFAULT-HOUSING-MICROS-YR
+         climb-steps 2
+         target-stage "L2"}}]
   (let [sig (or member-signature (str "sig-displaced-" subject-did))
         enrolled (l0/enroll {:subject-did subject-did
                              :vow-text (or vow-text
@@ -86,10 +75,12 @@
                  :covenant "vowed"
                  :rails [{:kind "food" :active? true}
                          {:kind "care" :active? true}
-                         {:kind "energy" :active? true}]
+                         {:kind "energy" :active? true}
+                         {:kind "housing" :active? true}]
                  :floor-usd-micros-yr (+ food-imputed-usd-micros-yr
                                          care-imputed-usd-micros-yr
-                                         energy-imputed-usd-micros-yr)
+                                         energy-imputed-usd-micros-yr
+                                         housing-imputed-usd-micros-yr)
                  :disclosure {:wage-labor-band "0-10h" :state-benefits? false
                               :wellbecoming-attest-fact :submitted
                               :related-party-edges [] :rider-s2-self-report :none}
@@ -99,36 +90,16 @@
                  :displacement-source displacing-actor
                  :cash-usd-micros 0}
         hold (dh/initial person0)
-        food-pkg (food/r1-dry-package
-                  {:alloc-id (str "food-" subject-did)
-                   :subject-did subject-did
-                   :imputed-usd-micros-yr food-imputed-usd-micros-yr
-                   :person person0
-                   :hold-machine hold})
-        care-pkg (care/r1-dry-package
-                  {:alloc-id (str "care-" subject-did)
-                   :subject-did subject-did
-                   :imputed-usd-micros-yr care-imputed-usd-micros-yr
-                   :person person0
-                   :hold-machine hold})
-        energy-pkg (energy/r1-dry-package
-                    {:alloc-id (str "energy-" subject-did)
-                     :subject-did subject-did
-                     :imputed-usd-micros-yr energy-imputed-usd-micros-yr
-                     :person person0
-                     :hold-machine hold})
-        food-plan (when (not= :refused (:phase food-pkg))
-                    (mprod/plan-from-r1 food-pkg))
-        care-plan (when (not= :refused (:phase care-pkg))
-                    (cprod/plan-from-r1 care-pkg))
-        energy-plan (when (not= :refused (:phase energy-pkg))
-                      (hprod/plan-from-r1 energy-pkg))
-        climb (when climb-to-l1?
-                (ladder/climb-offline person0 hold :steps 1 :member-signature sig))
-        person (if climb (:person climb) person0)
+        climb (ladder/climb-offline person0 hold :steps climb-steps :member-signature sig)
+        person (:person climb)
         stage (or (:stage person) "L0")
-        r2-refuse (when food-plan
-                    (r2/refuse-without-gate "produce" food-plan))
+        stage-pkg (stage/build-for-stage
+                   person hold
+                   :imputed-overrides {"food" food-imputed-usd-micros-yr
+                                       "care" care-imputed-usd-micros-yr
+                                       "energy" energy-imputed-usd-micros-yr
+                                       "housing" housing-imputed-usd-micros-yr})
+        pkgs (:packages stage-pkg)
         out {:path "displacement-l0"
              :subject-did subject-did
              :cohort-id cohort-id
@@ -142,20 +113,27 @@
              :ladder climb
              :ladder-fact (ladder/ladder-public-fact person)
              :stage stage
+             :target-stage target-stage
              :public-person (pp/public-surface person :stage stage)
-             :food-package food-pkg
-             :food-produce-plan food-plan
-             :care-package care-pkg
-             :care-produce-plan care-plan
-             :energy-package energy-pkg
-             :energy-produce-plan energy-plan
-             :r2-execute-status r2-refuse}]
+             :stage-sustenance stage-pkg
+             :stage-public (stage/public-floor-row stage-pkg)
+             ;; convenience aliases for tests / path consumers
+             :food-package (get-in pkgs ["food" :package])
+             :food-produce-plan (get-in pkgs ["food" :plan])
+             :care-package (get-in pkgs ["care" :package])
+             :care-produce-plan (get-in pkgs ["care" :plan])
+             :energy-package (get-in pkgs ["energy" :package])
+             :energy-produce-plan (get-in pkgs ["energy" :plan])
+             :housing-package (get-in pkgs ["housing" :package])
+             :housing-produce-plan (get-in pkgs ["housing" :plan])
+             :r2-execute-status (or (get-in pkgs ["food" :r2])
+                                    (get-in pkgs ["care" :r2]))}]
     (pp/assert-no-public-scores! (:public-person out))
     out))
 
 (defn run-for-event
-  "One funded displacement event → slot plan + offline L0 paths (or refuse package)."
-  [event & {:keys [max-slots] :or {max-slots 5}}]
+  "One funded displacement event → slot plan + offline L0→L2 paths (or refuse package)."
+  [event & {:keys [max-slots climb-steps] :or {max-slots 5 climb-steps 2}}]
   (let [ear (couple/earmark-from-surplus event)
         gate (couple/coupling-gate event ear 0)]
     (if-not (true? (get gate "admissible"))
@@ -177,7 +155,8 @@
                (enroll-displaced-subject
                 {:subject-did (subject-did-for (:cohort-id event) i)
                  :cohort-id (:cohort-id event)
-                 :displacing-actor (:displacing-actor event)}))
+                 :displacing-actor (:displacing-actor event)
+                 :climb-steps climb-steps}))
              (range (:slots slots-plan)))]
         {:path "displacement-l0"
          :cohort-id (:cohort-id event)
@@ -191,15 +170,15 @@
          :cash-usd-micros 0
          :score-surface []
          :priority-stack PRIORITY-STACK
-         :note "offline L0 only — no live mint, no cash, no produce execute"}))))
+         :note "offline L0→L2 stage sustenance only — no live mint, no cash, no produce execute"}))))
 
 (defn run-from-itonami-seed
   "All itonami seed events → displacement-L0 packages (admissible + refused)."
-  [itonami-seed & {:keys [max-slots] :or {max-slots 5}}]
+  [itonami-seed & {:keys [max-slots climb-steps] :or {max-slots 5 climb-steps 2}}]
   (let [events (if (sequential? itonami-seed)
                  (mapv itonami/itonami->couple-event itonami-seed)
                  (itonami/load-itonami-batch itonami-seed))
-        packages (mapv #(run-for-event % :max-slots max-slots) events)
+        packages (mapv #(run-for-event % :max-slots max-slots :climb-steps climb-steps) events)
         out {:path "displacement-l0-batch"
              :live false
              :cash-usd-micros 0
@@ -208,7 +187,8 @@
              :packages packages
              :enrolled-subjects (count (mapcat :subjects packages))
              :refused-cohorts (count (filter #(= :refused (:phase %)) packages))
-             :admissible-cohorts (count (filter #(= :offline-enrolled (:phase %)) packages))}]
+             :admissible-cohorts (count (filter #(= :offline-enrolled (:phase %)) packages))
+             :stage-counts (frequencies (map :stage (mapcat :subjects packages)))}]
     (doseq [p packages
             s (:subjects p)]
       (pp/assert-no-public-scores! (:public-person s)))
@@ -216,9 +196,9 @@
 
 #?(:clj
    (defn run-default-seed
-     "Load data/itonami-displacement-events.edn and run displacement→L0 offline path."
-     [& {:keys [max-slots] :or {max-slots 3}}]
+     "Load data/itonami-displacement-events.edn and run displacement→L2 offline path."
+     [& {:keys [max-slots climb-steps] :or {max-slots 3 climb-steps 2}}]
      (let [actor (or (System/getenv "FUCHI_ACTOR_DIR")
                      (-> *file* io/file .getParentFile .getParentFile .getCanonicalPath))
            seed (edn/load-edn (io/file actor "data" "itonami-displacement-events.edn"))]
-       (run-from-itonami-seed seed :max-slots max-slots))))
+       (run-from-itonami-seed seed :max-slots max-slots :climb-steps climb-steps))))

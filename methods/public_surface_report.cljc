@@ -191,14 +191,17 @@
      :priority-stack PRIORITY-STACK}))
 
 (defn displacement-l0-public-summary
-  "Facts-only projection of displacement→L0 batch (no subject scores)."
+  "Facts-only projection of displacement→L0/L2 batch (no subject scores)."
   [batch]
-  (let [pkgs (mapv
+  (let [subjects (mapcat :subjects (or (:packages batch) []))
+        pkgs (mapv
               (fn [p]
-                (let [row {:cohort-id (:cohort-id p)
+                (let [stages (frequencies (map :stage (:subjects p)))
+                      row {:cohort-id (:cohort-id p)
                            :displacing-actor (:displacing-actor p)
                            :phase (name (:phase p))
                            :subject-count (count (:subjects p))
+                           :stages stages
                            :refusal-reason (:refusal-reason p)
                            :cash-usd-micros 0
                            :live false
@@ -210,6 +213,7 @@
     {:admissible-cohorts (or (:admissible-cohorts batch) 0)
      :refused-cohorts (or (:refused-cohorts batch) 0)
      :enrolled-subjects (or (:enrolled-subjects batch) 0)
+     :stage-counts (or (:stage-counts batch) (frequencies (map :stage subjects)))
      :packages pkgs
      :cash-usd-micros 0
      :live false
@@ -320,15 +324,17 @@
                         " total-displaced=" (:total-displaced s) "\n")))
     (when-let [dl0 (:report/displacement-l0 body)]
       (when (seq (:packages dl0))
-        (conj! lines "\n## Displacement → L0 enroll (offline; G2 gated)\n")
+        (conj! lines "\n## Displacement → L0→L2 enroll (offline; G2 gated)\n")
         (conj! lines (str "admissible-cohorts=" (:admissible-cohorts dl0)
                           " refused-cohorts=" (:refused-cohorts dl0)
-                          " enrolled-subjects=" (:enrolled-subjects dl0) "\n"))
-        (conj! lines "| actor | cohort | phase | subjects |\n|---|---|---|---|\n")
+                          " enrolled-subjects=" (:enrolled-subjects dl0)
+                          " stages=" (pr-str (:stage-counts dl0)) "\n"))
+        (conj! lines "| actor | cohort | phase | subjects | stages |\n|---|---|---|---|---|\n")
         (doseq [p (:packages dl0)]
           (conj! lines
                  (str "| " (:displacing-actor p) " | " (:cohort-id p) " | "
-                      (:phase p) " | " (:subject-count p) " |\n")))))
+                      (:phase p) " | " (:subject-count p) " | "
+                      (pr-str (:stages p)) " |\n")))))
     (when-let [l0 (:report/l0-demo body)]
       (conj! lines "\n## L0 demo (offline)\n")
       (conj! lines (str "- did: " (last-seg (:did l0)) " stage=" (:stage l0)
@@ -401,17 +407,18 @@
         "</tbody></table>"))
      (when (seq (get-in body [:report/displacement-l0 :packages]))
        (str
-        "<h2>Displacement → L0 enroll (offline)</h2>"
-        "<p class=\"note\">Funded cohorts open L0 + food/care dry floors; unfunded refuse. "
+        "<h2>Displacement → L0→L2 enroll (offline)</h2>"
+        "<p class=\"note\">Funded cohorts open L0 climb to L2 multi-gen floors (food/energy/care/housing); unfunded refuse. "
         "enrolled-subjects=" (get-in body [:report/displacement-l0 :enrolled-subjects])
-        " refused-cohorts=" (get-in body [:report/displacement-l0 :refused-cohorts]) ".</p>"
+        " refused-cohorts=" (get-in body [:report/displacement-l0 :refused-cohorts])
+        " stages=" (pr-str (get-in body [:report/displacement-l0 :stage-counts])) ".</p>"
         "<table><thead>"
-        (rows "th" ["actor" "cohort" "phase" "subjects"])
+        (rows "th" ["actor" "cohort" "phase" "subjects" "stages"])
         "</thead><tbody>"
         (apply str
                (for [p (get-in body [:report/displacement-l0 :packages])]
                  (rows "td" [(:displacing-actor p) (:cohort-id p)
-                             (:phase p) (:subject-count p)])))
+                             (:phase p) (:subject-count p) (pr-str (:stages p))])))
         "</tbody></table>"))
      "<p class=\"note\">G2: no live displacement without a funded cohort. "
      "Recipient scores are unrepresentable. Live rails default refuse.</p>"
