@@ -25,6 +25,8 @@
             [fuchi.methods.displacement-surface :as disp]
             [fuchi.methods.itonami-bridge :as itonami]
             [fuchi.methods.displacement-l0-path :as dl0]
+            [fuchi.methods.displacement-tenure :as ten]
+            [fuchi.methods.displacement-gov :as dgov]
             [fuchi.methods.displacement-scorecard :as dsc]
             #?(:clj [fuchi.methods.edn :as edn])
             #?(:clj [clojure.java.io :as io])))
@@ -226,16 +228,27 @@
                                                  (= :held (:disclosure-state %))
                                                  (false? (:entitlements-may-flow? %)))
                                             subs))
+                      c-pre (:couple-pre-gov p)
                       row {:cohort-id (:cohort-id p)
                            :displacing-actor (:displacing-actor p)
                            :phase (name (:phase p))
                            :subject-count (count subs)
                            :stages stages
+                           ;; flowable-first committed (housing held under Council excluded)
                            :committed-usd-micros-yr (or (:committed-usd-micros-yr c) 0)
+                           :committed-full-usd-micros-yr
+                           (or (:committed-full-usd-micros-yr c)
+                               (:committed-usd-micros-yr c-pre)
+                               (:committed-usd-micros-yr c)
+                               0)
                            :earmark-usd-micros-yr (or (:earmark-usd-micros-yr c)
                                                       (get-in p [:earmark :earmark-usd-micros-yr])
                                                       0)
                            :headroom-usd-micros-yr (or (:headroom-usd-micros-yr c) 0)
+                           :gov-flowable-usd-micros
+                           (or (:gov-flowable-committed-usd-micros p) 0)
+                           :gov-post-ratify-usd-micros
+                           (or (:gov-post-ratify-committed-usd-micros p) 0)
                            ;; refused / missing couple → not G2-admissible (no free-riding)
                            :g2-admissible (boolean (and c (true? (:admissible c))))
                            :funded (boolean (or (:funded c)
@@ -301,7 +314,10 @@
      :refused-cohorts (or (:refused-cohorts batch) 0)
      :enrolled-subjects (or (:enrolled-subjects batch) 0)
      :stage-counts (or (:stage-counts batch) (frequencies (map :stage subjects)))
-     :committed-usd-micros-yr (or (:committed-usd-micros-yr batch) 0)
+     ;; prefer per-package flowable/full sums (post-G7) over bare batch totals
+     :committed-usd-micros-yr
+     (let [s (reduce + 0 (map #(or (:committed-usd-micros-yr %) 0) pkgs))]
+       (if (pos? s) s (or (:committed-usd-micros-yr batch) 0)))
      :disclosure-open (reduce + 0 (map #(or (:disclosure-open %) 0) pkgs))
      :disclosure-held (reduce + 0 (map #(or (:disclosure-held %) 0) pkgs))
      :mitsuho-r1-dry (reduce + 0 (map #(or (:mitsuho-r1-dry %) 0) pkgs))
@@ -330,6 +346,12 @@
      (reduce + 0 (map #(or (:earmark-usd-micros-yr %) 0) pkgs))
      :headroom-usd-micros-yr
      (reduce + 0 (map #(or (:headroom-usd-micros-yr %) 0) pkgs))
+     :committed-full-usd-micros-yr
+     (reduce + 0 (map #(or (:committed-full-usd-micros-yr %) 0) pkgs))
+     :gov-flowable-usd-micros
+     (reduce + 0 (map #(or (:gov-flowable-usd-micros %) 0) pkgs))
+     :gov-post-ratify-usd-micros
+     (reduce + 0 (map #(or (:gov-post-ratify-usd-micros %) 0) pkgs))
      :g2-admissible-cohorts
      (count (filter :g2-admissible pkgs))
      :packages pkgs
@@ -355,8 +377,21 @@
                           :cljs []))
         dl0-batch #?(:clj
                      (when include-displacement-l0
-                       (try (dl0/run-default-seed :max-slots 2 :climb-steps 4)
-                            (catch Exception _ nil)))
+                       (try
+                         ;; L0→L6 tenure + G7 package so public L0 shows flowable-first committed
+                         (let [batch0 (dl0/run-default-seed :max-slots 2 :climb-steps 4)
+                               actor (or (System/getenv "FUCHI_ACTOR_DIR")
+                                         (-> *file* io/file .getParentFile .getParentFile
+                                             .getCanonicalPath))
+                               seed (edn/load-edn
+                                     (io/file actor "data" "itonami-displacement-events.edn"))
+                               evs (itonami/load-itonami-batch seed)
+                               with-ten (if (seq evs)
+                                          (ten/run-batch-with-tenure batch0 evs
+                                                                    :target-stage "L6")
+                                          batch0)]
+                           (dgov/package-batch with-ten))
+                         (catch Exception _ nil)))
                      :cljs nil)
         dl0-sum (when dl0-batch (displacement-l0-public-summary dl0-batch))
         scard (when include-scorecard
@@ -459,9 +494,12 @@
                           " disclosure-held=" (or (:disclosure-held dl0) 0)
                           " g2-admissible-cohorts=" (or (:g2-admissible-cohorts dl0) 0) "\n"))
         (conj! lines (str "earmark-total=" (or (:earmark-usd-micros-yr dl0) 0)
-                          " committed-total=" (or (:committed-usd-micros-yr dl0) 0)
+                          " committed-flowable-total=" (or (:committed-usd-micros-yr dl0) 0)
+                          " committed-full-total=" (or (:committed-full-usd-micros-yr dl0) 0)
                           " headroom-total=" (or (:headroom-usd-micros-yr dl0) 0) "\n"))
-        (conj! lines "| actor | cohort | phase | subjects | g2 | funded | earmark | disc-open | disc-held | committed | headroom |\n|---|---|---|---|---|---|---|---|---|---|---|\n")
+        (conj! lines (str "gov-flowable-total=" (or (:gov-flowable-usd-micros dl0) 0)
+                          " gov-post-ratify-total=" (or (:gov-post-ratify-usd-micros dl0) 0) "\n"))
+        (conj! lines "| actor | cohort | phase | n | g2 | funded | earmark | disc-o/h | committed-flow | committed-full | headroom |\n|---|---|---|---|---|---|---|---|---|---|---|\n")
         (doseq [p (:packages dl0)]
           (conj! lines
                  (str "| " (:displacing-actor p) " | " (:cohort-id p) " | "
@@ -469,9 +507,10 @@
                       (:g2-admissible p) " | "
                       (boolean (:funded p)) " | "
                       (or (:earmark-usd-micros-yr p) 0) " | "
-                      (or (:disclosure-open p) 0) " | "
+                      (or (:disclosure-open p) 0) "/"
                       (or (:disclosure-held p) 0) " | "
                       (:committed-usd-micros-yr p) " | "
+                      (or (:committed-full-usd-micros-yr p) 0) " | "
                       (:headroom-usd-micros-yr p) " |\n"))))
     (when-let [sc (:report/displacement-scorecard body)]
       (when (seq sc)
@@ -616,10 +655,11 @@
         " disclosure-held=" (or (get-in body [:report/displacement-l0 :disclosure-held]) 0)
         " g2-admissible-cohorts=" (or (get-in body [:report/displacement-l0 :g2-admissible-cohorts]) 0)
         " earmark-total=" (or (get-in body [:report/displacement-l0 :earmark-usd-micros-yr]) 0)
-        " committed-total=" (or (get-in body [:report/displacement-l0 :committed-usd-micros-yr]) 0)
+        " committed-flowable-total=" (or (get-in body [:report/displacement-l0 :committed-usd-micros-yr]) 0)
+        " committed-full-total=" (or (get-in body [:report/displacement-l0 :committed-full-usd-micros-yr]) 0)
         ".</p>"
         "<table><thead>"
-        (rows "th" ["actor" "cohort" "phase" "subjects" "g2" "funded" "earmark" "disc-open" "disc-held" "committed" "headroom"])
+        (rows "th" ["actor" "cohort" "phase" "n" "g2" "funded" "earmark" "disc-o/h" "committed-flow" "committed-full" "headroom"])
         "</thead><tbody>"
         (apply str
                (for [p (get-in body [:report/displacement-l0 :packages])]
@@ -628,9 +668,10 @@
                              (:g2-admissible p)
                              (boolean (:funded p))
                              (or (:earmark-usd-micros-yr p) 0)
-                             (or (:disclosure-open p) 0)
-                             (or (:disclosure-held p) 0)
+                             (str (or (:disclosure-open p) 0) "/"
+                                  (or (:disclosure-held p) 0))
                              (:committed-usd-micros-yr p)
+                             (or (:committed-full-usd-micros-yr p) 0)
                              (:headroom-usd-micros-yr p)])))
         "</tbody></table>"))
      (when (get-in body [:report/displacement-scorecard :scorecard/id])
