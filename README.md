@@ -94,7 +94,8 @@ bb -cp . -e '(require (quote fuchi.methods.public-surface-report)) (fuchi.method
 | [`methods/ss_offline_path.cljc`](methods/ss_offline_path.cljc) | L0→all rails R1→receive→produce-plan E2E offline |
 | [`methods/rail_care_iyashi.cljc`](methods/rail_care_iyashi.cljc) | care-iyashi (子・孫 wellbecoming) R1+gated plan |
 | [`methods/itonami_surplus_ledger.cljc`](methods/itonami_surplus_ledger.cljc) | offline surplus ledger (cash-to-workers≡0; G2) |
-| [`methods/displacement_l0_path.cljc`](methods/displacement_l0_path.cljc) | funded displacement → L0 + food/care dry path |
+| [`methods/displacement_l0_path.cljc`](methods/displacement_l0_path.cljc) | funded displacement → L0 + food/care/energy + L0→L1 |
+| [`methods/liberation_ladder.cljc`](methods/liberation_ladder.cljc) | offline L0–L6 stage climb (disclosure-gated; no mint) |
 | [`methods/r2_execute.cljc`](methods/r2_execute.cljc) | R2 execute membrane (default refuse; executed=false) |
 | [`methods/pages_publish.cljc`](methods/pages_publish.cljc) | Pages-ready `public/` static package (no deploy) |
 | [`methods/pages_deploy.cljc`](methods/pages_deploy.cljc) | Pages deploy membrane (default refuse; wrangler not invoked) |

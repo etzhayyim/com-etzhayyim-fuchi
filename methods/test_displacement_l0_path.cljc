@@ -26,6 +26,13 @@
       (is (= :dry-produce-plan (get-in s [:care-produce-plan :phase])))
       (is (false? (get-in s [:care-produce-plan :care-delivery-executed])))
       (is (pos? (get-in s [:care-produce-plan :care-hours-floor-yr])))
+      (is (= :dry-produce-plan (get-in s [:energy-produce-plan :phase])))
+      (is (false? (get-in s [:energy-produce-plan :generate-executed])))
+      (is (pos? (get-in s [:energy-produce-plan :kwh-floor-yr])))
+      (is (= "L1" (:stage s)))
+      (is (= "L1" (get-in s [:ladder-fact :stage])))
+      (is (= :refused (get-in s [:r2-execute-status :phase])))
+      (is (false? (get-in s [:r2-execute-status :executed])))
       (pp/assert-no-public-scores! (:public-person s)))))
 
 (deftest test-unfunded-refused
