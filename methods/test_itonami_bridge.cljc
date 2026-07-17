@@ -13,9 +13,11 @@
            fuchi (edn/load-edn (io/file actor "data" "seed-sustenance-graph.kotoba.edn"))
            rows (b/public-facts-from-itonami itonami fuchi)
            by (into {} (map (fn [r] [(:displacing-actor r) r]) rows))]
-       (is (= 2 (count rows)))
+       (is (= 4 (count rows)))
        (is (true? (:admissible (get by "sanae"))))
+       (is (true? (:admissible (get by "itonami-robotics"))))
        (is (false? (:admissible (get by "hataori"))))
+       (is (false? (:admissible (get by "warehouse-amr"))))
        (is (= "itonami-bridge" (:source (get by "sanae"))))
        (is (= 0 (:cash-usd-micros (get by "sanae"))))
        (is (= [] (:score-surface (get by "sanae"))))

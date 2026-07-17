@@ -93,6 +93,7 @@ bb -cp . -e '(require (quote fuchi.methods.public-surface-report)) (fuchi.method
 | [`methods/liquidity_warifu_receive.cljc`](methods/liquidity_warifu_receive.cljc) | warifu dry-ack (loan not invoked) |
 | [`methods/ss_offline_path.cljc`](methods/ss_offline_path.cljc) | L0→all rails R1→receive→produce-plan E2E offline |
 | [`methods/rail_care_iyashi.cljc`](methods/rail_care_iyashi.cljc) | care-iyashi (子・孫 wellbecoming) R1+gated plan |
+| [`methods/itonami_surplus_ledger.cljc`](methods/itonami_surplus_ledger.cljc) | offline surplus ledger (cash-to-workers≡0; G2) |
 | [`methods/pages_publish.cljc`](methods/pages_publish.cljc) | Pages-ready `public/` static package (no deploy) |
 
 ```bash

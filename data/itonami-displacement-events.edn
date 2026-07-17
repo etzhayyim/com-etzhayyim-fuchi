@@ -24,4 +24,22 @@
    :itonami.displacement/displaced-worker-count 30
    :itonami.displacement/surplus-usd-micros-yr 0
    :itonami.displacement/surplus-landed-in-public-fund false
-   :itonami.displacement/note "displacement without funded surplus — refuse"}]}
+   :itonami.displacement/note "displacement without funded surplus — refuse"}
+  ;; funded robotics / remote-control surplus (itonami labor-liberation)
+  {:itonami.displacement/id "disp.itonami-robotics.2026q3"
+   :itonami.displacement/actor-id "itonami-robotics"
+   :itonami.displacement/isco-or-isic "ISCO-3139"
+   :itonami.displacement/cohort-id "cohort-robotics-remote-2026"
+   :itonami.displacement/displaced-worker-count 48
+   :itonami.displacement/surplus-usd-micros-yr 120000000000
+   :itonami.displacement/surplus-landed-in-public-fund true
+   :itonami.displacement/note "robotics remote-control surplus earmark for displaced cohort (in-kind only)"}
+  ;; partial wave without fund landing — refuse
+  {:itonami.displacement/id "disp.warehouse-amr.2026q3"
+   :itonami.displacement/actor-id "warehouse-amr"
+   :itonami.displacement/isco-or-isic "ISCO-9333"
+   :itonami.displacement/cohort-id "cohort-warehouse-amr-2026"
+   :itonami.displacement/displaced-worker-count 20
+   :itonami.displacement/surplus-usd-micros-yr 25000000000
+   :itonami.displacement/surplus-landed-in-public-fund false
+   :itonami.displacement/note "AMR surplus not landed in Public Fund — G2 refuse"}]}

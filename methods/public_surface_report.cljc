@@ -3,11 +3,23 @@
 
   Emits markdown + EDN maps of public-person facts from seed. NEVER includes
   priority-rank, share, weight, scores, or percentiles.
+  Covers all in-kind rails + dry floor plans + itonami displacement facts.
   Portable .cljc; pure report builders; file write only at #?(:clj) edge optional."
   (:require [clojure.string :as str]
             [fuchi.methods.public-person :as pp]
             [fuchi.methods.rail-mitsuho :as mitsuho]
             [fuchi.methods.rail-hikari :as hikari]
+            [fuchi.methods.rail-care-iyashi :as care]
+            [fuchi.methods.rail-housing-commons :as housing]
+            [fuchi.methods.rail-tooling-okaimono :as tooling]
+            [fuchi.methods.rail-compute-murakumo :as compute]
+            [fuchi.methods.rail-liquidity-warifu :as liquidity]
+            [fuchi.methods.mitsuho-produce-plan :as mprod]
+            [fuchi.methods.hikari-produce-plan :as hprod]
+            [fuchi.methods.care-iyashi-produce-plan :as cprod]
+            [fuchi.methods.housing-commons-produce-plan :as housprod]
+            [fuchi.methods.tooling-okaimono-produce-plan :as tprod]
+            [fuchi.methods.compute-murakumo-produce-plan :as cmpprod]
             [fuchi.methods.disclosure-hold :as dh]
             [fuchi.methods.l0-enroll :as l0]
             [fuchi.methods.displacement-surface :as disp]
@@ -19,6 +31,19 @@
 
 (defn- last-seg [s]
   (last (str/split (str s) #":")))
+
+(defn- line* [e]
+  (-> (str (or (get e ":envelope/line") (get e :envelope/line) ""))
+      (str/replace #"^:" "")
+      (str/split #"/")
+      last
+      str/lower-case))
+
+(defn- imp-for [envs line]
+  (reduce + 0 (map #(long (or (get % ":envelope/imputed-usd-micros-yr")
+                              (get % :envelope/imputed-usd-micros-yr)
+                              0))
+                   (filter #(= line (line* %)) envs))))
 
 (defn person-fact-row
   "One public fact row (map). Strips scores."
@@ -42,8 +67,31 @@
   [seed]
   (mapv person-fact-row (pp/persons-from-seed seed)))
 
-(defn food-energy-packages
-  "R1 dry packages for food+energy for each public-person with positive floor (facts)."
+(defn- phase-of [pkg]
+  (when pkg (name (:phase pkg))))
+
+(defn- floor-facts
+  "Extract non-score floor fields from a dry produce plan (facts only)."
+  [plan]
+  (when (and plan (not= :refused (:phase plan)))
+    (cond-> {:phase (name (:phase plan))
+             :produce-executed (boolean (:produce-executed plan false))
+             :live false
+             :cash-usd-micros 0
+             :score-surface []}
+      (:kcal-floor-yr plan) (assoc :kcal-floor-yr (:kcal-floor-yr plan))
+      (:kwh-floor-yr plan) (assoc :kwh-floor-yr (:kwh-floor-yr plan))
+      (:care-hours-floor-yr plan) (assoc :care-hours-floor-yr (:care-hours-floor-yr plan))
+      (:housing-months-floor-yr plan) (assoc :housing-months-floor-yr (:housing-months-floor-yr plan))
+      (:tool-units-floor-yr plan) (assoc :tool-units-floor-yr (:tool-units-floor-yr plan))
+      (:gpu-hours-floor-yr plan) (assoc :gpu-hours-floor-yr (:gpu-hours-floor-yr plan)))))
+
+(defn- safe-plan [plan-fn pkg]
+  (when (and pkg (not= :refused (:phase pkg)))
+    (try (plan-fn pkg) (catch Exception _ nil))))
+
+(defn inkind-rail-packages
+  "R1 dry packages + dry floor plans for all in-kind rails (facts only; no live execute)."
   [seed]
   (let [surfs (pp/persons-from-seed seed)
         recs (get seed ":maintainer/batch" [])
@@ -55,36 +103,74 @@
            :let [did (:did surf)
                  rec (first (filter #(= (get % ":maintainer/did") did) recs))
                  envs (env-of did)
-                 line* (fn [e]
-                         (-> (str (get e ":envelope/line"))
-                             (str/replace #"^:" "")
-                             (str/replace #"^envelope/line$" "")
-                             (str/split #"/")
-                             last))
-                 food-imp (reduce + 0 (map #(long (get % ":envelope/imputed-usd-micros-yr" 0))
-                                           (filter #(= "food" (line* %)) envs)))
-                 energy-imp (reduce + 0 (map #(long (get % ":envelope/imputed-usd-micros-yr" 0))
-                                             (filter #(= "energy" (line* %)) envs)))
+                 food-imp (imp-for envs "food")
+                 energy-imp (imp-for envs "energy")
+                 care-imp (imp-for envs "care")
+                 housing-imp (imp-for envs "housing")
+                 tooling-imp (imp-for envs "tooling")
+                 compute-imp (imp-for envs "compute")
+                 liquidity-imp (imp-for envs "liquidity")
                  drec (pp/disclosure-for-did seed did)
                  person (pp/persons-from-seed-row rec envs drec)
-                 hm (dh/from-seed-person person)]
-           :when (or (pos? food-imp) (pos? energy-imp))]
-       {:did did
-        :disclosure-state (name (:state hm))
-        :food (when (pos? food-imp)
-                (mitsuho/r1-dry-package
-                 {:alloc-id (str "food-" (last-seg did))
-                  :subject-did did
-                  :imputed-usd-micros-yr food-imp
-                  :person person
-                  :hold-machine hm}))
-        :energy (when (pos? energy-imp)
-                  (hikari/r1-dry-package
-                   {:alloc-id (str "energy-" (last-seg did))
-                    :subject-did did
-                    :imputed-usd-micros-yr energy-imp
-                    :person person
-                    :hold-machine hm}))}))))
+                 hm (dh/from-seed-person person)
+                 food-pkg (when (pos? food-imp)
+                            (mitsuho/r1-dry-package
+                             {:alloc-id (str "food-" (last-seg did)) :subject-did did
+                              :imputed-usd-micros-yr food-imp :person person :hold-machine hm}))
+                 energy-pkg (when (pos? energy-imp)
+                              (hikari/r1-dry-package
+                               {:alloc-id (str "energy-" (last-seg did)) :subject-did did
+                                :imputed-usd-micros-yr energy-imp :person person :hold-machine hm}))
+                 care-pkg (when (pos? care-imp)
+                            (care/r1-dry-package
+                             {:alloc-id (str "care-" (last-seg did)) :subject-did did
+                              :imputed-usd-micros-yr care-imp :person person :hold-machine hm}))
+                 housing-pkg (when (pos? housing-imp)
+                               (housing/r1-dry-package
+                                {:alloc-id (str "housing-" (last-seg did)) :subject-did did
+                                 :imputed-usd-micros-yr housing-imp :person person :hold-machine hm}))
+                 tooling-pkg (when (pos? tooling-imp)
+                               (tooling/r1-dry-package
+                                {:alloc-id (str "tooling-" (last-seg did)) :subject-did did
+                                 :imputed-usd-micros-yr tooling-imp :person person :hold-machine hm}))
+                 compute-pkg (when (pos? compute-imp)
+                               (compute/r1-dry-package
+                                {:alloc-id (str "compute-" (last-seg did)) :subject-did did
+                                 :imputed-usd-micros-yr compute-imp :person person :hold-machine hm}))
+                 liquidity-pkg (when (pos? liquidity-imp)
+                                 (liquidity/r1-dry-package
+                                  {:alloc-id (str "liquidity-" (last-seg did)) :subject-did did
+                                   :imputed-usd-micros-yr liquidity-imp :person person :hold-machine hm}))]
+           :when (or (pos? food-imp) (pos? energy-imp) (pos? care-imp) (pos? housing-imp)
+                     (pos? tooling-imp) (pos? compute-imp) (pos? liquidity-imp))]
+       (let [row {:did did
+                  :disclosure-state (name (:state hm))
+                  :food food-pkg
+                  :food-floor (floor-facts (safe-plan mprod/plan-from-r1 food-pkg))
+                  :energy energy-pkg
+                  :energy-floor (floor-facts (safe-plan hprod/plan-from-r1 energy-pkg))
+                  :care care-pkg
+                  :care-floor (floor-facts (safe-plan cprod/plan-from-r1 care-pkg))
+                  :housing housing-pkg
+                  :housing-floor (floor-facts (safe-plan housprod/plan-from-r1 housing-pkg))
+                  :tooling tooling-pkg
+                  :tooling-floor (floor-facts (safe-plan tprod/plan-from-r1 tooling-pkg))
+                  :compute compute-pkg
+                  :compute-floor (floor-facts (safe-plan cmpprod/plan-from-r1 compute-pkg))
+                  :liquidity liquidity-pkg
+                  :cash-usd-micros 0
+                  :live false
+                  :score-surface []
+                  :priority-stack PRIORITY-STACK}]
+         (pp/assert-no-public-scores! row)
+         row)))))
+
+(defn food-energy-packages
+  "Backward-compatible alias: food+energy subset of inkind-rail-packages."
+  [seed]
+  (mapv (fn [r]
+          (select-keys r [:did :disclosure-state :food :energy]))
+        (inkind-rail-packages seed)))
 
 (defn l0-demo-fact
   "Optional L0 enroll demo fact for a DID (offline)."
@@ -107,7 +193,7 @@
   "Full facts-only report structure."
   [seed & {:keys [include-l0-demo include-itonami]}]
   (let [facts (seed-public-facts seed)
-        rails (food-energy-packages seed)
+        rails (inkind-rail-packages seed)
         drows (disp/public-displacement-facts seed)
         itonami-rows (when include-itonami
                        #?(:clj
@@ -149,13 +235,31 @@
              (str "| " (last-seg (:did f)) " | " (:covenant f) " | "
                   (:public-person? f) " | " (:disclosure-status f) " | "
                   (str/join "," (:rails f)) " | " (:imputed-fact f) " |\n")))
-    (conj! lines "\n## Rail packages (R1 dry / refused)\n")
-    (conj! lines "| did | food phase | energy phase |\n|---|---|---|\n")
+    (conj! lines "\n## Rail packages (R1 dry + floor plans; no live execute)\n")
+    (conj! lines "| did | food | energy | care | housing | tooling | compute | liquidity |\n")
+    (conj! lines "|---|---|---|---|---|---|---|---|\n")
     (doseq [r (:report/rail-packages body)]
       (conj! lines
              (str "| " (last-seg (:did r)) " | "
-                  (or (some-> r :food :phase name) "—") " | "
-                  (or (some-> r :energy :phase name) "—") " |\n")))
+                  (or (phase-of (:food r)) "—") " | "
+                  (or (phase-of (:energy r)) "—") " | "
+                  (or (phase-of (:care r)) "—") " | "
+                  (or (phase-of (:housing r)) "—") " | "
+                  (or (phase-of (:tooling r)) "—") " | "
+                  (or (phase-of (:compute r)) "—") " | "
+                  (or (phase-of (:liquidity r)) "—") " |\n")))
+    (conj! lines "\n## Dry floor facts (produce-executed=false)\n")
+    (conj! lines "| did | kcal | kWh | care-h | housing-mo | tools | GPU-h |\n")
+    (conj! lines "|---|---|---|---|---|---|---|\n")
+    (doseq [r (:report/rail-packages body)]
+      (conj! lines
+             (str "| " (last-seg (:did r)) " | "
+                  (or (get-in r [:food-floor :kcal-floor-yr]) "—") " | "
+                  (or (get-in r [:energy-floor :kwh-floor-yr]) "—") " | "
+                  (or (get-in r [:care-floor :care-hours-floor-yr]) "—") " | "
+                  (or (get-in r [:housing-floor :housing-months-floor-yr]) "—") " | "
+                  (or (get-in r [:tooling-floor :tool-units-floor-yr]) "—") " | "
+                  (or (get-in r [:compute-floor :gpu-hours-floor-yr]) "—") " |\n")))
     (conj! lines "\n## Displacement → earmark (itonami/robotics coupling facts)\n")
     (conj! lines "| actor | cohort | displaced | funded | admissible | earmark USD micros |\n")
     (conj! lines "|---|---|---|---|---|---|\n")
@@ -164,6 +268,13 @@
              (str "| " (:displacing-actor d) " | " (:cohort-id d) " | "
                   (:displaced-count d) " | " (:funded d) " | " (:admissible d) " | "
                   (:earmark-usd-micros-yr d) " |\n")))
+    (when (seq (:report/itonami-displacement body))
+      (conj! lines "\n## itonami surplus bridge (offline seed)\n")
+      (conj! lines "| actor | cohort | displaced | funded | admissible |\n|---|---|---|---|---|\n")
+      (doseq [d (:report/itonami-displacement body)]
+        (conj! lines
+               (str "| " (:displacing-actor d) " | " (:cohort-id d) " | "
+                    (:displaced-count d) " | " (:funded d) " | " (:admissible d) " |\n"))))
     (let [s (:report/displacement-summary body)]
       (conj! lines (str "\nSummary: events=" (:displacement-events s)
                         " admissible=" (:funded-admissible s)
@@ -196,7 +307,7 @@
      "th{background:#f4f4f4}.note{color:#444;font-size:.9rem}</style></head><body>"
      "<h1>fuchi — public surface (facts only)</h1>"
      "<p class=\"note\">Priority: wellbecoming &gt; mago(孫) &gt; ko(子) &gt; present. "
-     "cash≡0. live=false. No personal scores or ranks.</p>"
+     "cash≡0. live=false. No personal scores or ranks. Floors are dry plans only.</p>"
      "<h2>Public persons</h2><table><thead>"
      (rows "th" ["did" "covenant" "public?" "disclosure" "rails" "imputed"])
      "</thead><tbody>"
@@ -206,6 +317,19 @@
                           (:disclosure-status f) (str/join "," (:rails f))
                           (:imputed-fact f)])))
      "</tbody></table>"
+     "<h2>Dry floor plans (produce-executed=false)</h2><table><thead>"
+     (rows "th" ["did" "kcal" "kWh" "care-h" "housing-mo" "tools" "GPU-h"])
+     "</thead><tbody>"
+     (apply str
+            (for [r (:report/rail-packages body)]
+              (rows "td" [(last-seg (:did r))
+                          (or (get-in r [:food-floor :kcal-floor-yr]) "—")
+                          (or (get-in r [:energy-floor :kwh-floor-yr]) "—")
+                          (or (get-in r [:care-floor :care-hours-floor-yr]) "—")
+                          (or (get-in r [:housing-floor :housing-months-floor-yr]) "—")
+                          (or (get-in r [:tooling-floor :tool-units-floor-yr]) "—")
+                          (or (get-in r [:compute-floor :gpu-hours-floor-yr]) "—")])))
+     "</tbody></table>"
      "<h2>Displacement → earmark</h2><table><thead>"
      (rows "th" ["actor" "cohort" "displaced" "funded" "admissible" "earmark"])
      "</thead><tbody>"
@@ -214,8 +338,18 @@
               (rows "td" [(:displacing-actor d) (:cohort-id d) (:displaced-count d)
                           (:funded d) (:admissible d) (:earmark-usd-micros-yr d)])))
      "</tbody></table>"
+     (when (seq (:report/itonami-displacement body))
+       (str
+        "<h2>itonami surplus bridge (offline)</h2><table><thead>"
+        (rows "th" ["actor" "cohort" "displaced" "funded" "admissible"])
+        "</thead><tbody>"
+        (apply str
+               (for [d (:report/itonami-displacement body)]
+                 (rows "td" [(:displacing-actor d) (:cohort-id d) (:displaced-count d)
+                             (:funded d) (:admissible d)])))
+        "</tbody></table>"))
      "<p class=\"note\">G2: no live displacement without a funded cohort. "
-     "Recipient scores are unrepresentable.</p>"
+     "Recipient scores are unrepresentable. Live rails default refuse.</p>"
      "</body></html>")))
 
 #?(:clj
