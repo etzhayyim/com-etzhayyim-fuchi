@@ -1,0 +1,46 @@
+;; rail-mitsuho-design.edn — food-mitsuho single-rail R1 → gated-live DESIGN (ADR-2607177000 + 2606052300)
+;; Live execution remains default-refuse (G10). This file is the machine-readable design SSoT for
+;; the first in-kind SS rail that can eventually feed public-person recipients.
+;;
+;; Priority: wellbecoming > mago(孫) > ko(子) > present-adherent.
+;; Food floor is substrate for multi-gen wellbecoming (not a personal score).
+{:rail/id "food-mitsuho"
+ :rail/kind "food-mitsuho"
+ :rail/provider-did "did:web:etzhayyim.com:actor:mitsuho"
+ :rail/provider-kind "actor"
+ :rail/label "mitsuho 瑞穂 — staple food in-kind"
+ :rail/adr ["2606052300" "2607177000" "2605261000"]
+ :rail/priority-stack [:wellbecoming :mago-wellbecoming :ko-wellbecoming :present-adherent]
+ :rail/cash-usd-micros 0
+ :rail/published-default false
+ :rail/server-held-key false
+ :rail/score-surface []
+
+ :rail/phases
+ {:R1-dry
+  {:writes ["provisioningIntent published=false"]
+   :reads ["route food line" "public-person? " "disclosure-gate"]
+   :live false}
+  :gated-live-design
+  {:requires ["FUCHI_ALLOW_LIVE_PROVISION=1"
+              "operator-did non-blank"
+              "Council Lv6+"
+              "member-signature (non-server)"
+              "disclosure state ≠ held"
+              "public-person? true OR L0 floor active"]
+   :still-does-not ["call mitsuho live API"
+                    "move cash"
+                    "publish true without gate"
+                    "emit personal scores"]
+   :live false
+   :note "design+authorize only; mitsuho R2 produce remains separate actor gate"}}
+
+ :rail/multi-gen-facts
+ ["staple-kcal-floor-supports-caregiver-and-child-households"
+  "not-a-happiness-score"
+  "imputed-usd-is-accounting-fact-only"]
+
+ :rail/hold-coupling
+ {:on-disclosure-held :refuse-dispatch
+  :on-exit-suspended :refuse-dispatch
+  :on-open :allow-r1-and-gated-plan}}

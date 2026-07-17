@@ -1,0 +1,31 @@
+{:lexicon 1
+ :id "com.etzhayyim.fuchi.mitsuhoRailDispatch"
+ :defs
+ {:main
+  {:type "record"
+   :key "tid"
+   :description "Food-mitsuho single-rail dispatch package (R1 dry + gated-live DESIGN). cash≡0, published=false by default, no personal scores. Live produce call to mitsuho is NOT included — only authorization plan after live_gate + disclosure open (ADR-2607177000 / 2606052300 G10)."
+   :record
+   {:type "object"
+    :required ["allocId" "subjectDid" "railKind" "providerDid" "imputedUsdMicrosYr"
+               "phase" "published" "cashUsdMicros" "serverHeldKey" "live"]
+    :properties
+    {:allocId {:type "string"}
+     :subjectDid {:type "string"}
+     :railKind {:type "string" :const "food-mitsuho"}
+     :providerDid {:type "string" :const "did:web:etzhayyim.com:actor:mitsuho"}
+     :imputedUsdMicrosYr {:type "integer" :minimum 0}
+     :phase {:type "string" :enum ["R1-dry" "gated-live-plan" "refused"]}
+     :refusalReason {:type "string"}
+     :disclosureState {:type "string" :enum ["open" "held" "exit-suspended" "n/a"]}
+     :publicPerson {:type "boolean"}
+     :priorityStack {:type "array" :items {:type "string"}}
+     :multiGenFacts {:type "array" :items {:type "string"}}
+     :authorizedToPublish {:type "boolean"
+                           :description "true only after full live_gate; still does not call mitsuho"}
+     :published {:type "boolean" :const false}
+     :cashUsdMicros {:type "integer" :const 0}
+     :serverHeldKey {:type "boolean" :const false}
+     :live {:type "boolean" :const false
+            :description "Scaffold never sets live true — mitsuho produce is out of scope here."}
+     :scoreSurface {:type "array" :maxItems 0}}}}}}

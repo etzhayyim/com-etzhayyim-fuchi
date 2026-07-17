@@ -28,7 +28,8 @@
    "sustenanceBooking.edn"  "com.etzhayyim.fuchi.sustenanceBooking"
    "cohortEarmark.edn"      "com.etzhayyim.fuchi.cohortEarmark"
    "disclosureAttestation.edn" "com.etzhayyim.fuchi.disclosureAttestation"
-   "commitmentVow.edn" "com.etzhayyim.fuchi.commitmentVow"))
+   "commitmentVow.edn" "com.etzhayyim.fuchi.commitmentVow"
+   "mitsuhoRailDispatch.edn" "com.etzhayyim.fuchi.mitsuhoRailDispatch"))
 
 #?(:clj
    (defn- present-edn-files []
