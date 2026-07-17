@@ -28,6 +28,7 @@
             [fuchi.methods.displacement-tenure :as ten]
             [fuchi.methods.displacement-gov :as dgov]
             [fuchi.methods.displacement-scorecard :as dsc]
+            [fuchi.methods.ss-offline-path :as ss-path]
             #?(:clj [fuchi.methods.pipeline-audit-ledger :as audit])
             #?(:clj [fuchi.methods.edn :as edn])
             #?(:clj [clojure.java.io :as io])))
@@ -235,6 +236,50 @@
      :score-surface []
      :priority-stack PRIORITY-STACK}))
 
+(defn ss-priority-path-public-fact
+  "Facts-only projection of ss_offline_path priority (1)(2)(3) demo.
+   L0 enroll + disclosure continuity + mitsuho/hikari gated-live DESIGN refuse + R2 refuse.
+   No personal scores. cash≡0. live=false."
+  ([]
+   (ss-priority-path-public-fact
+    "did:web:etzhayyim.com:member:ss-priority-demo"))
+  ([subject-did]
+   (let [path (ss-path/run-food-path
+               {:subject-did subject-did
+                :food-imputed-usd-micros-yr 2000000000
+                :energy-imputed-usd-micros-yr 1500000000
+                :care-imputed-usd-micros-yr 1000000000
+                :include-disclosure-stress true})
+         s (or (:priority-path-summary path) {})
+         out {:path (:path path)
+              :did subject-did
+              :l0-stage (:l0-stage s)
+              :l0-published (boolean (:l0-published s))
+              :l0-token-stub (:l0-token-stub s)
+              :disclosure-state (:disclosure-state s)
+              :entitlements-may-flow? (boolean (:entitlements-may-flow? s))
+              :continuity-action (when-let [a (:continuity-action s)] (name a))
+              :held-stress-held? (boolean (:held-stress-held? s))
+              :held-stress-food-phase (:held-stress-food-phase s)
+              :mitsuho-r1-phase (:mitsuho-r1-phase s)
+              :mitsuho-gated-admissible (boolean (:mitsuho-gated-admissible s))
+              :mitsuho-produce-executed false
+              :hikari-r1-phase (:hikari-r1-phase s)
+              :hikari-gated-admissible (boolean (:hikari-gated-admissible s))
+              :hikari-generate-executed false
+              :r2-food-phase (:r2-food-phase s)
+              :r2-food-executed (boolean (:r2-food-executed s))
+              :r2-energy-phase (:r2-energy-phase s)
+              :r2-energy-executed (boolean (:r2-energy-executed s))
+              :public-person? (boolean (get-in path [:public-person :public-person?]))
+              :live false
+              :cash-usd-micros 0
+              :score-surface []
+              :priority-stack PRIORITY-STACK
+              :note "priority path offline demo — L0 + disclosure + mitsuho/hikari gate refuse"}]
+     (pp/assert-no-public-scores! out)
+     out)))
+
 (defn displacement-l0-public-summary
   "Facts-only projection of displacement→L0/L4 batch (no subject scores).
    Includes disclosure open/held and mitsuho/hikari R1→gated refuse facts when present."
@@ -416,8 +461,9 @@
 (defn report-edn
   "Full facts-only report structure."
   [seed & {:keys [include-l0-demo include-itonami include-displacement-l0
-                  include-scorecard include-audit]
-           :or {include-displacement-l0 true include-scorecard true include-audit true}}]
+                  include-scorecard include-audit include-ss-priority-path]
+           :or {include-displacement-l0 true include-scorecard true include-audit true
+                include-ss-priority-path true}}]
   (let [facts (seed-public-facts seed)
         rails (inkind-rail-packages seed)
         drows (disp/public-displacement-facts seed)
@@ -477,10 +523,20 @@
               :report/displacement-scorecard (or scard {})
               :report/pipeline-audit (or audit-sum {})
               :report/pages-deploy-status (pages-deploy-refuse-status)
+              :report/ss-priority-path
+              (when include-ss-priority-path
+                (try (ss-priority-path-public-fact)
+                     (catch #?(:clj Exception :cljs :default) _
+                       {:path "ss-offline-inkind-rails"
+                        :error "ss-priority-path unavailable"
+                        :live false :cash-usd-micros 0 :score-surface []
+                        :priority-stack PRIORITY-STACK})))
               :report/l0-demo (when include-l0-demo
                                 (l0-demo-fact "did:web:etzhayyim.com:member:lot"))}]
     (doseq [f facts] (pp/assert-no-public-scores! f))
     (doseq [d drows] (pp/assert-no-public-scores! d))
+    (when-let [sp (:report/ss-priority-path body)]
+      (pp/assert-no-public-scores! (dissoc sp :error)))
     body))
 
 (defn report-md
@@ -702,6 +758,39 @@
                          (or (:total-liquidity-cash-usd-micros au) 0) "\n"))
         (conj! lines (str "- live: " (boolean (:live au))
                          " cash: " (or (:cash-usd-micros au) 0) "\n"))))
+    (when-let [sp (:report/ss-priority-path body)]
+      (when (and (map? sp) (not (:error sp)))
+        (conj! lines "\n## SS priority path (offline L0 + disclosure + mitsuho/hikari)\n")
+        (conj! lines (str "- path: " (or (:path sp) "ss-offline-inkind-rails") "\n"))
+        (conj! lines (str "- did: " (last-seg (:did sp)) "\n"))
+        (conj! lines (str "- (1) L0 stage/published/token-stub: "
+                         (:l0-stage sp) "/"
+                         (boolean (:l0-published sp)) "/"
+                         (or (:l0-token-stub sp) "—") "\n"))
+        (conj! lines (str "- (2) disclosure open path: state="
+                         (:disclosure-state sp)
+                         " entitlements-may-flow="
+                         (boolean (:entitlements-may-flow? sp)) "\n"))
+        (conj! lines (str "- (2) held-stress: held="
+                         (boolean (:held-stress-held? sp))
+                         " food-r1-phase="
+                         (or (:held-stress-food-phase sp) "—") "\n"))
+        (conj! lines (str "- (3) mitsuho R1/gated-admissible/produce-executed: "
+                         (or (:mitsuho-r1-phase sp) "—") "/"
+                         (boolean (:mitsuho-gated-admissible sp)) "/"
+                         (boolean (:mitsuho-produce-executed sp)) "\n"))
+        (conj! lines (str "- (3) hikari R1/gated-admissible/generate-executed: "
+                         (or (:hikari-r1-phase sp) "—") "/"
+                         (boolean (:hikari-gated-admissible sp)) "/"
+                         (boolean (:hikari-generate-executed sp)) "\n"))
+        (conj! lines (str "- R2 food/energy executed: "
+                         (boolean (:r2-food-executed sp)) "/"
+                         (boolean (:r2-energy-executed sp))
+                         " (phases "
+                         (or (:r2-food-phase sp) "—") "/"
+                         (or (:r2-energy-phase sp) "—") ")\n"))
+        (conj! lines (str "- live: " (boolean (:live sp))
+                         " cash: " (or (:cash-usd-micros sp) 0) "\n"))))
     (when-let [l0 (:report/l0-demo body)]
       (conj! lines "\n## L0 demo (offline)\n")
       (conj! lines (str "- did: " (last-seg (:did l0)) " stage=" (:stage l0)
@@ -924,6 +1013,31 @@
           (or (:total-liquidity-cash-usd-micros au) 0)
           " live=" (boolean (:live au))
           " cash=" (or (:cash-usd-micros au) 0)
+          ".</p>")))
+     (when-let [sp (:report/ss-priority-path body)]
+       (when (and (map? sp) (not (:error sp)))
+         (str
+          "<h2>SS priority path (offline)</h2>"
+          "<p class=\"note\">(1) L0 stage=" (:l0-stage sp)
+          " published=" (boolean (:l0-published sp))
+          " token-stub=" (or (:l0-token-stub sp) "—")
+          ". (2) disclosure=" (:disclosure-state sp)
+          " entitlements-may-flow=" (boolean (:entitlements-may-flow? sp))
+          " held-stress-held=" (boolean (:held-stress-held? sp))
+          " held-food-r1=" (or (:held-stress-food-phase sp) "—")
+          ". (3) mitsuho R1/gated/produce="
+          (or (:mitsuho-r1-phase sp) "—") "/"
+          (boolean (:mitsuho-gated-admissible sp)) "/"
+          (boolean (:mitsuho-produce-executed sp))
+          " hikari R1/gated/generate="
+          (or (:hikari-r1-phase sp) "—") "/"
+          (boolean (:hikari-gated-admissible sp)) "/"
+          (boolean (:hikari-generate-executed sp))
+          " R2 food/energy executed="
+          (boolean (:r2-food-executed sp)) "/"
+          (boolean (:r2-energy-executed sp))
+          " live=" (boolean (:live sp))
+          " cash=" (or (:cash-usd-micros sp) 0)
           ".</p>")))
      "<p class=\"note\">G2: no live displacement without a funded cohort. "
      "Recipient scores are unrepresentable. Live rails default refuse. cash≡0.</p>"
