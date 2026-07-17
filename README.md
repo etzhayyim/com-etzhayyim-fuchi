@@ -98,6 +98,7 @@ bb -cp . -e '(require (quote fuchi.methods.public-surface-report)) (fuchi.method
 | [`methods/liberation_ladder.cljc`](methods/liberation_ladder.cljc) | offline L0–L6 stage climb (disclosure-gated; no mint) |
 | [`methods/stage_sustenance.cljc`](methods/stage_sustenance.cljc) | stage rails-hint → dry floor packages (L3 vocation+) |
 | [`methods/disclosure_continuity.cljc`](methods/disclosure_continuity.cljc) | continuous disclosure tick (stale → hold) |
+| [`methods/displacement_book.cljc`](methods/displacement_book.cljc) | offline toritate/kanae book for displacement floors |
 | [`methods/r2_execute.cljc`](methods/r2_execute.cljc) | R2 execute membrane (default refuse; executed=false) |
 | [`methods/pages_publish.cljc`](methods/pages_publish.cljc) | Pages-ready `public/` static package (no deploy) |
 | [`methods/pages_deploy.cljc`](methods/pages_deploy.cljc) | Pages deploy membrane (default refuse; wrangler not invoked) |

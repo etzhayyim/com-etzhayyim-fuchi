@@ -4,8 +4,9 @@
   When a funded Public-Fund earmark exists (G2), project representative displaced
   subjects into L0 enrollment, climb offline toward L3 (multi-gen substrate +
   vocation recovery: food/energy/care/housing/tooling/compute;
-  wellbecoming > 孫 > 子), attach stage-aware dry floors, run disclosure continuity
-  tick. R2 execute stays refused. Unfunded surplus → refused (no free-riding).
+  wellbecoming > 孫 > 子), attach stage-aware dry floors, disclosure continuity
+  tick, offline toritate/kanae booking (write_live refused). R2 execute stays
+  refused. Unfunded surplus → refused (no free-riding).
 
   Never cash. Never scores. Never live mint/dispatch. Portable .cljc."
   (:require [fuchi.methods.l0-enroll :as l0]
@@ -16,6 +17,7 @@
             [fuchi.methods.disclosure-continuity :as disc]
             [fuchi.methods.liberation-ladder :as ladder]
             [fuchi.methods.stage-sustenance :as stage]
+            [fuchi.methods.displacement-book :as dbook]
             #?(:clj [fuchi.methods.edn :as edn])
             #?(:clj [clojure.java.io :as io])))
 
@@ -118,6 +120,8 @@
                                        "tooling" tooling-imputed-usd-micros-yr
                                        "compute" compute-imputed-usd-micros-yr})
         pkgs (:packages stage-pkg)
+        booking (dbook/book-subject subject-did stage-pkg
+                                    :alloc-id (str "disp-" cohort-id "-" subject-did))
         out {:path "displacement-l0"
              :subject-did subject-did
              :cohort-id cohort-id
@@ -150,7 +154,9 @@
              :compute-produce-plan (get-in pkgs ["compute" :plan])
              :r2-execute-status (or (get-in pkgs ["food" :r2])
                                     (get-in pkgs ["tooling" :r2])
-                                    (get-in pkgs ["care" :r2]))}]
+                                    (get-in pkgs ["care" :r2]))
+             :booking booking
+             :booking-public (dbook/public-book-summary booking)}]
     (pp/assert-no-public-scores! (:public-person out))
     out))
 

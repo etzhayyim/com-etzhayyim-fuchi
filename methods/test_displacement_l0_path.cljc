@@ -48,6 +48,11 @@
       (is (false? (get-in s [:disclosure-continuity :held?])))
       (is (= :refused (get-in s [:r2-execute-status :phase])))
       (is (false? (get-in s [:r2-execute-status :executed])))
+      (is (= :booked-offline (get-in s [:booking :phase])))
+      (is (pos? (get-in s [:booking :entry-count])))
+      (is (false? (get-in s [:booking :write-live-admissible])))
+      (is (= 0 (get-in s [:booking :cash-usd-micros])))
+      (is (contains? (get-in s [:booking :category-counts]) "care-flow"))
       (pp/assert-no-public-scores! (:public-person s)))))
 
 (deftest test-unfunded-refused
