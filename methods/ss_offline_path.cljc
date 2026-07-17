@@ -216,11 +216,15 @@
                       (hprod/plan-from-r1 energy-pkg))
         food-ack (when (and food-pkg (not= :refused (:phase food-pkg)))
                    (frecv/receive-from-r1-package food-pkg))
-        ;; priority (3): mitsuho/hikari gated-receive DESIGN (default refuse; produce/generate false)
+        ;; priority (3): mitsuho/hikari gated-receive + gated-produce DESIGN (default refuse)
         food-recv-gated (when (and food-pkg (not= :refused (:phase food-pkg)))
                           (frecv/gated-receive-status food-pkg))
         energy-recv-gated (when (and energy-pkg (not= :refused (:phase energy-pkg)))
                             (hrecv/gated-receive-status energy-pkg))
+        food-prod-gated (when (and food-pkg (not= :refused (:phase food-pkg)))
+                          (mprod/gated-produce-status food-pkg))
+        energy-prod-gated (when (and energy-pkg (not= :refused (:phase energy-pkg)))
+                            (hprod/gated-produce-status energy-pkg))
         care-plan (when (and care-pkg (not= :refused (:phase care-pkg)))
                     (cprod/plan-from-r1 care-pkg))
         care-ack (when (and care-pkg (not= :refused (:phase care-pkg)))
@@ -380,6 +384,32 @@
                       (some? energy-recv-gated)
                       (not (true? (:admissible food-recv-gated)))
                       (not (true? (:admissible energy-recv-gated))))
+                 :mitsuho-gated-produce-admissible
+                 (boolean (:admissible food-prod-gated))
+                 :mitsuho-gated-produce-phase
+                 (when food-prod-gated (name (:phase food-prod-gated)))
+                 :mitsuho-produce-executed-on-gated false
+                 :hikari-gated-produce-admissible
+                 (boolean (:admissible energy-prod-gated))
+                 :hikari-gated-produce-phase
+                 (when energy-prod-gated (name (:phase energy-prod-gated)))
+                 :hikari-generate-executed-on-gated false
+                 :mitsuho-hikari-produce-both-refused
+                 (and (some? food-prod-gated)
+                      (some? energy-prod-gated)
+                      (not (true? (:admissible food-prod-gated)))
+                      (not (true? (:admissible energy-prod-gated))))
+                 :mitsuho-hikari-full-chain-refused
+                 ;; plan gated + receive + produce all refuse (default env)
+                 (and (some? food-gated) (some? energy-gated)
+                      (some? food-recv-gated) (some? energy-recv-gated)
+                      (some? food-prod-gated) (some? energy-prod-gated)
+                      (not (true? (:admissible food-gated)))
+                      (not (true? (:admissible energy-gated)))
+                      (not (true? (:admissible food-recv-gated)))
+                      (not (true? (:admissible energy-recv-gated)))
+                      (not (true? (:admissible food-prod-gated)))
+                      (not (true? (:admissible energy-prod-gated))))
                  :care-r1-phase (when care-pkg (name (:phase care-pkg)))
                  :care-gated-admissible (boolean (:admissible care-gated))
                  :care-delivery-executed false
@@ -445,12 +475,14 @@
              :food-package food-pkg
              :food-gated-live-status food-gated
              :food-gated-receive-status food-recv-gated
+             :food-gated-produce-status food-prod-gated
              :food-produce-plan food-plan
              :food-receive food-ack
              :food-r2-execute-status food-r2
              :energy-package energy-pkg
              :energy-gated-live-status energy-gated
              :energy-gated-receive-status energy-recv-gated
+             :energy-gated-produce-status energy-prod-gated
              :energy-produce-plan energy-plan
              :energy-receive (when (and energy-pkg (not= :refused (:phase energy-pkg)))
                                (hrecv/receive-from-r1-package energy-pkg))
@@ -488,6 +520,8 @@
     (doseq [g (remove nil? gated-statuses)] (pp/assert-no-public-scores! g))
     (when food-recv-gated (pp/assert-no-public-scores! food-recv-gated))
     (when energy-recv-gated (pp/assert-no-public-scores! energy-recv-gated))
+    (when food-prod-gated (pp/assert-no-public-scores! food-prod-gated))
+    (when energy-prod-gated (pp/assert-no-public-scores! energy-prod-gated))
     (when care-recv-gated (pp/assert-no-public-scores! care-recv-gated))
     out))
 

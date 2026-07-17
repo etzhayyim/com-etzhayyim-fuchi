@@ -306,6 +306,16 @@
               :hikari-gated-receive-phase (:hikari-gated-receive-phase s)
               :mitsuho-hikari-receive-both-refused
               (boolean (:mitsuho-hikari-receive-both-refused s))
+              :mitsuho-gated-produce-admissible
+              (boolean (:mitsuho-gated-produce-admissible s))
+              :mitsuho-gated-produce-phase (:mitsuho-gated-produce-phase s)
+              :hikari-gated-produce-admissible
+              (boolean (:hikari-gated-produce-admissible s))
+              :hikari-gated-produce-phase (:hikari-gated-produce-phase s)
+              :mitsuho-hikari-produce-both-refused
+              (boolean (:mitsuho-hikari-produce-both-refused s))
+              :mitsuho-hikari-full-chain-refused
+              (boolean (:mitsuho-hikari-full-chain-refused s))
               :care-gated-receive-admissible
               (boolean (:care-gated-receive-admissible s))
               :care-gated-receive-phase (:care-gated-receive-phase s)
@@ -921,6 +931,15 @@
                          (or (:care-gated-receive-phase sp) "—")
                          " care+mitsuho+hikari-all-refused="
                          (boolean (:care-mitsuho-hikari-receive-all-refused sp)) "\n"))
+        (conj! lines (str "- (3) mitsuho/hikari gated-produce admissible/phase: "
+                         (boolean (:mitsuho-gated-produce-admissible sp)) "/"
+                         (or (:mitsuho-gated-produce-phase sp) "—") " · "
+                         (boolean (:hikari-gated-produce-admissible sp)) "/"
+                         (or (:hikari-gated-produce-phase sp) "—")
+                         " both-refused="
+                         (boolean (:mitsuho-hikari-produce-both-refused sp))
+                         " full-chain-refused="
+                         (boolean (:mitsuho-hikari-full-chain-refused sp)) "\n"))
         (conj! lines (str "- (3) care/housing/tooling/compute/liquidity gated-admissible: "
                          (boolean (:care-gated-admissible sp)) "/"
                          (boolean (:housing-gated-admissible sp)) "/"
@@ -1232,6 +1251,11 @@
           (boolean (:care-gated-receive-admissible sp))
           " food+energy+care-recv-all-refused="
           (boolean (:care-mitsuho-hikari-receive-all-refused sp))
+          " produce-gated="
+          (boolean (:mitsuho-gated-produce-admissible sp)) "/"
+          (boolean (:hikari-gated-produce-admissible sp))
+          " full-chain-refused="
+          (boolean (:mitsuho-hikari-full-chain-refused sp))
           " care/housing/tooling/compute/liquidity gated="
           (boolean (:care-gated-admissible sp)) "/"
           (boolean (:housing-gated-admissible sp)) "/"
