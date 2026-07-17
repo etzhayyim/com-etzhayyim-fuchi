@@ -225,6 +225,9 @@
                     (cprod/plan-from-r1 care-pkg))
         care-ack (when (and care-pkg (not= :refused (:phase care-pkg)))
                    (crecv/receive-from-r1-package care-pkg))
+        ;; care-iyashi gated-receive (孫/子 multi-gen; default refuse)
+        care-recv-gated (when (and care-pkg (not= :refused (:phase care-pkg)))
+                          (crecv/gated-receive-status care-pkg))
         housing-plan (when (and housing-pkg (not= :refused (:phase housing-pkg)))
                        (housprod/plan-from-r1 housing-pkg))
         housing-ack (when (and housing-pkg (not= :refused (:phase housing-pkg)))
@@ -380,6 +383,18 @@
                  :care-r1-phase (when care-pkg (name (:phase care-pkg)))
                  :care-gated-admissible (boolean (:admissible care-gated))
                  :care-delivery-executed false
+                 :care-gated-receive-admissible
+                 (boolean (:admissible care-recv-gated))
+                 :care-gated-receive-phase
+                 (when care-recv-gated (name (:phase care-recv-gated)))
+                 :care-delivery-invoked-on-receive false
+                 :care-mitsuho-hikari-receive-all-refused
+                 (and (some? food-recv-gated)
+                      (some? energy-recv-gated)
+                      (some? care-recv-gated)
+                      (not (true? (:admissible food-recv-gated)))
+                      (not (true? (:admissible energy-recv-gated)))
+                      (not (true? (:admissible care-recv-gated))))
                  :housing-r1-phase (when housing-pkg (name (:phase housing-pkg)))
                  :housing-gated-admissible (boolean (:admissible housing-gated))
                  :housing-land-grant-executed false
@@ -442,6 +457,7 @@
              :energy-r2-execute-status energy-r2
              :care-package care-pkg
              :care-gated-live-status care-gated
+             :care-gated-receive-status care-recv-gated
              :care-produce-plan care-plan
              :care-receive care-ack
              :care-r2-execute-status care-r2
@@ -472,6 +488,7 @@
     (doseq [g (remove nil? gated-statuses)] (pp/assert-no-public-scores! g))
     (when food-recv-gated (pp/assert-no-public-scores! food-recv-gated))
     (when energy-recv-gated (pp/assert-no-public-scores! energy-recv-gated))
+    (when care-recv-gated (pp/assert-no-public-scores! care-recv-gated))
     out))
 
 #?(:clj

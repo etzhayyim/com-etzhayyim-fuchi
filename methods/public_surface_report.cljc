@@ -306,6 +306,11 @@
               :hikari-gated-receive-phase (:hikari-gated-receive-phase s)
               :mitsuho-hikari-receive-both-refused
               (boolean (:mitsuho-hikari-receive-both-refused s))
+              :care-gated-receive-admissible
+              (boolean (:care-gated-receive-admissible s))
+              :care-gated-receive-phase (:care-gated-receive-phase s)
+              :care-mitsuho-hikari-receive-all-refused
+              (boolean (:care-mitsuho-hikari-receive-all-refused s))
               :care-r1-phase (:care-r1-phase s)
               :care-gated-admissible (boolean (:care-gated-admissible s))
               :housing-r1-phase (:housing-r1-phase s)
@@ -833,6 +838,15 @@
                          (boolean (:last-run-ss-stage-hikari-gated-admissible au)) "\n"))
         (conj! lines (str "- last-run SS stage land-grant-executed: "
                          (boolean (:last-run-ss-stage-land-grant-executed au)) "\n"))
+        (conj! lines (str "- last-run SS mitsuho/hikari/care gated-receive admissible: "
+                         (boolean (:last-run-ss-mitsuho-gated-receive-admissible au)) "/"
+                         (boolean (:last-run-ss-hikari-gated-receive-admissible au)) "/"
+                         (boolean (:last-run-ss-care-gated-receive-admissible au))
+                         " food+energy both-refused="
+                         (boolean (:last-run-ss-mitsuho-hikari-receive-both-refused au true))
+                         " all-three-refused="
+                         (boolean (:last-run-ss-care-mitsuho-hikari-receive-all-refused au true))
+                         "\n"))
         (conj! lines (str "- cumulative liquidity member-principal / cash-usd-micros: "
                          (or (:total-liquidity-member-principal au) 0) "/"
                          (or (:total-liquidity-cash-usd-micros au) 0) "\n"))
@@ -902,6 +916,11 @@
                          (or (:hikari-gated-receive-phase sp) "—")
                          " both-refused="
                          (boolean (:mitsuho-hikari-receive-both-refused sp)) "\n"))
+        (conj! lines (str "- (3) care-iyashi gated-receive (孫/子) admissible/phase: "
+                         (boolean (:care-gated-receive-admissible sp)) "/"
+                         (or (:care-gated-receive-phase sp) "—")
+                         " care+mitsuho+hikari-all-refused="
+                         (boolean (:care-mitsuho-hikari-receive-all-refused sp)) "\n"))
         (conj! lines (str "- (3) care/housing/tooling/compute/liquidity gated-admissible: "
                          (boolean (:care-gated-admissible sp)) "/"
                          (boolean (:housing-gated-admissible sp)) "/"
@@ -1164,6 +1183,12 @@
           (boolean (:last-run-ss-stage-hikari-gated-admissible au))
           " stage-land-grant="
           (boolean (:last-run-ss-stage-land-grant-executed au))
+          " mitsuho/hikari/care-recv="
+          (boolean (:last-run-ss-mitsuho-gated-receive-admissible au)) "/"
+          (boolean (:last-run-ss-hikari-gated-receive-admissible au)) "/"
+          (boolean (:last-run-ss-care-gated-receive-admissible au))
+          " recv-all-three-refused="
+          (boolean (:last-run-ss-care-mitsuho-hikari-receive-all-refused au true))
           " liquidity member-principal/cash="
           (or (:total-liquidity-member-principal au) 0) "/"
           (or (:total-liquidity-cash-usd-micros au) 0)
@@ -1203,8 +1228,10 @@
           " gated-receive="
           (boolean (:mitsuho-gated-receive-admissible sp)) "/"
           (boolean (:hikari-gated-receive-admissible sp))
-          " both-recv-refused="
-          (boolean (:mitsuho-hikari-receive-both-refused sp))
+          " care-recv="
+          (boolean (:care-gated-receive-admissible sp))
+          " food+energy+care-recv-all-refused="
+          (boolean (:care-mitsuho-hikari-receive-all-refused sp))
           " care/housing/tooling/compute/liquidity gated="
           (boolean (:care-gated-admissible sp)) "/"
           (boolean (:housing-gated-admissible sp)) "/"

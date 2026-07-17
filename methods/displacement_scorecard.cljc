@@ -107,6 +107,10 @@
                (boolean (:hikari-gated-receive-admissible s))
                :mitsuho-hikari-receive-both-refused
                (boolean (:mitsuho-hikari-receive-both-refused s))
+               :care-gated-receive-admissible
+               (boolean (:care-gated-receive-admissible s))
+               :care-mitsuho-hikari-receive-all-refused
+               (boolean (:care-mitsuho-hikari-receive-all-refused s))
                :care-gated-admissible (boolean (:care-gated-admissible s))
                :housing-land-grant-executed (boolean (:housing-land-grant-executed s))
                :liquidity-loan-executed (boolean (:liquidity-loan-executed s))
@@ -567,6 +571,9 @@
                          (boolean (:mitsuho-gated-receive-admissible sp)) "/"
                          (boolean (:hikari-gated-receive-admissible sp)) "/"
                          (boolean (:mitsuho-hikari-receive-both-refused sp)) "\n"))
+        (conj! lines (str "- care-iyashi gated-receive (孫/子) admissible/all-three-refused: "
+                         (boolean (:care-gated-receive-admissible sp)) "/"
+                         (boolean (:care-mitsuho-hikari-receive-all-refused sp)) "\n"))
         (conj! lines (str "- housing land-grant / liquidity loan / cash: "
                          (boolean (:housing-land-grant-executed sp)) "/"
                          (boolean (:liquidity-loan-executed sp)) "/"

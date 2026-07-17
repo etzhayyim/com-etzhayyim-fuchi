@@ -123,6 +123,19 @@
             (or (get-in sc [:scorecard/ss-priority-path :disclosure-state]) "n/a")
             :audit/ss-housing-land-grant-executed
             (boolean (get-in sc [:scorecard/ss-priority-path :housing-land-grant-executed]))
+            :audit/ss-mitsuho-gated-receive-admissible
+            (boolean (get-in sc [:scorecard/ss-priority-path :mitsuho-gated-receive-admissible]))
+            :audit/ss-hikari-gated-receive-admissible
+            (boolean (get-in sc [:scorecard/ss-priority-path :hikari-gated-receive-admissible]))
+            :audit/ss-care-gated-receive-admissible
+            (boolean (get-in sc [:scorecard/ss-priority-path :care-gated-receive-admissible]))
+            :audit/ss-mitsuho-hikari-receive-both-refused
+            (boolean (get-in sc [:scorecard/ss-priority-path :mitsuho-hikari-receive-both-refused]
+                             true))
+            :audit/ss-care-mitsuho-hikari-receive-all-refused
+            (boolean (get-in sc [:scorecard/ss-priority-path
+                                 :care-mitsuho-hikari-receive-all-refused]
+                             true))
             :audit/all-held-stress-gov-flowable
             (or (get-in sc [:scorecard/all-held-stress :gov-flowable]) 0)
             :audit/all-held-stress-held-subjects
@@ -238,6 +251,16 @@
                (boolean (:audit/ss-stage-hikari-gated-admissible ev))
                :ss-stage-land-grant-executed
                (boolean (:audit/ss-stage-land-grant-executed ev))
+               :ss-mitsuho-gated-receive-admissible
+               (boolean (:audit/ss-mitsuho-gated-receive-admissible ev))
+               :ss-hikari-gated-receive-admissible
+               (boolean (:audit/ss-hikari-gated-receive-admissible ev))
+               :ss-care-gated-receive-admissible
+               (boolean (:audit/ss-care-gated-receive-admissible ev))
+               :ss-mitsuho-hikari-receive-both-refused
+               (boolean (:audit/ss-mitsuho-hikari-receive-both-refused ev true))
+               :ss-care-mitsuho-hikari-receive-all-refused
+               (boolean (:audit/ss-care-mitsuho-hikari-receive-all-refused ev true))
                :ss-disclosure-state (or (:audit/ss-disclosure-state ev) "n/a")
                :all-live-refused (boolean (:audit/all-live-refused ev))
                :l4-disclosure-open (or (:audit/l4-disclosure-open ev) 0)
@@ -344,6 +367,16 @@
                  (boolean (:audit/ss-stage-hikari-gated-admissible last-ev))
                  :last-run-ss-stage-land-grant-executed
                  (boolean (:audit/ss-stage-land-grant-executed last-ev))
+                 :last-run-ss-mitsuho-gated-receive-admissible
+                 (boolean (:audit/ss-mitsuho-gated-receive-admissible last-ev))
+                 :last-run-ss-hikari-gated-receive-admissible
+                 (boolean (:audit/ss-hikari-gated-receive-admissible last-ev))
+                 :last-run-ss-care-gated-receive-admissible
+                 (boolean (:audit/ss-care-gated-receive-admissible last-ev))
+                 :last-run-ss-mitsuho-hikari-receive-both-refused
+                 (boolean (:audit/ss-mitsuho-hikari-receive-both-refused last-ev true))
+                 :last-run-ss-care-mitsuho-hikari-receive-all-refused
+                 (boolean (:audit/ss-care-mitsuho-hikari-receive-all-refused last-ev true))
                  :cash-usd-micros 0
                  :cash-to-workers-usd-micros 0
                  :live false

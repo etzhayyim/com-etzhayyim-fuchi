@@ -95,7 +95,29 @@
                                  [:scorecard/ss-priority-path :stage-hikari-gated-admissible]))
                 :ss-stage-land-grant-executed
                 (boolean (get-in scorecard
-                                 [:scorecard/ss-priority-path :stage-land-grant-executed]))}]
+                                 [:scorecard/ss-priority-path :stage-land-grant-executed]))
+                :ss-mitsuho-gated-receive-admissible
+                (boolean (get-in scorecard
+                                 [:scorecard/ss-priority-path
+                                  :mitsuho-gated-receive-admissible]))
+                :ss-hikari-gated-receive-admissible
+                (boolean (get-in scorecard
+                                 [:scorecard/ss-priority-path
+                                  :hikari-gated-receive-admissible]))
+                :ss-care-gated-receive-admissible
+                (boolean (get-in scorecard
+                                 [:scorecard/ss-priority-path
+                                  :care-gated-receive-admissible]))
+                :ss-mitsuho-hikari-receive-both-refused
+                (boolean (get-in scorecard
+                                 [:scorecard/ss-priority-path
+                                  :mitsuho-hikari-receive-both-refused]
+                                 true))
+                :ss-care-mitsuho-hikari-receive-all-refused
+                (boolean (get-in scorecard
+                                 [:scorecard/ss-priority-path
+                                  :care-mitsuho-hikari-receive-all-refused]
+                                 true))}]
        (pp/assert-no-public-scores!
         (select-keys out [:live :cash-usd-micros :score-surface :priority-stack
                           :admissible-cohorts :tenure-subjects :all-live-refused
@@ -108,7 +130,12 @@
                           :ss-stage-land-grant-executed
                           :ss-stage-care-gated-admissible
                           :ss-stage-mitsuho-gated-admissible
-                          :ss-stage-hikari-gated-admissible]))
+                          :ss-stage-hikari-gated-admissible
+                          :ss-mitsuho-gated-receive-admissible
+                          :ss-hikari-gated-receive-admissible
+                          :ss-care-gated-receive-admissible
+                          :ss-mitsuho-hikari-receive-both-refused
+                          :ss-care-mitsuho-hikari-receive-all-refused]))
        out)))
 
 #?(:clj

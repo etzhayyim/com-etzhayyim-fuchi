@@ -56,7 +56,12 @@
        (is (false? (:ss-stage-care-gated-admissible out)))
        (is (false? (:ss-stage-mitsuho-gated-admissible out)))
        (is (false? (:ss-stage-hikari-gated-admissible out)))
-       (is (false? (:ss-stage-land-grant-executed out))))))
+       (is (false? (:ss-stage-land-grant-executed out)))
+       (is (false? (:ss-mitsuho-gated-receive-admissible out)))
+       (is (false? (:ss-hikari-gated-receive-admissible out)))
+       (is (false? (:ss-care-gated-receive-admissible out)))
+       (is (true? (:ss-mitsuho-hikari-receive-both-refused out)))
+       (is (true? (:ss-care-mitsuho-hikari-receive-all-refused out))))))
 
 #?(:clj
    (deftest test-write-all

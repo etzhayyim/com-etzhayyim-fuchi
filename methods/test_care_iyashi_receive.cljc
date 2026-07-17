@@ -33,3 +33,13 @@
     (is (= :gated-ack-plan (:phase ack)))
     (is (false? (:care-delivery-invoked ack)))
     (is (false? (:live ack)))))
+
+(deftest test-gated-receive-status-default-refuse
+  (let [pkg (c/r1-dry-package {:alloc-id "a" :imputed-usd-micros-yr 1000 :person (person)})
+        st (cr/gated-receive-status pkg)]
+    (is (= :refused (:phase st)))
+    (is (false? (:admissible st)))
+    (is (false? (:care-delivery-invoked st)))
+    (is (false? (:live st)))
+    (is (= 0 (:cash-usd-micros st)))
+    (pp/assert-no-public-scores! st)))

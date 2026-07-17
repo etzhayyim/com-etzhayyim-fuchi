@@ -213,6 +213,16 @@
                   (boolean (:last-run-ss-stage-hikari-gated-admissible au))
                   :last-run-ss-stage-land-grant-executed
                   (boolean (:last-run-ss-stage-land-grant-executed au))
+                  :last-run-ss-mitsuho-gated-receive-admissible
+                  (boolean (:last-run-ss-mitsuho-gated-receive-admissible au))
+                  :last-run-ss-hikari-gated-receive-admissible
+                  (boolean (:last-run-ss-hikari-gated-receive-admissible au))
+                  :last-run-ss-care-gated-receive-admissible
+                  (boolean (:last-run-ss-care-gated-receive-admissible au))
+                  :last-run-ss-mitsuho-hikari-receive-both-refused
+                  (boolean (:last-run-ss-mitsuho-hikari-receive-both-refused au true))
+                  :last-run-ss-care-mitsuho-hikari-receive-all-refused
+                  (boolean (:last-run-ss-care-mitsuho-hikari-receive-all-refused au true))
                   :live false
                   :cash-usd-micros 0
                   :score-surface []
