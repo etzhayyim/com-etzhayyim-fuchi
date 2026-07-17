@@ -533,7 +533,13 @@
                           " tenure-committed-full=" (or (:tenure-committed-full-usd-micros-yr dl0) 0) "\n"))
         (conj! lines (str "tenure-gov-flowable=" (or (:tenure-gov-flowable-usd-micros dl0) 0)
                           " tenure-gov-post-ratify=" (or (:tenure-gov-post-ratify-usd-micros dl0) 0) "\n"))
-        (conj! lines "| actor | cohort | phase | n | g2 | funded | earmark | disc-o/h | L4-flow | L4-full | ten-n | ten-flow | headroom |\n|---|---|---|---|---|---|---|---|---|---|---|---|---|\n")
+        (conj! lines (str "land-grant-executed-total="
+                          (or (:housing-land-grant-executed dl0) 0)
+                          " (post-ratify plan keeps land-grant=false; Council-gated)\n"))
+        (conj! lines (str "| actor | cohort | phase | n | g2 | funded | earmark | disc-o/h "
+                          "| L4-flow | L4-full | L4-post | ten-n | ten-flow | ten-post "
+                          "| land-grant | headroom |\n"
+                          "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|\n"))
         (doseq [p (:packages dl0)]
           (conj! lines
                  (str "| " (:displacing-actor p) " | " (:cohort-id p) " | "
@@ -545,8 +551,11 @@
                       (or (:disclosure-held p) 0) " | "
                       (:committed-usd-micros-yr p) " | "
                       (or (:committed-full-usd-micros-yr p) 0) " | "
+                      (or (:gov-post-ratify-usd-micros p) 0) " | "
                       (or (:tenure-subjects p) 0) " | "
                       (or (:tenure-committed-usd-micros-yr p) 0) " | "
+                      (or (:tenure-gov-post-ratify-usd-micros p) 0) " | "
+                      (or (:housing-land-grant-executed p) 0) " | "
                       (:headroom-usd-micros-yr p) " |\n"))))
     (when-let [sc (:report/displacement-scorecard body)]
       (when (seq sc)
@@ -560,6 +569,14 @@
         (conj! lines (str "- tenure-stages: " (pr-str (:scorecard/tenure-stage-counts sc)) "\n"))
         (conj! lines (str "- gov-routes: " (pr-str (:scorecard/gov-route-counts sc)) "\n"))
         (conj! lines "  (housing held for council-lv7; multi-gen substrate may dry-flow)\n")
+        (conj! lines (str "- gov-flowable / gov-post-ratify: "
+                         (or (:scorecard/gov-flowable-committed-usd-micros sc) 0) "/"
+                         (or (:scorecard/gov-post-ratify-committed-usd-micros sc) 0) "\n"))
+        (conj! lines (str "- tenure-gov-flowable / tenure-gov-post-ratify: "
+                         (or (:scorecard/tenure-gov-flowable-committed-usd-micros sc) 0) "/"
+                         (or (:scorecard/tenure-gov-post-ratify-committed-usd-micros sc) 0) "\n"))
+        (conj! lines (str "- land-grant-executed (post-ratify plan still false): "
+                         (or (:scorecard/housing-land-grant-executed sc) 0) "\n"))
         (conj! lines (str "- L4 disclosure open/held: "
                          (or (:scorecard/l4-disclosure-open sc) 0) "/"
                          (or (:scorecard/l4-disclosure-held sc) 0) "\n"))
@@ -695,9 +712,14 @@
         " committed-full-total=" (or (get-in body [:report/displacement-l0 :committed-full-usd-micros-yr]) 0)
         " tenure-subjects=" (or (get-in body [:report/displacement-l0 :tenure-subjects]) 0)
         " tenure-committed-flow=" (or (get-in body [:report/displacement-l0 :tenure-committed-usd-micros-yr]) 0)
-        ".</p>"
+        " gov-post-ratify-total=" (or (get-in body [:report/displacement-l0 :gov-post-ratify-usd-micros]) 0)
+        " tenure-gov-post-ratify=" (or (get-in body [:report/displacement-l0 :tenure-gov-post-ratify-usd-micros]) 0)
+        " land-grant-executed=" (or (get-in body [:report/displacement-l0 :housing-land-grant-executed]) 0)
+        " (post-ratify keeps land-grant=false).</p>"
         "<table><thead>"
-        (rows "th" ["actor" "cohort" "phase" "n" "g2" "funded" "earmark" "disc-o/h" "L4-flow" "L4-full" "ten-n" "ten-flow" "headroom"])
+        (rows "th" ["actor" "cohort" "phase" "n" "g2" "funded" "earmark" "disc-o/h"
+                    "L4-flow" "L4-full" "L4-post" "ten-n" "ten-flow" "ten-post"
+                    "land-grant" "headroom"])
         "</thead><tbody>"
         (apply str
                (for [p (get-in body [:report/displacement-l0 :packages])]
@@ -710,8 +732,11 @@
                                   (or (:disclosure-held p) 0))
                              (:committed-usd-micros-yr p)
                              (or (:committed-full-usd-micros-yr p) 0)
+                             (or (:gov-post-ratify-usd-micros p) 0)
                              (or (:tenure-subjects p) 0)
                              (or (:tenure-committed-usd-micros-yr p) 0)
+                             (or (:tenure-gov-post-ratify-usd-micros p) 0)
+                             (or (:housing-land-grant-executed p) 0)
                              (:headroom-usd-micros-yr p)])))
         "</tbody></table>"))
      (when (get-in body [:report/displacement-scorecard :scorecard/id])
@@ -724,7 +749,10 @@
           " booked-entries=" (:scorecard/booked-entries sc)
           " committed-flowable=" (:scorecard/committed-usd-micros-yr sc)
           " gov-routes=" (pr-str (:scorecard/gov-route-counts sc))
-          ". Housing held for Council; multi-gen substrate may dry-flow.</p>"
+          " gov-post-ratify=" (or (:scorecard/gov-post-ratify-committed-usd-micros sc) 0)
+          " tenure-gov-post-ratify=" (or (:scorecard/tenure-gov-post-ratify-committed-usd-micros sc) 0)
+          " land-grant-executed=" (or (:scorecard/housing-land-grant-executed sc) 0)
+          ". Housing held for Council; multi-gen substrate may dry-flow; post-ratify plan keeps land-grant=false.</p>"
           "<table><thead>"
           (rows "th" ["rail" "R1-dry" "gated-refused" "executed"])
           "</thead><tbody>"
@@ -787,7 +815,9 @@
         "</p>"))
      "<p class=\"note\">G2: no live displacement without a funded cohort. "
      "Recipient scores are unrepresentable. Live rails default refuse. cash≡0.</p>"
-     "</body></html>")))#?(:clj
+     "</body></html>")))
+
+#?(:clj
    (defn write-report!
      "Write out/public-surface.{md,edn,html} from seed path."
      ([]

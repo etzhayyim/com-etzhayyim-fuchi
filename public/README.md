@@ -2,7 +2,19 @@
 
 Generated offline. cash≡0. live=false. No personal scores.
 Priority: wellbecoming > mago > ko > present.
-Includes displacement L0→L4 multi-gen + L6 tenure scorecard.
-Audit summary: public/audit-summary.edn (pipeline runs append-only).
-Deploy: point Cloudflare Pages (or any static host) at this directory.
-Do not enable live disbursement from this package.
+Includes displacement→L0 offline enroll facts when generated.
+
+## Deploy membrane
+
+- Default: refused (`FUCHI_ALLOW_PAGES_DEPLOY` unset).
+- Gated plan: flag=1 + operator-did → still no wrangler invoke here.
+- Actual `wrangler pages deploy` is operator out-of-band.
+- Do not enable live sustenance disbursement from this package.
+
+status phase: :refused
+
+## Deploy status
+
+- phase: :refused
+- deployed: false
+- live disbursement: never from this package
