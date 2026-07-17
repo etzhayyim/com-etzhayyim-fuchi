@@ -8,6 +8,7 @@
   (:require [fuchi.methods.l0-enroll :as l0]
             [fuchi.methods.rail-mitsuho :as food]
             [fuchi.methods.rail-hikari :as energy]
+            [fuchi.methods.rail-care-iyashi :as care]
             [fuchi.methods.mitsuho-receive :as mrecv]
             [fuchi.methods.mitsuho-produce-plan :as mprod]
             [fuchi.methods.hikari-receive :as hrecv]
@@ -20,9 +21,11 @@
 (def PRIORITY-STACK pp/PRIORITY-STACK)
 
 (defn run-food-path
-  "Offline path for one subject with food imputed micros."
-  [{:keys [subject-did vow-text member-signature food-imputed-usd-micros-yr energy-imputed-usd-micros-yr]
-    :or {food-imputed-usd-micros-yr 2000000000 energy-imputed-usd-micros-yr 0}}]
+  "Offline path for one subject with food/energy/care imputed micros."
+  [{:keys [subject-did vow-text member-signature food-imputed-usd-micros-yr
+           energy-imputed-usd-micros-yr care-imputed-usd-micros-yr]
+    :or {food-imputed-usd-micros-yr 2000000000 energy-imputed-usd-micros-yr 0
+         care-imputed-usd-micros-yr 0}}]
   (let [enrolled (l0/enroll {:subject-did subject-did
                              :vow-text (or vow-text "L0 offline path vow")
                              :member-signature (or member-signature (str "sig-" subject-did))
@@ -31,8 +34,10 @@
                 :covenant "vowed"
                 :rails (cond-> []
                          (pos? food-imputed-usd-micros-yr) (conj {:kind "food" :active? true})
-                         (pos? energy-imputed-usd-micros-yr) (conj {:kind "energy" :active? true}))
-                :floor-usd-micros-yr (+ food-imputed-usd-micros-yr energy-imputed-usd-micros-yr)
+                         (pos? energy-imputed-usd-micros-yr) (conj {:kind "energy" :active? true})
+                         (pos? care-imputed-usd-micros-yr) (conj {:kind "care" :active? true}))
+                :floor-usd-micros-yr (+ food-imputed-usd-micros-yr energy-imputed-usd-micros-yr
+                                        care-imputed-usd-micros-yr)
                 :disclosure {:wage-labor-band "0-10h" :state-benefits? false
                              :wellbecoming-attest-fact :submitted
                              :related-party-edges [] :rider-s2-self-report :none}
@@ -53,11 +58,18 @@
                        :imputed-usd-micros-yr energy-imputed-usd-micros-yr
                        :person person
                        :hold-machine hold}))
+        care-pkg (when (pos? care-imputed-usd-micros-yr)
+                   (care/r1-dry-package
+                    {:alloc-id (str "care-" subject-did)
+                     :subject-did subject-did
+                     :imputed-usd-micros-yr care-imputed-usd-micros-yr
+                     :person person
+                     :hold-machine hold}))
         food-plan (when (and food-pkg (not= :refused (:phase food-pkg)))
                     (mprod/plan-from-r1 food-pkg))
         energy-ack (when (and energy-pkg (not= :refused (:phase energy-pkg)))
                      (hrecv/receive-from-r1-package energy-pkg))
-        out {:path "ss-offline-food-energy"
+        out {:path "ss-offline-food-energy-care"
              :priority-stack PRIORITY-STACK
              :live false
              :cash-usd-micros 0
@@ -68,7 +80,8 @@
              :food-package food-pkg
              :food-produce-plan food-plan
              :energy-package energy-pkg
-             :energy-receive energy-ack}]
+             :energy-receive energy-ack
+             :care-package care-pkg}]
     (pp/assert-no-public-scores! (:public-person out))
     out))
 

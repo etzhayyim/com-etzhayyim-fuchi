@@ -43,7 +43,9 @@ exec bb -cp "$ACTOR_DIR" -e '
   (quote fuchi.methods.test-mitsuho-receive)
   (quote fuchi.methods.test-hikari-receive)
   (quote fuchi.methods.test-mitsuho-produce-plan)
-  (quote fuchi.methods.test-ss-offline-path))
+  (quote fuchi.methods.test-ss-offline-path)
+  (quote fuchi.methods.test-rail-care-iyashi)
+  (quote fuchi.methods.test-pages-publish))
 (let [r (clojure.test/run-tests
           (quote fuchi.cells.test-state-machine)
           (quote fuchi.methods.test-provision)
@@ -68,6 +70,8 @@ exec bb -cp "$ACTOR_DIR" -e '
           (quote fuchi.methods.test-mitsuho-receive)
           (quote fuchi.methods.test-hikari-receive)
           (quote fuchi.methods.test-mitsuho-produce-plan)
-          (quote fuchi.methods.test-ss-offline-path))]
+          (quote fuchi.methods.test-ss-offline-path)
+          (quote fuchi.methods.test-rail-care-iyashi)
+          (quote fuchi.methods.test-pages-publish))]
   (System/exit (if (zero? (+ (:fail r) (:error r))) 0 1)))
 '

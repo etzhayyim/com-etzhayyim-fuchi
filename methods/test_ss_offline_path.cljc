@@ -8,7 +8,8 @@
   (let [out (path/run-food-path
              {:subject-did "did:web:etzhayyim.com:member:path-demo"
               :food-imputed-usd-micros-yr 2000000000
-              :energy-imputed-usd-micros-yr 1500000000})]
+              :energy-imputed-usd-micros-yr 1500000000
+              :care-imputed-usd-micros-yr 1000000000})]
     (is (false? (:live out)))
     (is (= 0 (:cash-usd-micros out)))
     (is (= [] (:score-surface out)))
@@ -17,6 +18,8 @@
     (is (false? (get-in out [:food-produce-plan :produce-executed])))
     (is (= :dry-ack (get-in out [:energy-receive :phase])))
     (is (false? (get-in out [:energy-receive :generate-invoked])))
+    (is (= :R1-dry (get-in out [:care-package :phase])))
+    (is (= "care-iyashi" (get-in out [:care-package :rail-kind])))
     (pp/assert-no-public-scores! (:public-person out))))
 
 #?(:clj
