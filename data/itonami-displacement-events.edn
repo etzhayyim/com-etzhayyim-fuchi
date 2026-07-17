@@ -1,0 +1,27 @@
+;; itonami-displacement-events.edn — representative cloud-itonami / robotics
+;; displacement surplus events (offline seed). Maps into fuchi couple + public surface.
+;; Not live telemetry. cash never goes to workers; surplus funds in-kind earmarks only.
+{:events/id "com.etzhayyim.fuchi.itonami-displacement-seed"
+ :events/adr ["2606032130" "2607177000" "2607122100"]
+ :events/sourcing :representative
+ :events/priority-stack [:wellbecoming :mago-wellbecoming :ko-wellbecoming :present-adherent]
+ :events/score-surface []
+ :events/batch
+ [;; funded surplus from farm automation (sanae)
+  {:itonami.displacement/id "disp.sanae.2026q2"
+   :itonami.displacement/actor-id "sanae"
+   :itonami.displacement/isco-or-isic "ISCO-6112"
+   :itonami.displacement/cohort-id "cohort-sanae-2026"
+   :itonami.displacement/displaced-worker-count 12
+   :itonami.displacement/surplus-usd-micros-yr 60000000000
+   :itonami.displacement/surplus-landed-in-public-fund true
+   :itonami.displacement/note "market-garden automation surplus → Public Fund donation"}
+  ;; unfunded / zero surplus — G2 must refuse
+  {:itonami.displacement/id "disp.hataori.2026q2"
+   :itonami.displacement/actor-id "hataori"
+   :itonami.displacement/isco-or-isic "ISIC-1311"
+   :itonami.displacement/cohort-id "cohort-hataori-2026"
+   :itonami.displacement/displaced-worker-count 30
+   :itonami.displacement/surplus-usd-micros-yr 0
+   :itonami.displacement/surplus-landed-in-public-fund false
+   :itonami.displacement/note "displacement without funded surplus — refuse"}]}

@@ -11,6 +11,7 @@
             [fuchi.methods.disclosure-hold :as dh]
             [fuchi.methods.l0-enroll :as l0]
             [fuchi.methods.displacement-surface :as disp]
+            [fuchi.methods.itonami-bridge :as itonami]
             #?(:clj [fuchi.methods.edn :as edn])
             #?(:clj [clojure.java.io :as io])))
 
@@ -104,10 +105,17 @@
 
 (defn report-edn
   "Full facts-only report structure."
-  [seed & {:keys [include-l0-demo]}]
+  [seed & {:keys [include-l0-demo include-itonami]}]
   (let [facts (seed-public-facts seed)
         rails (food-energy-packages seed)
         drows (disp/public-displacement-facts seed)
+        itonami-rows (when include-itonami
+                       #?(:clj
+                          (try
+                            (itonami/public-facts-from-itonami
+                             (itonami/load-itonami-seed-file) seed)
+                            (catch Exception _ []))
+                          :cljs []))
         body {:report/id "fuchi.public-surface"
               :report/adr ["2607177000" "2606032130"]
               :report/priority-stack PRIORITY-STACK
@@ -118,6 +126,7 @@
               :report/rail-packages rails
               :report/displacement drows
               :report/displacement-summary (disp/summary drows)
+              :report/itonami-displacement (or itonami-rows [])
               :report/l0-demo (when include-l0-demo
                                 (l0-demo-fact "did:web:etzhayyim.com:member:lot"))}]
     (doseq [f facts] (pp/assert-no-public-scores! f))
@@ -126,8 +135,8 @@
 
 (defn report-md
   "Markdown facts-only public surface (no ranks/scores)."
-  [seed & {:keys [include-l0-demo]}]
-  (let [body (report-edn seed :include-l0-demo include-l0-demo)
+  [seed & {:keys [include-l0-demo include-itonami]}]
+  (let [body (report-edn seed :include-l0-demo include-l0-demo :include-itonami include-itonami)
         lines (transient
                ["# fuchi — public surface (facts only)\n"
                 (str "Priority: wellbecoming > mago(孫) > ko(子) > present. "
@@ -169,8 +178,8 @@
 
 (defn report-html
   "Minimal static HTML public surface (facts only). No live, no scores."
-  [seed & {:keys [include-l0-demo]}]
-  (let [body (report-edn seed :include-l0-demo include-l0-demo)
+  [seed & {:keys [include-l0-demo include-itonami]}]
+  (let [body (report-edn seed :include-l0-demo include-l0-demo :include-itonami include-itonami)
         esc (fn [x] (-> (str x)
                         (str/replace "&" "&amp;")
                         (str/replace "<" "&lt;")
@@ -218,11 +227,12 @@
             seed (edn/load-edn (io/file actor "data" "seed-sustenance-graph.kotoba.edn"))
             outd (io/file actor "out")]
         (.mkdirs outd)
-        (spit (io/file outd "public-surface.md") (report-md seed :include-l0-demo true))
+        (spit (io/file outd "public-surface.md")
+              (report-md seed :include-l0-demo true :include-itonami true))
         (spit (io/file outd "public-surface.edn")
-              (pr-str (report-edn seed :include-l0-demo true)))
+              (pr-str (report-edn seed :include-l0-demo true :include-itonami true)))
         (spit (io/file outd "public-surface.html")
-              (report-html seed :include-l0-demo true))
+              (report-html seed :include-l0-demo true :include-itonami true))
         {:md (str (io/file outd "public-surface.md"))
          :edn (str (io/file outd "public-surface.edn"))
          :html (str (io/file outd "public-surface.html"))}))))
