@@ -18,6 +18,8 @@
             [fuchi.methods.stage-sustenance :as stage]
             [fuchi.methods.displacement-book :as dbook]
             [fuchi.methods.displacement-couple :as dcouple]
+            [fuchi.methods.rail-mitsuho :as mitsuho]
+            [fuchi.methods.rail-hikari :as hikari]
             #?(:clj [fuchi.methods.edn :as edn])
             #?(:clj [clojure.java.io :as io])))
 
@@ -160,8 +162,17 @@
                                     (get-in pkgs ["tooling" :r2])
                                     (get-in pkgs ["care" :r2]))
              :booking booking
-             :booking-public (dbook/public-book-summary booking)}]
+             :booking-public (dbook/public-book-summary booking)}
+        food-st (when-let [fp (:food-package out)]
+                  (mitsuho/gated-live-status fp :hold-machine hold))
+        energy-st (when-let [ep (:energy-package out)]
+                    (hikari/gated-live-status ep :hold-machine hold))
+        out (cond-> out
+              food-st (assoc :food-gated-live-status food-st)
+              energy-st (assoc :energy-gated-live-status energy-st))]
     (pp/assert-no-public-scores! (:public-person out))
+    (when food-st (pp/assert-no-public-scores! food-st))
+    (when energy-st (pp/assert-no-public-scores! energy-st))
     out))
 
 (defn run-for-event

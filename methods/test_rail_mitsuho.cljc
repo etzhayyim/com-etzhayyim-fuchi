@@ -53,6 +53,18 @@
   (let [st (m/default-refuse-status)]
     (is (false? (get st "admissible")))))
 
+(deftest test-gated-live-status-default-refuse-no-throw
+  (let [pkg (m/r1-dry-package {:alloc-id "a" :imputed-usd-micros-yr 1
+                               :person (person fresh-d)})
+        st (m/gated-live-status pkg)]
+    (is (= :refused (:phase st)))
+    (is (false? (:admissible st)))
+    (is (false? (:produce-executed st)))
+    (is (false? (:live st)))
+    (is (= 0 (:cash-usd-micros st)))
+    (is (= "food-mitsuho" (:rail-kind st)))
+    (pp/assert-no-public-scores! st)))
+
 (deftest test-gated-live-plan-refuses-without-capability
   (let [pkg (m/r1-dry-package {:alloc-id "a" :imputed-usd-micros-yr 1
                                :person (person fresh-d)})

@@ -192,17 +192,27 @@
      :priority-stack PRIORITY-STACK}))
 
 (defn displacement-l0-public-summary
-  "Facts-only projection of displacement→L0/L2 batch (no subject scores)."
+  "Facts-only projection of displacement→L0/L4 batch (no subject scores).
+   Includes disclosure open/held and mitsuho/hikari R1→gated refuse facts when present."
   [batch]
   (let [subjects (mapcat :subjects (or (:packages batch) []))
         pkgs (mapv
               (fn [p]
-                (let [stages (frequencies (map :stage (:subjects p)))
+                (let [subs (:subjects p)
+                      stages (frequencies (map :stage subs))
                       c (:couple p)
+                      open-n (count (filter #(or (true? (:entitlements-may-flow? %))
+                                                 (= :open (:disclosure-state %))
+                                                 (= :open (get-in % [:disclosure-hold :state])))
+                                            subs))
+                      held-n (count (filter #(or (true? (:disclosure-held? %))
+                                                 (= :held (:disclosure-state %))
+                                                 (false? (:entitlements-may-flow? %)))
+                                            subs))
                       row {:cohort-id (:cohort-id p)
                            :displacing-actor (:displacing-actor p)
                            :phase (name (:phase p))
-                           :subject-count (count (:subjects p))
+                           :subject-count (count subs)
                            :stages stages
                            :committed-usd-micros-yr (or (:committed-usd-micros-yr c) 0)
                            :earmark-usd-micros-yr (or (:earmark-usd-micros-yr c)
@@ -210,6 +220,18 @@
                                                       0)
                            :headroom-usd-micros-yr (or (:headroom-usd-micros-yr c) 0)
                            :g2-admissible (boolean (if (nil? c) true (boolean (:admissible c))))
+                           :disclosure-open open-n
+                           :disclosure-held held-n
+                           :mitsuho-r1-dry
+                           (count (filter #(= :R1-dry (get-in % [:food-package :phase])) subs))
+                           :mitsuho-gated-refused
+                           (count (filter #(false? (get-in % [:food-gated-live-status :admissible]))
+                                          (filter :food-gated-live-status subs)))
+                           :hikari-r1-dry
+                           (count (filter #(= :R1-dry (get-in % [:energy-package :phase])) subs))
+                           :hikari-gated-refused
+                           (count (filter #(false? (get-in % [:energy-gated-live-status :admissible]))
+                                          (filter :energy-gated-live-status subs)))
                            :refusal-reason (:refusal-reason p)
                            :cash-usd-micros 0
                            :live false
@@ -223,6 +245,12 @@
      :enrolled-subjects (or (:enrolled-subjects batch) 0)
      :stage-counts (or (:stage-counts batch) (frequencies (map :stage subjects)))
      :committed-usd-micros-yr (or (:committed-usd-micros-yr batch) 0)
+     :disclosure-open (reduce + 0 (map #(or (:disclosure-open %) 0) pkgs))
+     :disclosure-held (reduce + 0 (map #(or (:disclosure-held %) 0) pkgs))
+     :mitsuho-r1-dry (reduce + 0 (map #(or (:mitsuho-r1-dry %) 0) pkgs))
+     :mitsuho-gated-refused (reduce + 0 (map #(or (:mitsuho-gated-refused %) 0) pkgs))
+     :hikari-r1-dry (reduce + 0 (map #(or (:hikari-r1-dry %) 0) pkgs))
+     :hikari-gated-refused (reduce + 0 (map #(or (:hikari-gated-refused %) 0) pkgs))
      :packages pkgs
      :cash-usd-micros 0
      :live false

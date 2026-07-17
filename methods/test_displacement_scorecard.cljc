@@ -35,6 +35,12 @@
               (:scorecard/tenure-gov-post-ratify-committed-usd-micros body)))
        (is (pos? (:scorecard/tenure-disclosure-open body)))
        (is (zero? (:scorecard/tenure-disclosure-held body)))
+       (is (pos? (:scorecard/mitsuho-r1-dry body)))
+       (is (pos? (:scorecard/mitsuho-gated-refused body)))
+       (is (zero? (:scorecard/mitsuho-produce-executed body)))
+       (is (pos? (:scorecard/hikari-r1-dry body)))
+       (is (pos? (:scorecard/hikari-gated-refused body)))
+       (is (zero? (:scorecard/hikari-generate-executed body)))
        (is (= pp/PRIORITY-STACK (:scorecard/priority-stack body)))
        (let [md (sc/scorecard-md body)]
          (is (str/includes? md "scorecard"))
@@ -42,6 +48,8 @@
          (is (str/includes? md "tenure"))
          (is (str/includes? md "tenure gov flowable"))
          (is (str/includes? md "disclosure open/held"))
+         (is (str/includes? md "mitsuho food"))
+         (is (str/includes? md "hikari energy"))
          (is (str/includes? md "all live legs refused"))
          (is (not (str/includes? md "| rank |")))))))
 

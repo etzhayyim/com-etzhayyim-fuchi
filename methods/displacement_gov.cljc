@@ -16,6 +16,8 @@
             [fuchi.methods.displacement-book :as dbook]
             [fuchi.methods.displacement-couple :as dcouple]
             [fuchi.methods.couple :as couple]
+            [fuchi.methods.rail-mitsuho :as mitsuho]
+            [fuchi.methods.rail-hikari :as hikari]
             [fuchi.methods.r2-execute :as r2]))
 
 (def PRIORITY-STACK pp/PRIORITY-STACK)
@@ -315,6 +317,34 @@
                                        0))
       :funded (boolean (or (:funded ear) (:funded c)))})))
 
+(defn- food-pkg-of
+  [subject]
+  (or (:food-package subject)
+      (get-in subject [:stage-sustenance :packages "food" :package])))
+
+(defn- energy-pkg-of
+  [subject]
+  (or (:energy-package subject)
+      (get-in subject [:stage-sustenance :packages "energy" :package])))
+
+(defn attach-substrate-gated-status
+  "Priority #3 slice: mitsuho food + hikari energy R1→gated-live DESIGN status.
+   Default membrane refuses; produce/generate stay false. cash≡0. no scores."
+  [subject]
+  (let [hold (:disclosure-hold subject)
+        food (food-pkg-of subject)
+        energy (energy-pkg-of subject)
+        food-st (when food (mitsuho/gated-live-status food :hold-machine hold))
+        energy-st (when energy (hikari/gated-live-status energy :hold-machine hold))
+        out (cond-> subject
+              food-st (assoc :food-gated-live-status food-st
+                             :food-package (or (:food-package subject) food))
+              energy-st (assoc :energy-gated-live-status energy-st
+                               :energy-package (or (:energy-package subject) energy)))]
+    (when food-st (pp/assert-no-public-scores! food-st))
+    (when energy-st (pp/assert-no-public-scores! energy-st))
+    out))
+
 (defn- package-subject-row
   "Route + optional council ratify rebook for one subject (L4 or tenure)."
   [subject apply-ratify?]
@@ -359,8 +389,9 @@
           re (when ear
                (try
                  (dcouple/reevaluate-after-gov (event-from-pkg pkg) ear subjects govs)
-                 (catch Exception _ nil)))]
-      {:subjects (or (:subjects re) subjects)
+                 (catch Exception _ nil)))
+          subjects' (mapv attach-substrate-gated-status (or (:subjects re) subjects))]
+      {:subjects subjects'
        :gov-subjects govs
        :couple (or (:couple re) pre-couple)
        :couple-post-ratify (:couple-post-ratify re)

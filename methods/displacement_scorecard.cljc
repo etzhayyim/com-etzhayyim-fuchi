@@ -156,6 +156,27 @@
                :scorecard/tenure-disclosure-held
                (or (:tenure-disclosure-held batch)
                    (count (filter :disclosure-held? tenure-subjects)))
+               ;; Priority #3 substrate rails: mitsuho food + hikari energy R1→gated-live
+               :scorecard/mitsuho-r1-dry
+               (count (filter #(= :R1-dry (get-in % [:food-package :phase]))
+                              (concat subjects tenure-subjects)))
+               :scorecard/mitsuho-gated-refused
+               (count (filter #(and (:food-gated-live-status %)
+                                    (false? (get-in % [:food-gated-live-status :admissible])))
+                              (concat subjects tenure-subjects)))
+               :scorecard/mitsuho-produce-executed
+               (count (filter #(true? (get-in % [:food-produce-plan :produce-executed]))
+                              (concat subjects tenure-subjects)))
+               :scorecard/hikari-r1-dry
+               (count (filter #(= :R1-dry (get-in % [:energy-package :phase]))
+                              (concat subjects tenure-subjects)))
+               :scorecard/hikari-gated-refused
+               (count (filter #(and (:energy-gated-live-status %)
+                                    (false? (get-in % [:energy-gated-live-status :admissible])))
+                              (concat subjects tenure-subjects)))
+               :scorecard/hikari-generate-executed
+               (count (filter #(true? (get-in % [:energy-produce-plan :generate-executed]))
+                              (concat subjects tenure-subjects)))
                :scorecard/itonami-ledger ledger
                :scorecard/cohorts
                (mapv (fn [p]
@@ -236,7 +257,15 @@
                      (or (:scorecard/l4-disclosure-held body) 0) "\n")
                 (str "- tenure disclosure open/held: "
                      (or (:scorecard/tenure-disclosure-open body) 0) "/"
-                     (or (:scorecard/tenure-disclosure-held body) 0) "\n\n")
+                     (or (:scorecard/tenure-disclosure-held body) 0) "\n")
+                (str "- mitsuho food R1-dry / gated-refused / produce-executed: "
+                     (or (:scorecard/mitsuho-r1-dry body) 0) "/"
+                     (or (:scorecard/mitsuho-gated-refused body) 0) "/"
+                     (or (:scorecard/mitsuho-produce-executed body) 0) "\n")
+                (str "- hikari energy R1-dry / gated-refused / generate-executed: "
+                     (or (:scorecard/hikari-r1-dry body) 0) "/"
+                     (or (:scorecard/hikari-gated-refused body) 0) "/"
+                     (or (:scorecard/hikari-generate-executed body) 0) "\n\n")
                 "## Cohorts\n\n"
                 "| actor | cohort | phase | n | L4-flow | L4-post | headroom | ten-flow | tenure | tenure-n |\n"
                 "|---|---|---|---|---|---|---|---|---|---|\n"])]
