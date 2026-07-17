@@ -103,26 +103,20 @@ happen on this branch.
 
 ```
 fuchi/
-├── manifest.jsonld
+├── manifest.edn                              # canonical actor manifest
+├── manifest.jsonld                          # compatibility source; not canonical
+├── schema.edn                               # repository-local ontology dependency
 ├── data/seed-sustenance-graph.kotoba.edn   # :representative: 5 maintainers + ballots + 2 cohorts
 ├── lex/                                     # 9 com.etzhayyim.fuchi.* lexicons
-├── methods/
-│   ├── allocate.py        # tenure-weighted in-kind shares + floors; cash≡0; G1 allowlist
-│   ├── route.py           # envelope → in-kind rails + the pure-function gov_route
-│   ├── provision.py       # R1(a) rails → real producing-actor provisioning intents
-│   ├── vote.py            # R1(b) 1 SBT = 1 vote + 48h timelock
-│   ├── book.py            # R1(c) toritate ledgerEntry + kanae :flow/* graph
-│   ├── couple.py          # R1(d) Displacement-Dividend earmark + G2 coupling gate
-│   ├── live_gate.py       # R1(live) operator+Council+member gate; every leg refuses by default
-│   └── analyze.py         # end-to-end dry-run → out/*.kotoba.edn + allocation-dryrun.md
-└── cells/                 # 5 coded state machines (.solve() raises at R0)
+├── src/fuchi/{methods,cells}/               # standalone Clojure/CLJC implementation
+└── test/fuchi/{methods,cells}/              # standalone tests
 ```
 
 ## Run
 
 ```bash
-./run_tests.sh                 # 174 tests green
-python3 methods/analyze.py     # end-to-end a→b→c→d dry-run scorecard + out/*.kotoba.edn
+./run_tests.sh                 # 184 tests / 488 assertions
+bb --classpath src -m fuchi.methods.analyze
 ```
 
 ## Honest R0/R1

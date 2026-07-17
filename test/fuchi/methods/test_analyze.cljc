@@ -7,7 +7,7 @@
             [fuchi.methods.analyze :as analyze]))
 
 (def seed-path
-  (-> (clojure.java.io/file *file*) .getParentFile .getParentFile
+  (-> (clojure.java.io/file (System/getProperty "user.dir"))
       (clojure.java.io/file "data" "seed-sustenance-graph.kotoba.edn") str))
 
 (defn- run* [] (analyze/run (edn/load-edn seed-path)))

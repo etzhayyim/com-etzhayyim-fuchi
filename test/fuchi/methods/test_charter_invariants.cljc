@@ -41,10 +41,8 @@
             [fuchi.methods.live-gate :as live-gate]))
 
 ;; ── fixture locators (*file*-relative; repo root + actor lex/) ────────────────
-#?(:clj (def ^:private root-dir (-> *file* io/file .getParentFile .getParentFile)))
-#?(:clj (def ^:private repo-dir (-> root-dir .getParentFile .getParentFile)))
-#?(:clj (def ^:private schema-file
-          (io/file repo-dir "00-contracts" "schemas" "maintainer-sustenance-ontology.kotoba.edn")))
+#?(:clj (def ^:private root-dir (io/file (System/getProperty "user.dir"))))
+#?(:clj (def ^:private schema-file (io/file root-dir "schema.edn")))
 #?(:clj (def ^:private lex-dir (io/file root-dir "lex")))
 
 (def INVESTMENT-TOKENS
