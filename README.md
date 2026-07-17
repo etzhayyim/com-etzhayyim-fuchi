@@ -100,6 +100,7 @@ bb -cp . -e '(require (quote fuchi.methods.public-surface-report)) (fuchi.method
 | [`methods/disclosure_continuity.cljc`](methods/disclosure_continuity.cljc) | continuous disclosure tick (stale → hold) |
 | [`methods/displacement_book.cljc`](methods/displacement_book.cljc) | offline toritate/kanae book for displacement floors |
 | [`methods/displacement_couple.cljc`](methods/displacement_couple.cljc) | G2 earmark headroom vs booked floors (commit_live refuse) |
+| [`methods/displacement_scorecard.cljc`](methods/displacement_scorecard.cljc) | E2E offline scorecard (all live legs refused) |
 | [`methods/r2_execute.cljc`](methods/r2_execute.cljc) | R2 execute membrane (default refuse; executed=false) |
 | [`methods/pages_publish.cljc`](methods/pages_publish.cljc) | Pages-ready `public/` static package (no deploy) |
 | [`methods/pages_deploy.cljc`](methods/pages_deploy.cljc) | Pages deploy membrane (default refuse; wrangler not invoked) |

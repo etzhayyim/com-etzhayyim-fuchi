@@ -41,10 +41,11 @@
          :rails-hint ["food" "energy" "care" "housing" "tooling" "compute"]
          :multi-gen "vocation-recovery-after-displacement-with-substrate"}
    "L4" {:label "multi-gen-care"
-         :rails-hint ["care" "food" "housing" "energy" "tooling"]
+         ;; explicit 孫/子 priority: care+housing first, full substrate retained
+         :rails-hint ["care" "housing" "food" "energy" "tooling" "compute"]
          :multi-gen "explicit-mago-ko-priority"}
    "L5" {:label "commons-participation"
-         :rails-hint ["housing" "care" "compute"]
+         :rails-hint ["housing" "care" "food" "energy" "compute" "tooling"]
          :multi-gen "commons-land-not-private-equity"}
    "L6" {:label "covenantal-tenure"
          :rails-hint ["food" "energy" "care" "housing" "tooling" "compute"]

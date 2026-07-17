@@ -74,6 +74,7 @@
          compute-imputed-usd-micros-yr DEFAULT-COMPUTE-MICROS-YR
          climb-steps 3
          target-stage "L3"}}]
+  ;; climb-steps 3 → L3 vocation; pass 4 for L4 multi-gen-care emphasis
   (let [sig (or member-signature (str "sig-displaced-" subject-did))
         enrolled (l0/enroll {:subject-did subject-did
                              :vow-text (or vow-text

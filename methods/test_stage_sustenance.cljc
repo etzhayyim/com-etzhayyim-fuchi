@@ -52,3 +52,15 @@
     (is (get-in pkg [:packages "compute" :plan]))
     (is (false? (get-in pkg [:packages "tooling" :plan :fulfillment-executed])))
     (is (= :refused (get-in pkg [:packages "compute" :r2 :phase])))))
+
+(deftest test-l4-multi-gen-first
+  (let [p (person "L4")
+        hm (dh/initial p)
+        pkg (st/build-for-stage p hm)
+        rails (:rails pkg)]
+    (is (= "L4" (:stage pkg)))
+    (is (= "care" (first rails)))
+    (is (= "housing" (second rails)))
+    (is (some #{"compute"} rails))
+    (is (get-in pkg [:packages "care" :plan]))
+    (is (get-in pkg [:packages "housing" :plan]))))
