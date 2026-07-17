@@ -102,7 +102,7 @@ bb -cp . -e '(require (quote fuchi.methods.public-surface-report)) (fuchi.method
 | [`methods/displacement_couple.cljc`](methods/displacement_couple.cljc) | G2 earmark headroom vs booked floors (commit_live refuse) |
 | [`methods/displacement_scorecard.cljc`](methods/displacement_scorecard.cljc) | E2E offline scorecard (all live legs refused) |
 | [`methods/displacement_tenure.cljc`](methods/displacement_tenure.cljc) | optional L4→L5/L6 tenure climb + re-book/G2 |
-| [`methods/displacement_pipeline.cljc`](methods/displacement_pipeline.cljc) | single offline entry: L4 + L6 tenure + scorecard |
+| [`methods/displacement_pipeline.cljc`](methods/displacement_pipeline.cljc) | single offline entry: L4 + L6 tenure + G7 + scorecard + optional public package |
 | [`methods/pipeline_audit_ledger.cljc`](methods/pipeline_audit_ledger.cljc) | append-only offline pipeline audit (`.ednl`) |
 | [`methods/displacement_gov.cljc`](methods/displacement_gov.cljc) | G7 route + dry sbt-vote/council packages (no finalize) |
 | [`methods/r2_execute.cljc`](methods/r2_execute.cljc) | R2 execute membrane (default refuse; executed=false) |
@@ -110,8 +110,13 @@ bb -cp . -e '(require (quote fuchi.methods.public-surface-report)) (fuchi.method
 | [`methods/pages_deploy.cljc`](methods/pages_deploy.cljc) | Pages deploy membrane (default refuse; wrangler not invoked) |
 
 ```bash
+# one-shot offline: pipeline → scorecard → audit → public/ (plan-only; never deploys)
+bb -cp . -e '(require (quote fuchi.methods.displacement-pipeline)) (fuchi.methods.displacement-pipeline/write-all!)'
+# → out/displacement-scorecard.{md,edn} + out/pipeline-audit-ledger.ednl + public/*
+#    deployed=false wrangler-invoked=false land-grant-executed=0 cash≡0
+
 bb -cp . -e '(require (quote fuchi.methods.pages-publish)) (fuchi.methods.pages-publish/write-pages!)'
-# → public/index.html + facts.edn  (point Cloudflare Pages here; deployed=false in package)
+# → public/index.html + facts.edn only  (point Cloudflare Pages here; OOB deploy)
 ```
 
 ## Why it exists

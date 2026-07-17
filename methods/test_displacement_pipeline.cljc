@@ -1,5 +1,6 @@
 (ns fuchi.methods.test-displacement-pipeline
   (:require [clojure.test :refer [deftest is]]
+            [clojure.string :as str]
             #?(:clj [fuchi.methods.displacement-pipeline :as pipe])
             #?(:clj [clojure.java.io :as io])))
 
@@ -31,14 +32,51 @@
        (is (pos? (:scorecard/tenure-gov-post-ratify-committed-usd-micros sc)))
        (is (pos? (:scorecard/tenure-committed-usd-micros-yr sc)))
        (is (pos? (:scorecard/l4-disclosure-open sc)))
-       (is (zero? (:scorecard/l4-disclosure-held sc))))))
+       (is (zero? (:scorecard/l4-disclosure-held sc)))
+       ;; top-level package facts (parity with scorecard)
+       (is (pos? (:gov-flowable-committed-usd-micros out)))
+       (is (pos? (:gov-post-ratify-committed-usd-micros out)))
+       (is (>= (:gov-post-ratify-committed-usd-micros out)
+               (:gov-flowable-committed-usd-micros out)))
+       (is (zero? (:housing-land-grant-executed out)))
+       (is (pos? (:housing-council-held out))))))
 
 #?(:clj
    (deftest test-write-all
-     (let [out (pipe/write-all! :max-slots 1)]
+     (let [out (pipe/write-all! :max-slots 1 :include-public false)]
        (is (.exists (io/file (get-in out [:paths :md]))))
        (is (false? (:deployed out)))
        (is (false? (:live out)))
+       (is (false? (:package-ready out)))
+       (is (nil? (:public-package out)))
        (is (map? (:audit out)))
        (is (.exists (io/file (get-in out [:audit :path]))))
-       (is (true? (get-in out [:audit :event :audit/all-live-refused]))))))
+       (is (true? (get-in out [:audit :event :audit/all-live-refused])))
+       (is (zero? (get-in out [:audit :event :audit/housing-land-grant-executed] 0)))
+       (is (pos? (get-in out [:audit :event :audit/gov-post-ratify-committed-usd-micros] 0))))))
+
+#?(:clj
+   (deftest test-write-all-with-public-package
+     (let [out (pipe/write-all! :max-slots 1 :include-public true)
+           pkg (:public-package out)
+           st (:deploy-status out)]
+       (is (false? (:deployed out)))
+       (is (false? (:wrangler-invoked out)))
+       (is (false? (:live out)))
+       (is (= 0 (:cash-usd-micros out)))
+       (is (true? (:package-ready out)))
+       (is (map? pkg))
+       (is (false? (:deployed pkg)))
+       (is (= :refused (:phase st)))
+       (is (false? (:authorized-to-deploy st)))
+       (is (zero? (:housing-land-grant-executed out)))
+       (is (pos? (:gov-post-ratify-committed-usd-micros out)))
+       (is (.exists (io/file (:index pkg))))
+       (is (.exists (io/file (:wrangler pkg))))
+       (when-let [rb (:deploy-runbook pkg)]
+         (is (.exists (io/file rb))))
+       (let [html (slurp (:index pkg))]
+         (is (str/includes? html "public surface"))
+         (is (str/includes? html "plan-only"))
+         (is (str/includes? html "Pipeline audit summary"))
+         (is (not (re-find #"(?i)priority-rank" html)))))))

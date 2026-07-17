@@ -2,8 +2,9 @@
   "displacement_pipeline.cljc — single offline entry for robotics/itonami SS path.
 
   L0 enroll → disclosure → L4 multi-gen floors → book → G2 headroom
-  → optional L6 tenure → scorecard facts. live=false throughout.
-  Portable .cljc; file I/O at #?(:clj) edge."
+  → optional L6 tenure → G7 package → scorecard facts.
+  write-all! optionally refreshes public/ package (Pages plan-only, never deploys).
+  live=false throughout. cash≡0. Portable .cljc; file I/O at #?(:clj) edge."
   (:require [fuchi.methods.displacement-l0-path :as dl0]
             [fuchi.methods.displacement-tenure :as ten]
             [fuchi.methods.displacement-scorecard :as sc]
@@ -11,6 +12,7 @@
             [fuchi.methods.displacement-gov :as dgov]
             [fuchi.methods.itonami-bridge :as itonami]
             [fuchi.methods.public-person :as pp]
+            #?(:clj [fuchi.methods.pages-deploy :as pages-dep])
             #?(:clj [fuchi.methods.edn :as edn])
             #?(:clj [clojure.java.io :as io])))
 
@@ -41,17 +43,44 @@
                 :gov-route-counts (:gov-route-counts batch3)
                 :admissible-cohorts (:scorecard/admissible-cohorts scorecard)
                 :tenure-subjects (:scorecard/tenure-subjects scorecard)
-                :all-live-refused (:scorecard/all-live-refused scorecard)}]
+                :all-live-refused (:scorecard/all-live-refused scorecard)
+                ;; surface G7 package facts at top-level (facts only)
+                :gov-flowable-committed-usd-micros
+                (or (:scorecard/gov-flowable-committed-usd-micros scorecard) 0)
+                :gov-post-ratify-committed-usd-micros
+                (or (:scorecard/gov-post-ratify-committed-usd-micros scorecard) 0)
+                :tenure-gov-flowable-committed-usd-micros
+                (or (:scorecard/tenure-gov-flowable-committed-usd-micros scorecard) 0)
+                :tenure-gov-post-ratify-committed-usd-micros
+                (or (:scorecard/tenure-gov-post-ratify-committed-usd-micros scorecard) 0)
+                :housing-land-grant-executed
+                (or (:scorecard/housing-land-grant-executed scorecard) 0)
+                :housing-council-held
+                (or (:scorecard/housing-council-held scorecard) 0)}]
        (pp/assert-no-public-scores!
         (select-keys out [:live :cash-usd-micros :score-surface :priority-stack
-                          :admissible-cohorts :tenure-subjects :all-live-refused]))
+                          :admissible-cohorts :tenure-subjects :all-live-refused
+                          :gov-flowable-committed-usd-micros
+                          :gov-post-ratify-committed-usd-micros
+                          :housing-land-grant-executed]))
        out)))
 
 #?(:clj
    (defn write-all!
-     "Run pipeline + write scorecard + append audit ledger line under out/."
-     [& opts]
-     (let [result (apply run! opts)
+     "Run pipeline + write scorecard + append audit + optionally refresh public/ package.
+
+     Options (in addition to run!):
+       :include-public — default true; calls pages-deploy/write-deploy-package!
+         (static package only; deployed=false; never wrangler/API).
+       :deploy-env / :operator-did / :project-name — forwarded to deploy package writer.
+
+     Never deploys. live=false. cash≡0."
+     [& {:keys [include-public deploy-env operator-did project-name]
+         :or {include-public true}
+         :as opts}]
+     (let [opts (or opts {})
+           run-opts (dissoc opts :include-public :deploy-env :operator-did :project-name)
+           result (apply run! (mapcat identity run-opts))
            ;; rebuild scorecard files from same batch to avoid double heavy seed run
            scard (:scorecard result)
            actor (or (System/getenv "FUCHI_ACTOR_DIR")
@@ -62,11 +91,40 @@
            _ (spit (io/file outd "displacement-scorecard.edn") (pr-str scard))
            paths {:md (str (io/file outd "displacement-scorecard.md"))
                   :edn (str (io/file outd "displacement-scorecard.edn"))}
-           audit-out (audit/append-from-pipeline! result)]
-       (assoc result
-              :paths paths
-              :audit audit-out
-              :live false
-              :cash-usd-micros 0
-              :score-surface []
-              :deployed false))))
+           audit-out (audit/append-from-pipeline! result)
+           public-pkg (when include-public
+                        (try
+                          (pages-dep/write-deploy-package!
+                           (cond-> {}
+                             deploy-env (assoc :env deploy-env)
+                             operator-did (assoc :operator-did operator-did)
+                             project-name (assoc :project-name project-name)))
+                          (catch Exception e
+                            {:error (.getMessage e)
+                             :deployed false
+                             :live false
+                             :cash-usd-micros 0
+                             :package-ready false})))
+           out (cond-> (assoc result
+                              :paths paths
+                              :audit audit-out
+                              :live false
+                              :cash-usd-micros 0
+                              :score-surface []
+                              :deployed false
+                              :wrangler-invoked false
+                              :package-ready (boolean (and include-public
+                                                           public-pkg
+                                                           (not (:error public-pkg))
+                                                           (true? (:package-ready public-pkg true))))
+                              :priority-stack PRIORITY-STACK)
+                 public-pkg (assoc :public-package public-pkg
+                                   :deploy-status (:deploy-status public-pkg)
+                                   :deployed (boolean (:deployed public-pkg false))
+                                   :wrangler-invoked (boolean (:wrangler-invoked public-pkg false))))]
+       (pp/assert-no-public-scores!
+        (select-keys out [:live :cash-usd-micros :score-surface :deployed
+                          :package-ready :wrangler-invoked
+                          :housing-land-grant-executed
+                          :gov-post-ratify-committed-usd-micros]))
+       out)))
