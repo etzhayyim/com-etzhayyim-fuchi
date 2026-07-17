@@ -56,7 +56,12 @@
          (is (= 0 (:cash-usd-micros abel)))
          (is (= [] (:score-surface abel))))
        (is (seq (:report/itonami-displacement body)))
-       (is (= 4 (count (:report/itonami-displacement body)))))))
+       (is (= 4 (count (:report/itonami-displacement body))))
+       (is (map? (:report/displacement-l0 body)))
+       (is (pos? (get-in body [:report/displacement-l0 :admissible-cohorts] 0)))
+       (is (pos? (get-in body [:report/displacement-l0 :refused-cohorts] 0)))
+       (is (= 0 (get-in body [:report/displacement-l0 :cash-usd-micros])))
+       (is (= [] (get-in body [:report/displacement-l0 :score-surface]))))))
 
 #?(:clj
    (deftest test-write-report

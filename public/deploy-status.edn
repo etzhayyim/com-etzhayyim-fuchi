@@ -1,0 +1,1 @@
+{:admissible false, :refusal-reason "missing FUCHI_ALLOW_PAGES_DEPLOY", :phase :refused, :priority-stack [:wellbecoming :mago-wellbecoming :ko-wellbecoming :present-adherent :operational], :note "Pages deploy default refuse — static package only", :deployed false, :deploy-target "cloudflare-pages", :score-surface [], :live false, :cash-usd-micros 0}

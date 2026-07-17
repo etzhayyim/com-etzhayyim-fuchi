@@ -1,0 +1,6 @@
+name = "fuchi-public-surface"
+compatibility_date = "2026-07-17"
+pages_build_output_dir = "."
+# Generated offline by fuchi.methods.pages-deploy
+# Deploy is OUT OF BAND. Scaffold never invokes wrangler.
+# cash≡0 live=false no personal scores

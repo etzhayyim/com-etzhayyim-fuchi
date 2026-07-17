@@ -24,6 +24,7 @@
             [fuchi.methods.l0-enroll :as l0]
             [fuchi.methods.displacement-surface :as disp]
             [fuchi.methods.itonami-bridge :as itonami]
+            [fuchi.methods.displacement-l0-path :as dl0]
             #?(:clj [fuchi.methods.edn :as edn])
             #?(:clj [clojure.java.io :as io])))
 
@@ -189,9 +190,36 @@
      :score-surface []
      :priority-stack PRIORITY-STACK}))
 
+(defn displacement-l0-public-summary
+  "Facts-only projection of displacement→L0 batch (no subject scores)."
+  [batch]
+  (let [pkgs (mapv
+              (fn [p]
+                (let [row {:cohort-id (:cohort-id p)
+                           :displacing-actor (:displacing-actor p)
+                           :phase (name (:phase p))
+                           :subject-count (count (:subjects p))
+                           :refusal-reason (:refusal-reason p)
+                           :cash-usd-micros 0
+                           :live false
+                           :score-surface []
+                           :priority-stack PRIORITY-STACK}]
+                  (pp/assert-no-public-scores! row)
+                  row))
+              (or (:packages batch) []))]
+    {:admissible-cohorts (or (:admissible-cohorts batch) 0)
+     :refused-cohorts (or (:refused-cohorts batch) 0)
+     :enrolled-subjects (or (:enrolled-subjects batch) 0)
+     :packages pkgs
+     :cash-usd-micros 0
+     :live false
+     :score-surface []
+     :priority-stack PRIORITY-STACK}))
+
 (defn report-edn
   "Full facts-only report structure."
-  [seed & {:keys [include-l0-demo include-itonami]}]
+  [seed & {:keys [include-l0-demo include-itonami include-displacement-l0]
+           :or {include-displacement-l0 true}}]
   (let [facts (seed-public-facts seed)
         rails (inkind-rail-packages seed)
         drows (disp/public-displacement-facts seed)
@@ -202,6 +230,13 @@
                              (itonami/load-itonami-seed-file) seed)
                             (catch Exception _ []))
                           :cljs []))
+        dl0-sum (when include-displacement-l0
+                  #?(:clj
+                     (try
+                       (displacement-l0-public-summary
+                        (dl0/run-default-seed :max-slots 2))
+                       (catch Exception _ nil))
+                     :cljs nil))
         body {:report/id "fuchi.public-surface"
               :report/adr ["2607177000" "2606032130"]
               :report/priority-stack PRIORITY-STACK
@@ -213,6 +248,7 @@
               :report/displacement drows
               :report/displacement-summary (disp/summary drows)
               :report/itonami-displacement (or itonami-rows [])
+              :report/displacement-l0 (or dl0-sum {})
               :report/l0-demo (when include-l0-demo
                                 (l0-demo-fact "did:web:etzhayyim.com:member:lot"))}]
     (doseq [f facts] (pp/assert-no-public-scores! f))
@@ -221,8 +257,10 @@
 
 (defn report-md
   "Markdown facts-only public surface (no ranks/scores)."
-  [seed & {:keys [include-l0-demo include-itonami]}]
-  (let [body (report-edn seed :include-l0-demo include-l0-demo :include-itonami include-itonami)
+  [seed & {:keys [include-l0-demo include-itonami include-displacement-l0]
+           :or {include-displacement-l0 true}}]
+  (let [body (report-edn seed :include-l0-demo include-l0-demo :include-itonami include-itonami
+                         :include-displacement-l0 include-displacement-l0)
         lines (transient
                ["# fuchi — public surface (facts only)\n"
                 (str "Priority: wellbecoming > mago(孫) > ko(子) > present. "
@@ -280,6 +318,17 @@
                         " admissible=" (:funded-admissible s)
                         " refused=" (:refused s)
                         " total-displaced=" (:total-displaced s) "\n")))
+    (when-let [dl0 (:report/displacement-l0 body)]
+      (when (seq (:packages dl0))
+        (conj! lines "\n## Displacement → L0 enroll (offline; G2 gated)\n")
+        (conj! lines (str "admissible-cohorts=" (:admissible-cohorts dl0)
+                          " refused-cohorts=" (:refused-cohorts dl0)
+                          " enrolled-subjects=" (:enrolled-subjects dl0) "\n"))
+        (conj! lines "| actor | cohort | phase | subjects |\n|---|---|---|---|\n")
+        (doseq [p (:packages dl0)]
+          (conj! lines
+                 (str "| " (:displacing-actor p) " | " (:cohort-id p) " | "
+                      (:phase p) " | " (:subject-count p) " |\n")))))
     (when-let [l0 (:report/l0-demo body)]
       (conj! lines "\n## L0 demo (offline)\n")
       (conj! lines (str "- did: " (last-seg (:did l0)) " stage=" (:stage l0)
@@ -289,8 +338,10 @@
 
 (defn report-html
   "Minimal static HTML public surface (facts only). No live, no scores."
-  [seed & {:keys [include-l0-demo include-itonami]}]
-  (let [body (report-edn seed :include-l0-demo include-l0-demo :include-itonami include-itonami)
+  [seed & {:keys [include-l0-demo include-itonami include-displacement-l0]
+           :or {include-displacement-l0 true}}]
+  (let [body (report-edn seed :include-l0-demo include-l0-demo :include-itonami include-itonami
+                         :include-displacement-l0 include-displacement-l0)
         esc (fn [x] (-> (str x)
                         (str/replace "&" "&amp;")
                         (str/replace "<" "&lt;")
@@ -347,6 +398,20 @@
                (for [d (:report/itonami-displacement body)]
                  (rows "td" [(:displacing-actor d) (:cohort-id d) (:displaced-count d)
                              (:funded d) (:admissible d)])))
+        "</tbody></table>"))
+     (when (seq (get-in body [:report/displacement-l0 :packages]))
+       (str
+        "<h2>Displacement → L0 enroll (offline)</h2>"
+        "<p class=\"note\">Funded cohorts open L0 + food/care dry floors; unfunded refuse. "
+        "enrolled-subjects=" (get-in body [:report/displacement-l0 :enrolled-subjects])
+        " refused-cohorts=" (get-in body [:report/displacement-l0 :refused-cohorts]) ".</p>"
+        "<table><thead>"
+        (rows "th" ["actor" "cohort" "phase" "subjects"])
+        "</thead><tbody>"
+        (apply str
+               (for [p (get-in body [:report/displacement-l0 :packages])]
+                 (rows "td" [(:displacing-actor p) (:cohort-id p)
+                             (:phase p) (:subject-count p)])))
         "</tbody></table>"))
      "<p class=\"note\">G2: no live displacement without a funded cohort. "
      "Recipient scores are unrepresentable. Live rails default refuse.</p>"

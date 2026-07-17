@@ -97,6 +97,7 @@ bb -cp . -e '(require (quote fuchi.methods.public-surface-report)) (fuchi.method
 | [`methods/displacement_l0_path.cljc`](methods/displacement_l0_path.cljc) | funded displacement → L0 + food/care dry path |
 | [`methods/r2_execute.cljc`](methods/r2_execute.cljc) | R2 execute membrane (default refuse; executed=false) |
 | [`methods/pages_publish.cljc`](methods/pages_publish.cljc) | Pages-ready `public/` static package (no deploy) |
+| [`methods/pages_deploy.cljc`](methods/pages_deploy.cljc) | Pages deploy membrane (default refuse; wrangler not invoked) |
 
 ```bash
 bb -cp . -e '(require (quote fuchi.methods.pages-publish)) (fuchi.methods.pages-publish/write-pages!)'
