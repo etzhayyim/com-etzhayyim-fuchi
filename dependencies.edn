@@ -1,0 +1,11 @@
+{:schema/version 1
+ :dependencies []
+ :integrates
+ [{:id "com-etzhayyim-hagukumi" :revision "7d34cb0660057005643f95fd9c298aeb1ff0ac82"}
+  {:id "com-etzhayyim-hikari" :revision "0a2a0ec962eb1cb72914a9f0aef9701e8948d556"}
+  {:id "com-etzhayyim-iyashi" :revision "eceea556237590f861a475b64bf41048c90f6213"}
+  {:id "com-etzhayyim-kanae" :revision "ecbb79e4b59a594180ee221cb7f35ad06b022ea7"}
+  {:id "com-etzhayyim-kokoro" :revision "e88ebbb23fd1f87c7af3b722d02538a55af005ad"}
+  {:id "com-etzhayyim-mitsuho" :revision "8ce9513470ef1df97568fd575a34c852baa755cd"}
+  {:id "com-etzhayyim-toritate" :revision "3354850aa05408e840426f91fe067ddad8535e5b"}]
+ :root-logical-integrations ["okaimono" "warifu"]}

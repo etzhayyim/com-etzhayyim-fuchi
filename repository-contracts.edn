@@ -1,0 +1,8 @@
+{:schema/version 1
+ :canonical :edn
+ :required ["actor.edn" "identity.edn" "manifest.edn" "dependencies.edn"
+            "schema/maintainer-sustenance-ontology.edn"
+            "data/seed-sustenance-graph.kotoba.edn"]
+ :wire-roots ["wire"]
+ :forbidden-extensions [".go" ".sh" ".wasm" ".jsonld" ".bpmn"]
+ :forbidden-files ["go.mod" "go.sum"]}

@@ -1,0 +1,3 @@
+{:paths ["src" "test"]
+ :tasks {test {:doc "Run standalone actor and repository-contract tests"
+               :task (load-file "run_tests.clj")}}}
