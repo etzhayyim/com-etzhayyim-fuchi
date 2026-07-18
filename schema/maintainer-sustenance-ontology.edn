@@ -21,9 +21,19 @@
 ;; single source the structural-invariant test parses.
 
 {:ontology/id        "com.etzhayyim.fuchi.maintainer-sustenance"
- :ontology/version   1
+ :ontology/version   2
  :ontology/title     "扶持 (fuchi) — maintainer sustenance allocator"
- :ontology/adr       "2606052300"
+ :ontology/adr       ["2606052300" "2607177000"]
+ ;; ADR-2607177000 — Tier-0 priority + public-person as-of (facts public; scores unrepresentable)
+ :ontology/priority-stack [:wellbecoming :mago-wellbecoming :ko-wellbecoming
+                           :present-adherent :operational]
+ :ontology/public-surface-keys [:did :sbt :covenant :stage :rails :imputed-fact
+                                :cohort-earmark :disclosure-status :hold-reason-code
+                                :multi-gen-care-facts]
+ :ontology/score-surface-keys []  ; empty = personal score/rank unrepresentable
+ :ontology/score-forbidden-keys [:priority-rank :rank :score :percentile :wellbecoming-score
+                                 :happiness-score :leaderboard-position :share-rank
+                                 :liberation-kpi-personal]
 
  ;; ── closed structural vocab (the invariants, as data) ───────────────────────
  ;; G1 — sustenance instruments only. :equity / :debt / :convertible / :revenue-share /
