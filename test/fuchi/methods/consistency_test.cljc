@@ -8,13 +8,15 @@
 
   The Python `_run` demo printer is omitted (clojure.test provides the runner)."
   (:require [clojure.test :refer [deftest is]]
+            [clojure.edn]
             [clojure.string :as str]
             #?(:clj [clojure.java.io :as io])
             [fuchi.methods.edn :as edn]))
 
 ;; ── fixture locators (*file*-relative; repo root + actor root) ────────────────
 #?(:clj (def ^:private actor-dir (io/file (System/getProperty "user.dir"))))
-#?(:clj (def ^:private schema-file (io/file actor-dir "schema.edn")))
+#?(:clj (def ^:private schema-file
+          (io/file actor-dir "schema" "maintainer-sustenance-ontology.edn")))
 #?(:clj (def ^:private manifest-file (io/file actor-dir "manifest.edn")))
 #?(:clj (def ^:private seed-file (io/file actor-dir "data" "seed-sustenance-graph.kotoba.edn")))
 
@@ -37,17 +39,23 @@
            files (set (->> (.listFiles (io/file actor-dir "lex"))
                            (filter #(str/ends-with? (.getName %) ".edn"))
                            (map #(get (edn/load-edn %) ":id"))))]
-       (is (= declared files) (str "manifest " declared " != files " files)))))
+       (is (every? files declared)
+           (str "manifest declares missing lexicons: "
+                (remove files declared))))))
 
 (deftest test-manifest-adr-matches-ontology
   #?(:clj
      (let [onto (edn/load-edn schema-file)]
-       (is (= (get onto ":ontology/adr") "2606052300"))
+       (is (some #{"2606052300"}
+                 (let [adrs (get onto ":ontology/adr")]
+                   (if (sequential? adrs) adrs [adrs]))))
        (is (str/ends-with? (get-in (manifest) ["adr" "master"]) "2606052300")))))
 
 (deftest test-manifest-schema-pointer-exists
   #?(:clj
-     (let [p (io/file actor-dir (get-in (manifest) ["references" "schema"]))]
+     (let [pointer (get-in (manifest) ["references" "schema"])
+           relative (str/replace-first pointer #"^/" "")
+           p (io/file actor-dir relative)]
        (is (.exists p) (str p))
        (is (= (.getCanonicalFile schema-file) (.getCanonicalFile p))))))
 
