@@ -103,7 +103,7 @@
 #?(:clj
    (deftest test-edn-ssot-matches-code
      (let [actor (or (System/getenv "FUCHI_ACTOR_DIR")
-                     (-> *file* io/file .getParentFile .getParentFile .getCanonicalPath))
+                     (io/file "."))
            edn (edn/load-edn (io/file actor "data" "public-person-dynamic.edn"))
            stack (get edn ":def/priority-stack")
            stack-k (mapv (fn [x]
@@ -120,7 +120,7 @@
 #?(:clj
    (deftest test-seed-disclosure-batch-drives-hold-for-noah
      (let [actor (or (System/getenv "FUCHI_ACTOR_DIR")
-                     (-> *file* io/file .getParentFile .getParentFile .getCanonicalPath))
+                     (io/file "."))
            seed (edn/load-edn (io/file actor "data" "seed-sustenance-graph.kotoba.edn"))
            surfs (pp/persons-from-seed seed)
            by-did (into {} (map (fn [s] [(:did s) s]) surfs))

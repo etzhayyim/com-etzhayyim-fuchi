@@ -25,9 +25,9 @@ public-person?(p,t) ≔ covenant?(p,t) ∧ receives-ss?(p,t) ∧ ¬exit-suspende
 - **PUBLIC**: DID, covenant, stage, rails, imputed **facts**, disclosure-status, hold-reason
 - **SCORE**: empty (no leaderboard)
 - Disclosure fail → **hold** entitlements; history retained on exit
-- SSoT: `data/public-person-dynamic.edn` + `methods/public_person.cljc`
-- L0 offline enroll: `methods/l0_enroll.cljc` (triple-permanent stubs only; no live mint)
-- Disclosure continuity: `methods/disclosure_hold.cljc` (open/held/exit-suspended)
+- SSoT: `data/public-person-dynamic.edn` + `src/fuchi/methods/public_person.cljc`
+- L0 offline enroll: `src/fuchi/methods/l0_enroll.cljc` (triple-permanent stubs only; no live mint)
+- Disclosure continuity: `src/fuchi/methods/disclosure_hold.cljc` (open/held/exit-suspended)
 
 ## What this actor is (and is NOT)
 
@@ -52,7 +52,7 @@ public-person?(p,t) ≔ covenant?(p,t) ∧ receives-ss?(p,t) ∧ ¬exit-suspende
   or let a cell/operator decide accept/reject. The vote / Council decides.
 - **G9 no-server-key** — `:alloc/server-held-key` is `:db/allowed [false]` (ADR-2605231525).
 - **G8 Murakumo-only** inference; **G10 outward-gated** — every live leg goes through
-  `methods/live_gate.py` and **REFUSES by default**. A live `provision`/`vote`/`book`/`couple`
+  `src/fuchi/src/fuchi/methods/live_gate.cljc` and **REFUSES by default**. A live `provision`/`vote`/`book`/`couple`
   fires only when the operator flag `FUCHI_ALLOW_LIVE_<LEG>=1` + an operator attestation +
   Council Lv6+ (Lv7+ for `couple`) + a member signature are ALL present. Never let the gate relax
   cash≡0 / no-server-key / in-kind-only / the vote timelock / the G2 funded-cohort gate — it is an
@@ -64,13 +64,9 @@ public-person?(p,t) ≔ covenant?(p,t) ∧ receives-ss?(p,t) ∧ ¬exit-suspende
   — do not invent a second tenure formula.
 - New in-kind needs → add an `:envelope/line` + a rail in `LINE_TO_RAIL`, mapped to a **producing
   actor** (mitsuho/hikari/okaimono/iyashi/commons-land/warifu). Never add a rail that pays cash.
-- Keep tests green: `./run_tests.sh` (184 tests / 488 assertions). The
-  `fuchi.methods.test-charter-invariants` suite parses the
+- Keep tests green: `bb test` (174 tests). The `test_charter_invariants.py` suite parses the
   ontology + lexicons + code and will fail if an invariant drifts out of any of the three places —
   including the R1-live locks (every leg refused by default; `couple` is Lv7).
-- The generic social membrane comes from the SHA-pinned
-  `com.etzhayyim/social-publication` dependency. Keep only actor identity and display text in
-  the local adapter; do not fork its invariant logic.
 
 ## Honest framing to preserve in all docs
 

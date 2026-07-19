@@ -1,7 +1,8 @@
-{:repository/contracts
- [{:id :abaki-routing-policy
-   :repository "https://github.com/etzhayyim/com-etzhayyim-abaki"
-   :revision "2081d3634328083755ad85ee4f957ac343b08e96"
-   :artifact "out/routing-policy.edn"
-   :override-env "ABAKI_POLICY_PATH"
-   :absence-policy :fail-open-no-block}]}
+{:schema/version 1
+ :canonical :edn
+ :required ["actor.edn" "identity.edn" "manifest.edn" "dependencies.edn"
+            "schema/maintainer-sustenance-ontology.edn"
+            "data/seed-sustenance-graph.kotoba.edn"]
+ :wire-roots ["wire"]
+ :forbidden-extensions [".go" ".sh" ".wasm" ".jsonld" ".bpmn"]
+ :forbidden-files ["go.mod" "go.sum"]}

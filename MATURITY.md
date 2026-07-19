@@ -12,14 +12,14 @@
 | **governance (b)** | **real 1 SBT = 1 vote + 48h timelock** (dedupe, weight≡1, no-server-key, finalize-raises-early) | `finalize_binding()` exists, **refuses by default**; timelock still strict | binding vote on-chain |
 | **booking (c)** | **toritate ledgerEntry projection** (cash≡0) + **kanae :flow/* graph** | `write_live()` exists, **refuses by default** | toritate writes the live ledger + kanae renders live |
 | **coupling (d)** | **Displacement-Dividend earmark** (TitheRouter 10% split, exact) + **G2 gate** (no displacement w/o funded cohort) | `commit_live()` exists, **refuses by default**; needs **Lv7** + G2 funded-cohort | live surplus→donation→earmark; binding G2 gate on the robotics wave |
-| **live gate** | — | **`methods/live_gate.py`** — single authorization membrane; per-leg `FUCHI_ALLOW_LIVE_<LEG>` flag + operator attestation + Council Lv6+/Lv7+ + member sig; default refused; never overrides cash≡0/no-server-key/G3 | env flag flipped + Council ratifies |
+| **live gate** | — | **`src/fuchi/src/fuchi/methods/live_gate.cljc`** — single authorization membrane; per-leg `FUCHI_ALLOW_LIVE_<LEG>` flag + operator attestation + Council Lv6+/Lv7+ + member sig; default refused; never overrides cash≡0/no-server-key/G3 | env flag flipped + Council ratifies |
 
 ## R0 + R1 a/b/c/d + R1 live-but-gated evidence
 
-- **174 tests green** (`./run_tests.sh`): 15 allocate + 13 route + 8 provision + 11 vote + 10 book
+- **174 tests green** (`bb test`): 15 allocate + 13 route + 8 provision + 11 vote + 10 book
   + 10 couple + **22 live_gate** + 15 analyze + **39 charter-invariants** + 3 lexicons + 9
   consistency/SSoT-drift-lock (methods) + 19 cell state-machine.
-- **R1 (live-but-gated)** — `methods/live_gate.py` is the single membrane every outward leg crosses.
+- **R1 (live-but-gated)** — `src/fuchi/src/fuchi/methods/live_gate.cljc` is the single membrane every outward leg crosses.
   `provision.dispatch_live` / `vote.finalize_binding` / `book.write_live` / `couple.commit_live`
   each call `live_gate.require()`, which **raises `LiveGateRefused` unless** the operator process
   flag (`FUCHI_ALLOW_LIVE_<LEG>=1`) + an operator attestation DID + Council **Lv6+** (Lv7+ for
@@ -42,7 +42,7 @@
   covers its committed $8.5k in-kind → **admissible**; `cohort-hataori-2026` ($0 / unfunded) →
   **REFUSED** by the G2 coupling gate. The 10% TitheRouter split is exact for every input
   (`gross = tithe + earmark`); `out/cohort-earmarks.kotoba.edn` is emitted.
-- **End-to-end allocator** (`methods/analyze.py`): 5 seed maintainers route to all four outcomes —
+- **End-to-end allocator** (`src/fuchi/src/fuchi/methods/analyze.cljc`): 5 seed maintainers route to all four outcomes —
   abel→auto, seth→sbt-vote (11-2, accepted, in-kind 50% because of an external liquidity residual),
   eve→council-lv7 (new commons-land grant), cain→refused (affiliate ad-share = Charter-Rider §2 hit),
   noah→outreach (zero tenure share, minimal floor). `cash≡0` on every allocation and seed line.

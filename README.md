@@ -24,19 +24,19 @@ Per **ADR-2606052300** + **ADR-2607177000** (public-person as-of, wellbecoming/m
 | **SCORE** | unrepresentable (no personal rank/leaderboard on public surface) |
 | **INTERNAL** | tenure weight / priority-rank for rationing only |
 
-Machine-readable SSoT: [`data/public-person-dynamic.edn`](data/public-person-dynamic.edn).  
-Implementation: [`methods/public_person.cljc`](methods/public_person.cljc).  
-Disclosure lexicon: [`lex/disclosureAttestation.edn`](lex/disclosureAttestation.edn)  
-Seed packages: `:disclosure/batch` in [`data/seed-sustenance-graph.kotoba.edn`](data/seed-sustenance-graph.kotoba.edn)  
+Machine-readable SSoT: [`data/public-person-dynamic.edn`](data/public-person-dynamic.edn).
+Implementation: [`src/fuchi/methods/public_person.cljc`](src/fuchi/methods/public_person.cljc).
+Disclosure lexicon: [`lex/disclosureAttestation.edn`](lex/disclosureAttestation.edn)
+Seed packages: `:disclosure/batch` in [`data/seed-sustenance-graph.kotoba.edn`](data/seed-sustenance-graph.kotoba.edn)
 (stale package → `disclosure-gate :hold` while `public-person?` stays true).
 
 ### L0 enroll + disclosure hold (offline)
 
 | Module | Role |
 |---|---|
-| [`methods/l0_enroll.cljc`](methods/l0_enroll.cljc) | draft vow → triple CID stubs → L0 floor (cash≡0, published=false) |
+| [`src/fuchi/methods/l0_enroll.cljc`](src/fuchi/methods/l0_enroll.cljc) | draft vow → triple CID stubs → L0 floor (cash≡0, published=false) |
 | [`lex/commitmentVow.edn`](lex/commitmentVow.edn) | §1.16.3a lexicon |
-| [`methods/disclosure_hold.cljc`](methods/disclosure_hold.cljc) | open/held/exit-suspended SM |
+| [`src/fuchi/methods/disclosure_hold.cljc`](src/fuchi/methods/disclosure_hold.cljc) | open/held/exit-suspended SM |
 
 Live mint/pin/mail remain refuse-by-default (G10).
 
@@ -44,7 +44,7 @@ Live mint/pin/mail remain refuse-by-default (G10).
 
 | Module | Role |
 |---|---|
-| [`methods/rail_mitsuho.cljc`](methods/rail_mitsuho.cljc) | R1 dry intent + gated-live **plan** (no mitsuho produce call) |
+| [`src/fuchi/methods/rail_mitsuho.cljc`](src/fuchi/methods/rail_mitsuho.cljc) | R1 dry intent + gated-live **plan** (no mitsuho produce call) |
 | [`data/rail-mitsuho-design.edn`](data/rail-mitsuho-design.edn) | design SSoT |
 | [`lex/mitsuhoRailDispatch.edn`](lex/mitsuhoRailDispatch.edn) | dispatch package lexicon |
 
@@ -54,8 +54,8 @@ Disclosure held → refuse. Live gate default refuse. cash≡0 / score empty.
 
 | Module | Role |
 |---|---|
-| [`methods/rail_hikari.cljc`](methods/rail_hikari.cljc) | energy-hikari R1 + gated-live plan |
-| [`methods/public_surface_report.cljc`](methods/public_surface_report.cljc) | facts-only MD/EDN public surface (`out/public-surface.*`) |
+| [`src/fuchi/methods/rail_hikari.cljc`](src/fuchi/methods/rail_hikari.cljc) | energy-hikari R1 + gated-live plan |
+| [`src/fuchi/methods/public_surface_report.cljc`](src/fuchi/methods/public_surface_report.cljc) | facts-only MD/EDN public surface (`out/public-surface.*`) |
 
 ```bash
 # optional report emit (after tests classpath)
@@ -65,40 +65,58 @@ bb -cp . -e '(require (quote fuchi.methods.public-surface-report)) (fuchi.method
 
 ### Displacement surface (itonami/robotics coupling)
 
-[`methods/displacement_surface.cljc`](methods/displacement_surface.cljc) projects
+[`src/fuchi/methods/displacement_surface.cljc`](src/fuchi/methods/displacement_surface.cljc) projects
 `:cohort/displacement` → public earmark facts (G2 funded cohort). No worker ranking scores.
 
 ### itonami bridge + mitsuho dry receive
 
 | Module | Role |
 |---|---|
-| [`methods/itonami_bridge.cljc`](methods/itonami_bridge.cljc) | itonami displacement EDN → couple events / public facts |
+| [`src/fuchi/methods/itonami_bridge.cljc`](src/fuchi/methods/itonami_bridge.cljc) | itonami displacement EDN → couple events / public facts |
 | [`data/itonami-displacement-events.edn`](data/itonami-displacement-events.edn) | representative surplus events |
-| [`methods/mitsuho_receive.cljc`](methods/mitsuho_receive.cljc) | actor-side dry-ack of food intent (produce not invoked) |
-| [`methods/hikari_receive.cljc`](methods/hikari_receive.cljc) | energy dry-ack (generate not invoked) |
-| [`methods/mitsuho_produce_plan.cljc`](methods/mitsuho_produce_plan.cljc) | dry kcal floor plan (produce-executed=false) |
-| [`methods/hikari_produce_plan.cljc`](methods/hikari_produce_plan.cljc) | dry kWh floor plan (generate-executed=false) |
-| [`methods/care_iyashi_receive.cljc`](methods/care_iyashi_receive.cljc) | care dry-ack (delivery not invoked) |
-| [`methods/care_iyashi_produce_plan.cljc`](methods/care_iyashi_produce_plan.cljc) | dry care-hours floor (delivery-executed=false) |
-| [`methods/rail_housing_commons.cljc`](methods/rail_housing_commons.cljc) | housing-commons (LANDS.md) R1+gated plan |
-| [`methods/rail_tooling_okaimono.cljc`](methods/rail_tooling_okaimono.cljc) | tooling-okaimono R1+gated plan (vocation recovery) |
-| [`methods/tooling_okaimono_receive.cljc`](methods/tooling_okaimono_receive.cljc) | tooling dry-ack (fulfillment not invoked) |
-| [`methods/tooling_okaimono_produce_plan.cljc`](methods/tooling_okaimono_produce_plan.cljc) | dry tool-units floor (fulfillment-executed=false) |
-| [`methods/rail_compute_murakumo.cljc`](methods/rail_compute_murakumo.cljc) | compute-murakumo R1+gated plan (mesh access) |
-| [`methods/compute_murakumo_receive.cljc`](methods/compute_murakumo_receive.cljc) | compute dry-ack (quota not invoked) |
-| [`methods/compute_murakumo_produce_plan.cljc`](methods/compute_murakumo_produce_plan.cljc) | dry GPU-hours floor (quota-executed=false) |
-| [`methods/housing_commons_receive.cljc`](methods/housing_commons_receive.cljc) | housing dry-ack (land grant not invoked) |
-| [`methods/housing_commons_produce_plan.cljc`](methods/housing_commons_produce_plan.cljc) | dry housing-months floor (grant-executed=false) |
-| [`methods/rail_liquidity_warifu.cljc`](methods/rail_liquidity_warifu.cljc) | liquidity-warifu member-principal residual (cash≡0) |
-| [`methods/liquidity_warifu_receive.cljc`](methods/liquidity_warifu_receive.cljc) | warifu dry-ack (loan not invoked) |
-| [`methods/ss_offline_path.cljc`](methods/ss_offline_path.cljc) | L0→all rails R1→receive→produce-plan E2E offline |
-| [`methods/rail_care_iyashi.cljc`](methods/rail_care_iyashi.cljc) | care-iyashi (子・孫 wellbecoming) R1+gated plan |
-| [`methods/itonami_surplus_ledger.cljc`](methods/itonami_surplus_ledger.cljc) | offline surplus ledger (cash-to-workers≡0; G2) |
-| [`methods/pages_publish.cljc`](methods/pages_publish.cljc) | Pages-ready `public/` static package (no deploy) |
+| [`src/fuchi/methods/mitsuho_receive.cljc`](src/fuchi/methods/mitsuho_receive.cljc) | actor-side dry-ack of food intent (produce not invoked) |
+| [`src/fuchi/methods/hikari_receive.cljc`](src/fuchi/methods/hikari_receive.cljc) | energy dry-ack (generate not invoked) |
+| [`src/fuchi/methods/mitsuho_produce_plan.cljc`](src/fuchi/methods/mitsuho_produce_plan.cljc) | dry kcal floor plan (produce-executed=false) |
+| [`src/fuchi/methods/hikari_produce_plan.cljc`](src/fuchi/methods/hikari_produce_plan.cljc) | dry kWh floor plan (generate-executed=false) |
+| [`src/fuchi/methods/care_iyashi_receive.cljc`](src/fuchi/methods/care_iyashi_receive.cljc) | care dry-ack (delivery not invoked) |
+| [`src/fuchi/methods/care_iyashi_produce_plan.cljc`](src/fuchi/methods/care_iyashi_produce_plan.cljc) | dry care-hours floor (delivery-executed=false) |
+| [`src/fuchi/methods/rail_housing_commons.cljc`](src/fuchi/methods/rail_housing_commons.cljc) | housing-commons (LANDS.md) R1+gated plan |
+| [`src/fuchi/methods/rail_tooling_okaimono.cljc`](src/fuchi/methods/rail_tooling_okaimono.cljc) | tooling-okaimono R1+gated plan (vocation recovery) |
+| [`src/fuchi/methods/tooling_okaimono_receive.cljc`](src/fuchi/methods/tooling_okaimono_receive.cljc) | tooling dry-ack (fulfillment not invoked) |
+| [`src/fuchi/methods/tooling_okaimono_produce_plan.cljc`](src/fuchi/methods/tooling_okaimono_produce_plan.cljc) | dry tool-units floor (fulfillment-executed=false) |
+| [`src/fuchi/methods/rail_compute_murakumo.cljc`](src/fuchi/methods/rail_compute_murakumo.cljc) | compute-murakumo R1+gated plan (mesh access) |
+| [`src/fuchi/methods/compute_murakumo_receive.cljc`](src/fuchi/methods/compute_murakumo_receive.cljc) | compute dry-ack (quota not invoked) |
+| [`src/fuchi/methods/compute_murakumo_produce_plan.cljc`](src/fuchi/methods/compute_murakumo_produce_plan.cljc) | dry GPU-hours floor (quota-executed=false) |
+| [`src/fuchi/methods/housing_commons_receive.cljc`](src/fuchi/methods/housing_commons_receive.cljc) | housing dry-ack (land grant not invoked) |
+| [`src/fuchi/methods/housing_commons_produce_plan.cljc`](src/fuchi/methods/housing_commons_produce_plan.cljc) | dry housing-months floor (grant-executed=false) |
+| [`src/fuchi/methods/rail_liquidity_warifu.cljc`](src/fuchi/methods/rail_liquidity_warifu.cljc) | liquidity-warifu member-principal residual (cash≡0) |
+| [`src/fuchi/methods/liquidity_warifu_receive.cljc`](src/fuchi/methods/liquidity_warifu_receive.cljc) | warifu dry-ack (loan not invoked) |
+| [`src/fuchi/methods/ss_offline_path.cljc`](src/fuchi/methods/ss_offline_path.cljc) | L0→disclosure continuity→mitsuho/hikari gated-live DESIGN (refuse)→R2 refuse + all rails R1 E2E offline |
+| [`src/fuchi/methods/rail_care_iyashi.cljc`](src/fuchi/methods/rail_care_iyashi.cljc) | care-iyashi (子・孫 wellbecoming) R1+gated plan |
+| [`src/fuchi/methods/itonami_surplus_ledger.cljc`](src/fuchi/methods/itonami_surplus_ledger.cljc) | offline surplus ledger (cash-to-workers≡0; G2) |
+| [`src/fuchi/methods/displacement_l0_path.cljc`](src/fuchi/methods/displacement_l0_path.cljc) | funded displacement → L0 + food/care/energy + L0→L1 |
+| [`src/fuchi/methods/liberation_ladder.cljc`](src/fuchi/methods/liberation_ladder.cljc) | offline L0–L6 stage climb (disclosure-gated; no mint) |
+| [`src/fuchi/methods/stage_sustenance.cljc`](src/fuchi/methods/stage_sustenance.cljc) | stage rails-hint → dry floor packages (L3 vocation+) |
+| [`src/fuchi/methods/disclosure_continuity.cljc`](src/fuchi/methods/disclosure_continuity.cljc) | continuous disclosure tick (stale → hold) |
+| [`src/fuchi/methods/displacement_book.cljc`](src/fuchi/methods/displacement_book.cljc) | offline toritate/kanae book for displacement floors |
+| [`src/fuchi/methods/displacement_couple.cljc`](src/fuchi/methods/displacement_couple.cljc) | G2 earmark headroom vs booked floors (commit_live refuse) |
+| [`src/fuchi/methods/displacement_scorecard.cljc`](src/fuchi/methods/displacement_scorecard.cljc) | E2E offline scorecard (all live legs refused) |
+| [`src/fuchi/methods/displacement_tenure.cljc`](src/fuchi/methods/displacement_tenure.cljc) | optional L4→L5/L6 tenure climb + re-book/G2 |
+| [`src/fuchi/methods/displacement_pipeline.cljc`](src/fuchi/methods/displacement_pipeline.cljc) | single offline entry: L4 + L6 tenure + G7 + scorecard + optional public package |
+| [`src/fuchi/methods/pipeline_audit_ledger.cljc`](src/fuchi/methods/pipeline_audit_ledger.cljc) | append-only offline pipeline audit (`.ednl`) |
+| [`src/fuchi/methods/displacement_gov.cljc`](src/fuchi/methods/displacement_gov.cljc) | G7 route + dry sbt-vote/council packages (no finalize) |
+| [`src/fuchi/methods/r2_execute.cljc`](src/fuchi/methods/r2_execute.cljc) | R2 execute membrane (default refuse; executed=false) |
+| [`src/fuchi/methods/pages_publish.cljc`](src/fuchi/methods/pages_publish.cljc) | Pages-ready `public/` static package (no deploy) |
+| [`src/fuchi/methods/pages_deploy.cljc`](src/fuchi/methods/pages_deploy.cljc) | Pages deploy membrane (default refuse; wrangler not invoked) |
 
 ```bash
+# one-shot offline: pipeline → scorecard → audit → public/ (plan-only; never deploys)
+bb -cp . -e '(require (quote fuchi.methods.displacement-pipeline)) (fuchi.methods.displacement-pipeline/write-all!)'
+# → out/displacement-scorecard.{md,edn} + out/pipeline-audit-ledger.ednl + public/*
+#    deployed=false wrangler-invoked=false land-grant-executed=0 cash≡0
+
 bb -cp . -e '(require (quote fuchi.methods.pages-publish)) (fuchi.methods.pages-publish/write-pages!)'
-# → public/index.html + facts.edn  (point Cloudflare Pages here; deployed=false in package)
+# → public/index.html + facts.edn only  (point Cloudflare Pages here; OOB deploy)
 ```
 
 ## Why it exists
@@ -141,21 +159,21 @@ hit → `refused`. 扶持 computes + routes; the vote / Council decides.
 
 ## R1 a/b/c/d (landed offline)
 
-- **(a) provisioning-intent wiring** (`methods/provision.py`) — the in-kind rails are mapped to
+- **(a) provisioning-intent wiring** (`src/fuchi/src/fuchi/methods/provision.cljc`) — the in-kind rails are mapped to
   the **real producing actor DIDs**: `mitsuho` (food), `hikari` (energy), `okaimono` (tooling),
   `iyashi` (care), `commons-land` (housing, LANDS.md), `murakumo` (compute), `warifu` (liquidity).
   Each is a **dry-run** intent: `published=false` (G10), `cash=0` (G2), `serverHeldKey=false` (G9).
   The liquidity intent is `member_principal` (the member borrows via warifu 0%; 扶持 never pays).
-- **(b) real 1 SBT = 1 vote + 48h timelock** (`methods/vote.py`) — ballots dedupe by DID
+- **(b) real 1 SBT = 1 vote + 48h timelock** (`src/fuchi/src/fuchi/methods/vote.cljc`) — ballots dedupe by DID
   (1 SBT = 1 vote), `weight≡1` (no plutocracy), a `:server` voter is unrepresentable, ballots
   outside the window don't count, and `finalize()` **raises** if the 48h timelock has not elapsed.
-- **(c) toritate booking + kanae flow viz** (`methods/book.py`) — each accepted in-kind rail is
+- **(c) toritate booking + kanae flow viz** (`src/fuchi/src/fuchi/methods/book.cljc`) — each accepted in-kind rail is
   projected into a **toritate `ledgerEntry`** using toritate's own category enum
   (`subsistence-flow`/`vocation-flow`/`care-flow`), `cashStipendUsd≡0`, no payroll/wage; the
   member-principal liquidity rail is **not booked as income**. A **kanae-renderable** internal
   sustenance-flow graph (`:flow/*`: Public Fund → 扶持 → provider → maintainer) is emitted for
   the viz layer (NOT the government `fundFlowEdge`).
-- **(d) Displacement-Dividend coupling** (`methods/couple.py` + `cohortEarmark` lexicon +
+- **(d) Displacement-Dividend coupling** (`src/fuchi/src/fuchi/methods/couple.cljc` + `cohortEarmark` lexicon +
   `:event/:earmark/:couple`) — the structural join to the labor-liberation mission's other half: a
   **displacing actor's surplus** → donation → **TitheRouter 10% split** (`gross = tithe + earmark`,
   exact) → a **per-cohort Public-Fund earmark** that is the imputed-value budget ceiling 扶持's
@@ -167,7 +185,7 @@ hit → `refused`. 扶持 computes + routes; the vote / Council decides.
 
 ## R1 (live-but-gated)
 
-Each outward leg now has a **live path that refuses by default** (`methods/live_gate.py`), exactly
+Each outward leg now has a **live path that refuses by default** (`src/fuchi/src/fuchi/methods/live_gate.cljc`), exactly
 as yadori's live RDAP fetch refuses without `YADORI_ALLOW_LIVE_RDAP=1`:
 
 - `provision.dispatch_live` · `vote.finalize_binding` · `book.write_live` · `couple.commit_live`
@@ -190,20 +208,26 @@ happen on this branch.
 
 ```
 fuchi/
-├── manifest.edn                              # canonical actor manifest
-├── manifest.jsonld                          # compatibility source; not canonical
-├── schema.edn                               # repository-local ontology dependency
+├── manifest.edn
 ├── data/seed-sustenance-graph.kotoba.edn   # :representative: 5 maintainers + ballots + 2 cohorts
 ├── lex/                                     # 9 com.etzhayyim.fuchi.* lexicons
-├── src/fuchi/{methods,cells}/               # standalone Clojure/CLJC implementation
-└── test/fuchi/{methods,cells}/              # standalone tests
+├── methods/
+│   ├── allocate.py        # tenure-weighted in-kind shares + floors; cash≡0; G1 allowlist
+│   ├── route.py           # envelope → in-kind rails + the pure-function gov_route
+│   ├── provision.py       # R1(a) rails → real producing-actor provisioning intents
+│   ├── vote.py            # R1(b) 1 SBT = 1 vote + 48h timelock
+│   ├── book.py            # R1(c) toritate ledgerEntry + kanae :flow/* graph
+│   ├── couple.py          # R1(d) Displacement-Dividend earmark + G2 coupling gate
+│   ├── live_gate.py       # R1(live) operator+Council+member gate; every leg refuses by default
+│   └── analyze.py         # end-to-end dry-run → out/*.kotoba.edn + allocation-dryrun.md
+└── cells/                 # 5 coded state machines (.solve() raises at R0)
 ```
 
 ## Run
 
 ```bash
-./run_tests.sh                 # 184 tests / 488 assertions
-bb --classpath src -m fuchi.methods.analyze
+bb test                 # 174 tests green
+python3 src/fuchi/methods/analyze.cljc     # end-to-end a→b→c→d dry-run scorecard + out/*.kotoba.edn
 ```
 
 ## Honest R0/R1

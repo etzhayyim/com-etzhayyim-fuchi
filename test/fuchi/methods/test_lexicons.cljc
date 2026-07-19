@@ -13,7 +13,7 @@
             [fuchi.methods.edn :as edn]))
 
 ;; ROOT/lex via *file* (…/fuchi/methods/test_lexicons.cljc → up 2 = fuchi, then lex/)
-#?(:clj (def ^:private lex-dir (io/file (System/getProperty "user.dir") "lex")))
+#?(:clj (def ^:private lex-dir (io/file (io/file ".") "lex")))
 
 ;; EXPECTED = {filename → lexicon id}  (insertion order preserved, mirrors the Python dict)
 (def ^:private expected

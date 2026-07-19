@@ -1,0 +1,100 @@
+# fuchi — displacement SS offline scorecard
+
+Priority: wellbecoming > mago(孫) > ko(子) > present. cash≡0. live=false. No personal scores.
+
+## Summary
+
+- admissible cohorts: 2
+- refused cohorts: 2
+- enrolled subjects (L4 path): 4
+- stages (L4 path): {"L4" 4}
+- tenure target: L6
+- tenure admissible cohorts: 2
+- tenure subjects: 4
+- tenure stages: {"L6" 4}
+- committed USD micros (L4): 18800000000
+- headroom USD micros (L4): 143200000000
+- tenure committed USD micros (flowable-first): 18800000000
+- tenure post-ratify committed: 42800000000
+- booked ledger entries (L4): 24
+- tenure booked entries: 24
+- all live legs refused: true
+- gov routes (L4): {"council-lv7" 4}
+- gov flowable committed L4 (housing held): 18800000000
+- gov post-ratify committed L4 (grant false): 42800000000
+- couple post-ratify committed L4: 42800000000
+- tenure gov routes: {"council-lv7" 4}
+- tenure gov flowable (housing held): 18800000000
+- tenure gov post-ratify (grant false): 42800000000
+- L4 disclosure open/held: 4/0
+- tenure disclosure open/held: 4/0
+- mitsuho food R1-dry / gated-refused / produce-executed: 8/8/0
+- hikari energy R1-dry / gated-refused / generate-executed: 8/8/0
+- care-iyashi R1-dry / gated-refused / care-delivery-executed: 8/8/0
+- housing-commons R1-dry / gated-refused / land-grant-executed: 8/8/0
+- housing council-held (awaiting Lv7): 8
+- tooling-okaimono R1-dry / gated-refused / fulfillment-executed: 8/8/0
+- compute-murakumo R1-dry / gated-refused / quota-executed: 8/8/0
+- liquidity-warifu R1-dry / gated-refused / loan-executed: 8/8/0
+- liquidity member-principal / cash-usd-micros: 8/0
+- R2 execute membrane statuses / refused / executed: 52/52/0
+- all-r2-not-executed: true
+- r2-by-rail: {"care" 8, "housing" 8, "food" 8, "energy" 8, "tooling" 8, "compute" 8}
+
+## SS priority path (L0 + disclosure + all rails gated)
+
+- L0 stage/published: L0/false
+- ladder offline: L0→L4 target=L4 steps=4 rails-hint-first=care published=false
+- stage_sustenance: stage=L4 rails-first/second=care/housing care-h/housing-mo=14600/144 land-grant=false r2-all-refused=true gated-all-refused=true gated-count=6
+- stage care/mitsuho/hikari gated-admissible: false/false/false
+- disclosure state / entitlements-may-flow: open/true
+- held-stress held / food-r1 / ladder-refused: true/refused/true
+- rails-gated-count / admissible / all-rails-gated-refused: 7/0/true
+- mitsuho/hikari/care gated-admissible: false/false/false
+- mitsuho/hikari gated-receive admissible/both-refused: false/false/true
+- care-iyashi gated-receive (孫/子) admissible/all-three-refused: false/true
+- mitsuho/hikari gated-produce admissible/both/full-chain-refused: false/false/true/true
+- care gated-produce (孫/子) admissible/produce-all/full-chain: false/true/true
+- housing gated-receive/produce (孫/子) admissible/full-chain: false/false/true
+- care+housing+food+energy full-chain-refused: true
+- housing land-grant / liquidity loan / cash: false/false/0
+- ss R2 statuses / executed / all-not-executed: 7/0/true
+- live: false cash: 0
+
+## All-disclosure-held stress (priority #2, offline)
+
+- stress: all-disclosure-held
+- held subjects: 8
+- open-path gov flowable: 18800000000
+- all-held gov flowable: 0
+- all-held tenure gov flowable: 0
+- all-held G2 admissible cohorts: 2
+- land-grant-executed: 0
+- live: false cash: 0
+
+## Cohorts
+
+| actor | cohort | phase | n | L4-flow | L4-post | ten-flow | ten-post | land-grant | headroom | tenure | tenure-n |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| sanae | cohort-sanae-2026 | offline-enrolled | 2 | 9400000000 | 21400000000 | 9400000000 | 21400000000 | 0 | 44600000000 | tenure-offline | 2 |
+| hataori | cohort-hataori-2026 | refused | 0 | 0 | 0 | 0 | 0 | 0 | 0 | — | 0 |
+| itonami-robotics | cohort-robotics-remote-2026 | offline-enrolled | 2 | 9400000000 | 21400000000 | 9400000000 | 21400000000 | 0 | 98600000000 | tenure-offline | 2 |
+| warehouse-amr | cohort-warehouse-amr-2026 | refused | 0 | 0 | 0 | 0 | 0 | 0 | 0 | — | 0 |
+
+## Live legs (default refuse)
+
+| leg | admissible | reason |
+|---|---|---|
+| provision | false | — |
+| vote | false | — |
+| book | false | — |
+| couple | false | — |
+
+## itonami surplus ledger (offline)
+
+- events: 4
+- funded-admissible: 2
+- refused: 2
+- cash-to-workers: 0
+
+_No personal scores, ranks, or percentiles. No live disbursement._

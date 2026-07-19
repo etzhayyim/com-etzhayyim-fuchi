@@ -4,11 +4,13 @@
   (:require [clojure.test :refer [deftest is]]
             [clojure.string :as str]
             [fuchi.methods.edn :as edn]
-            [fuchi.methods.analyze :as analyze]))
+            [fuchi.methods.analyze :as analyze]
+            [fuchi.methods.public-person :as public-person]))
 
 (def seed-path
-  (-> (clojure.java.io/file (System/getProperty "user.dir"))
-      (clojure.java.io/file "data" "seed-sustenance-graph.kotoba.edn") str))
+  (let [actor (or (System/getenv "FUCHI_ACTOR_DIR")
+                  (clojure.java.io/file "."))]
+    (str (clojure.java.io/file actor "data" "seed-sustenance-graph.kotoba.edn"))))
 
 (defn- run* [] (analyze/run (edn/load-edn seed-path)))
 
@@ -31,9 +33,33 @@
   (let [r (get (rows-by-did) "cain")]
     (is (and (= (get r "route") ":refused") (= (get r "outcome") "refused")))))
 
-(deftest test-noah-outreach-zero-share
-  (let [r (get (rows-by-did) "noah")]
-    (is (and (= (get r "covenant") "outreach") (= (get r "share") 0.0)))))
+(deftest test-noah-outreach-public-person-no-public-rank
+  (let [res (run*)
+        r (get (rows-by-did) "noah")
+        internal (first (filter #(str/ends-with? (str (get % ":alloc/maintainer")) "noah")
+                                (:derived res)))]
+    (is (= (get r "covenant") "outreach"))
+    (is (true? (get r "public_person")))
+    (is (nil? (get r "rank")) "public rows must not carry rank (ADR-2607177000)")
+    (is (nil? (get r "share")) "public rows must not carry share score")
+    (when internal
+      (is (= 0.0 (get internal ":internal/share"))))))
+
+(deftest test-public-persons-surface-has-no-scores
+  (let [res (run*)]
+    (is (= public-person/PRIORITY-STACK (:priority-stack res)))
+    (is (seq (:public-persons res)))
+    (doseq [p (:public-persons res)]
+      (is (nil? (:priority-rank p)))
+      (is (nil? (:score p)))
+      (is (= [] (:score-surface p))))))
+
+(deftest test-seed-disclosure-hold-emitted
+  (let [res (run*)
+        holds (:disclosure-holds res)
+        noah (first (filter #(str/ends-with? (str (:did %)) "noah") (:public-persons res)))]
+    (is (seq holds) "noah stale disclosure should produce a hold")
+    (is (= :hold (get-in noah [:disclosure-gate :action])))))
 
 (deftest test-seth-in-kind-coverage-below-one
   (is (< (get (get (rows-by-did) "seth") "in_kind") 1.0)))

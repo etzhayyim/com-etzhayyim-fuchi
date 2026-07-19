@@ -4,5 +4,8 @@
  :graph-type "com.etzhayyim.fuchi.graph"
  :published  "2026-06-28"
  :bundle [["data" "data"]
+          ["schema" "schema"]
+          ["lex" "lex"]
+          ["manifest.edn" "manifest.edn"]
           [".well-known/did.json" "did.json"]
           ["README.md" "README.md"]]}

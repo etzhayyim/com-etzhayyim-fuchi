@@ -40,9 +40,10 @@
             [fuchi.methods.provision :as prov]
             [fuchi.methods.live-gate :as live-gate]))
 
-;; ── fixture locators (*file*-relative; repo root + actor lex/) ────────────────
-#?(:clj (def ^:private root-dir (io/file (System/getProperty "user.dir"))))
-#?(:clj (def ^:private schema-file (io/file root-dir "schema.edn")))
+;; ── standalone repository fixtures ──────────────────────────────────────────
+#?(:clj (def ^:private root-dir (io/file ".")))
+#?(:clj (def ^:private schema-file
+          (io/file root-dir "schema" "maintainer-sustenance-ontology.edn")))
 #?(:clj (def ^:private lex-dir (io/file root-dir "lex")))
 
 (def INVESTMENT-TOKENS
