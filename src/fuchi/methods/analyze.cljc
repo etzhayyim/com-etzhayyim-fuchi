@@ -316,7 +316,7 @@
 
 #?(:clj
    (def ^:private SEED-PATH
-     (-> (clojure.java.io/file *file*) .getParentFile .getParentFile
+     (-> (clojure.java.io/file (System/getProperty "user.dir"))
          (clojure.java.io/file "data" "seed-sustenance-graph.kotoba.edn") str)))
 
 #?(:clj
@@ -325,8 +325,7 @@
      [& argv]
      (let [seed (edn/load-edn SEED-PATH)
            res (run seed)
-           here (-> (clojure.java.io/file *file*) .getParentFile)
-           outdir (clojure.java.io/file here "out")]
+           outdir (clojure.java.io/file (System/getProperty "user.dir") "out")]
        (.mkdirs outdir)
        (spit (clojure.java.io/file outdir "allocation-dryrun.md") (report res))
        (spit (clojure.java.io/file outdir "allocations.kotoba.edn")
